@@ -1,0 +1,11 @@
+.vercel
+
+# dependencies & build
+node_modules/
+.next/
+out/
+
+# debug / local
+npm-debug.log*
+.DS_Store
+*.tsbuildinfo

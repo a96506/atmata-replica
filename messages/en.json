@@ -1,0 +1,320 @@
+{
+  "meta": {
+    "title": "Atmata",
+    "description": "AI business platform for Kuwaiti SMBs (UI preview)"
+  },
+  "chrome": {
+    "brand": "Atmata",
+    "demoRibbon": "UI preview — not connected to API",
+    "demoUser": "demo@atmata.local",
+    "tenant": "Tenant",
+    "role": "admin",
+    "signOut": "Sign out",
+    "locale": "Language"
+  },
+  "nav": {
+    "inbox": "AI Inbox",
+    "dashboard": "Dashboard",
+    "accounting": "Accounting",
+    "sales": "Sales",
+    "purchasing": "Purchasing",
+    "inventory": "Inventory",
+    "settings": "Settings"
+  },
+  "login": {
+    "title": "Sign in",
+    "subtitle": "UI-only template — no backend call",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Continue to app",
+    "demoHint": "This button only navigates to the inbox with mock data."
+  },
+  "dashboard": {
+    "title": "Executive Dashboard",
+    "subtitle": "Real-time view across cash, revenue, AR/AP and AI activity.",
+    "kpiCash": "Cash position",
+    "kpiRevenue": "Revenue MTD",
+    "kpiPending": "Pending approvals",
+    "kpiSuccess": "AI success rate",
+    "arAging": "AR aging",
+    "alerts": "AI alerts"
+  },
+  "inbox": {
+    "title": "AI Inbox",
+    "subtitle": "Everything that needs your attention, in one place.",
+    "empty": "All caught up.",
+    "emptyHint": "Nothing in the inbox right now — sample data can be toggled in code.",
+    "approve": "Approve",
+    "reject": "Reject",
+    "openWorkspace": "Open workspace",
+    "viewDetails": "View details",
+    "confidence": "confidence"
+  },
+  "accounting": {
+    "title": "Accounting",
+    "subtitle": "Invoices, bank, statements, close.",
+    "invoices": "Invoices",
+    "invoicesDesc": "Upload + AI-extracted bills",
+    "reconciliation": "Bank reconciliation",
+    "reconciliationDesc": "Statement → invoice matches",
+    "financials": "Financial statements",
+    "financialsDesc": "P&L, BS, CF, Trial Balance",
+    "close": "Month-end close",
+    "closeDesc": "10-step checklist",
+    "manual": {
+      "newInvoice": "New invoice",
+      "dialogTitle": "Create invoice manually",
+      "dialogDescription": "Demo only — nothing is saved to a server.",
+      "invoiceNumber": "Invoice number",
+      "vendorName": "Vendor name",
+      "documentDate": "Document date",
+      "grandTotal": "Grand total (KWD)",
+      "paymentTerms": "Payment terms",
+      "deliveryDate": "Delivery date",
+      "referencePo": "Reference PO #",
+      "taxNote": "Tax note",
+      "description": "Description",
+      "lineItemsSection": "Line items",
+      "submit": "Create",
+      "cancel": "Cancel",
+      "validationInvoiceNumber": "Invoice number is required.",
+      "toastCreated": "Invoice {number} created (demo) · {vendor} · KWD {total}",
+      "lineItems": {
+        "itemNo": "#",
+        "description": "Description",
+        "qty": "Qty",
+        "unitPrice": "Unit price",
+        "total": "Total",
+        "addRow": "Add row",
+        "removeRow": "Remove",
+        "actionsHeader": "",
+        "footerGrandTotal": "Grand total"
+      }
+    }
+  },
+  "sales": {
+    "title": "Sales",
+    "subtitle": "Quotations, orders, pipeline, and credit — UI preview (PRD Sales View).",
+    "kpiQuotes": "Quotes pending customer",
+    "kpiOverdue": "Customers overdue",
+    "kpiCreditHolds": "Credit holds",
+    "creditBannerTitle": "Credit hold active",
+    "creditBannerBody": "Open exposure {exposure} — new SOs blocked until payment or override.",
+    "secQuotes": "Active quotations",
+    "secOrders": "Sales orders",
+    "secCustomers": "Customers · credit & payments",
+    "secPipeline": "Pipeline",
+    "colRef": "Reference",
+    "colCustomer": "Customer",
+    "colTotal": "Total",
+    "colStatus": "Status",
+    "colValidUntil": "Valid until",
+    "colState": "State",
+    "colDelivery": "Delivery",
+    "colExceptional": "Exceptional / project",
+    "colCreditLimit": "Credit limit",
+    "colExposure": "Exposure",
+    "colScore": "Score",
+    "colPayment": "Payment",
+    "colDeal": "Deal",
+    "colStage": "Stage",
+    "colValue": "Value",
+    "colProbability": "Probability",
+    "colDaysIdle": "Days idle",
+    "colNextAction": "Next action",
+    "exceptionalYes": "Tagged",
+    "quoteStatus": {
+      "sent": "Sent",
+      "draft": "Draft"
+    },
+    "orderState": {
+      "confirmed": "Confirmed",
+      "draft": "Draft"
+    },
+    "pay": {
+      "current": "Current",
+      "overdue_14": "Overdue (14d+)",
+      "on_hold": "On hold"
+    },
+    "quickQuote": {
+      "title": "Quick quote",
+      "hint": "AI-suggested pricing and terms — send is demo-only.",
+      "customer": "Customer",
+      "custRetail": "Kuwait Retail Co.",
+      "custFoods": "Gulf Foods WLL",
+      "custPharma": "City Pharmacy",
+      "exceptionalTag": "Mark as exceptional / project (excluded from demand run-rate)",
+      "colSku": "SKU",
+      "colProduct": "Product",
+      "colSugPrice": "Suggested price",
+      "colQty": "Qty",
+      "colLine": "Line",
+      "subtotal": "Subtotal",
+      "previewPdf": "Preview PDF",
+      "sendQuote": "Send quote",
+      "toastPdf": "PDF preview is visual-only in this template.",
+      "toastSend": "Quote queued for {customer} · exceptional: {exceptional} (demo)",
+      "yes": "Yes",
+      "no": "No"
+    }
+  },
+  "purchasing": {
+    "title": "Purchasing",
+    "subtitle": "PO suggestions, 3-way bill match, vendors — UI preview (PRD Procurement View).",
+    "kpiPoSuggestions": "Open PO suggestions",
+    "kpiBillQueue": "Bills in match queue",
+    "kpiPriceAlerts": "Price alerts",
+    "secPoSuggestions": "PO suggestions",
+    "secBillMatch": "Vendor bill matching",
+    "secPriceAlerts": "Vendor price alerts",
+    "secVendorScores": "Vendor scores",
+    "secPurchaseHistory": "Purchase history",
+    "secReceiving": "Receiving vs PO",
+    "colId": "ID",
+    "colProduct": "Product",
+    "colVendor": "Vendor",
+    "colQty": "Qty",
+    "colEstUnit": "Est. unit",
+    "colPriority": "Priority",
+    "colActions": "Actions",
+    "colBill": "Bill",
+    "colPo": "PO",
+    "colMatchStatus": "Match",
+    "colDiscrepancy": "Discrepancy",
+    "colScore": "Score",
+    "colLeadDays": "Lead time (d)",
+    "colQuality": "Quality",
+    "colPriceRank": "Price rank",
+    "colDate": "Date",
+    "colAmount": "Amount",
+    "colTransfer": "Transfer",
+    "colRecvStatus": "Receipt status",
+    "colExpected": "Expected",
+    "colReceived": "Received",
+    "colFlag": "Flag",
+    "severity": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "matchStatus": {
+      "matched": "Matched",
+      "discrepancy": "Discrepancy",
+      "review": "Review"
+    },
+    "quality": {
+      "high": "High",
+      "medium": "Medium"
+    },
+    "recvState": {
+      "partial": "Partial",
+      "ready": "Ready to receive"
+    },
+    "recvFlag": {
+      "short": "Short receipt"
+    },
+    "manual": {
+      "newPo": "New PO",
+      "dialogTitle": "Create purchase order manually",
+      "dialogDescription": "Demo only — nothing is saved to a server.",
+      "poNumber": "PO number",
+      "vendorName": "Vendor name",
+      "documentDate": "Document date",
+      "grandTotal": "Grand total (KWD)",
+      "paymentTerms": "Payment terms",
+      "deliveryDate": "Delivery date",
+      "description": "Description",
+      "lineItemsSection": "Line items",
+      "submit": "Create",
+      "cancel": "Cancel",
+      "validationPoNumber": "PO number is required.",
+      "toastCreated": "PO {number} created (demo) · {vendor} · KWD {total}",
+      "lineItems": {
+        "itemNo": "#",
+        "description": "Description",
+        "qty": "Qty",
+        "unitPrice": "Unit price",
+        "total": "Total",
+        "addRow": "Add row",
+        "removeRow": "Remove",
+        "actionsHeader": "",
+        "footerGrandTotal": "Grand total"
+      }
+    },
+    "actions": {
+      "approve": "Approve",
+      "adjust": "Adjust",
+      "reject": "Reject",
+      "approvePo": "PO {id} approved (demo)",
+      "adjustPo": "Adjust {id} — editor is visual-only.",
+      "rejectPo": "Suggestion {id} dismissed (demo)",
+      "approveMatch": "Approve",
+      "approveBill": "Bill match {id} approved (demo)",
+      "flag": "Flag issue",
+      "flagBill": "Flagged {id} ({status}) for follow-up (demo)",
+      "confirmReceiptBtn": "Confirm",
+      "confirmReceipt": "Receipt {ref} confirmed (demo)"
+    }
+  },
+  "inventory": {
+    "title": "Inventory",
+    "subtitle": "Stock, reorder alerts, demand forecast — UI preview (PRD inventory).",
+    "secReorder": "Reorder alerts",
+    "reorderShort": "{n} units below safety stock",
+    "secStock": "Stock levels",
+    "secForecast": "Demand forecast",
+    "forecastHint": "30 / 90 day units (illustrative; exceptional SOs excluded from run-rate in product).",
+    "secInbound": "Inbound shipments",
+    "secOutbound": "Outbound deliveries",
+    "colSku": "SKU",
+    "colProduct": "Product",
+    "colOnHand": "On hand",
+    "colMin": "Min",
+    "colMax": "Max",
+    "colAbc": "ABC",
+    "colDemand30": "Demand 30d",
+    "colDemand90": "Demand 90d",
+    "colTransfer": "Transfer",
+    "colPo": "PO",
+    "colSo": "SO",
+    "colPartner": "Partner",
+    "colEta": "ETA",
+    "colShipDate": "Ship date",
+    "colShipState": "Status",
+    "colNote": "Note",
+    "severity": {
+      "critical": "Critical",
+      "medium": "Medium"
+    },
+    "inboundState": {
+      "late": "Late",
+      "on_track": "On track"
+    },
+    "outboundState": {
+      "delayed": "Delayed",
+      "ready": "Ready to ship"
+    },
+    "actions": {
+      "refresh": "Refresh",
+      "refreshDemo": "Refresh is visual-only in this template.",
+      "viewDelay": "Why delayed?",
+      "delayNote": "Delay reason for {ref} — demo narrative only."
+    }
+  },
+  "settings": {
+    "title": "Settings · AI confidence thresholds",
+    "subtitle": "Tune per-automation thresholds. Values below are illustrative.",
+    "automation": "Automation",
+    "defaultThreshold": "Default threshold",
+    "autoThreshold": "Auto-execute threshold",
+    "source": "Source",
+    "actions": "Actions",
+    "save": "Save",
+    "reset": "Reset",
+    "platform": "platform",
+    "tenantOverride": "tenant override"
+  },
+  "common": {
+    "back": "Back"
+  }
+}
