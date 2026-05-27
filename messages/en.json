@@ -315,6 +315,107 @@
     "tenantOverride": "tenant override"
   },
   "common": {
-    "back": "Back"
+    "back": "Back",
+    "actions": {
+      "submit": "Submit",
+      "approve": "Approve",
+      "reject": "Reject",
+      "post": "Post",
+      "cancel": "Cancel",
+      "reverse": "Reverse",
+      "close": "Close",
+      "edit": "Edit",
+      "save": "Save",
+      "create": "Create",
+      "send": "Send"
+    },
+    "states": {
+      "draft": "Draft",
+      "pending": "Pending",
+      "confirmed": "Confirmed",
+      "posted": "Posted",
+      "locked": "Locked",
+      "archived": "Archived",
+      "cancelled": "Cancelled"
+    },
+    "period": {
+      "open": "Open",
+      "soft_closed": "Soft-closed",
+      "hard_closed": "Locked",
+      "no_period": "No period"
+    },
+    "empty": "No items here yet.",
+    "loading": "Loading…",
+    "error": {
+      "title": "Something went wrong",
+      "retry": "Retry"
+    }
+  },
+  "adoption": {
+    "title": "Adopt to",
+    "bulkTitle": "Adopt selected to",
+    "continue": "Continue to form",
+    "cancel": "Cancel",
+    "previewHeading": "Will create",
+    "noSelection": "No lines selected.",
+    "fullyConsumed": "Fully consumed",
+    "mergedFrom": "Merged from {count} parents",
+    "tabLabel": "Adoption",
+    "trailEmpty": "No adoption history yet for this document.",
+    "target": {
+      "rfq": "RFQ",
+      "po": "Purchase Order",
+      "grn": "Goods Receipt",
+      "vendor_bill": "Vendor Bill",
+      "vendor_payment": "Vendor Payment",
+      "vendor_return": "Vendor Return",
+      "debit_note": "Debit Note",
+      "so": "Sales Order",
+      "dn": "Delivery Note",
+      "customer_invoice": "Customer Invoice",
+      "customer_receipt": "Customer Receipt",
+      "customer_return": "Customer Return",
+      "credit_note": "Credit Note"
+    }
+  },
+  "rfq": {
+    "title": "Requests for quotation",
+    "newTitle": "New RFQ",
+    "compareTab": "Compare quotes",
+    "awardedTo": "Awarded to",
+    "lowest": "lowest",
+    "actions": {
+      "send": "Send",
+      "record_quotes": "Record quotes",
+      "award": "Award"
+    }
+  },
+  "returns": {
+    "vendorTitle": "Vendor returns",
+    "customerTitle": "Customer returns",
+    "newVendorReturn": "New vendor return",
+    "newCustomerReturn": "New customer return",
+    "reasonCode": "Reason"
+  },
+  "debit_note": {
+    "title": "Debit notes",
+    "balance": "Balance"
+  },
+  "credit_note": {
+    "title": "Credit notes",
+    "balance": "Balance"
+  },
+  "ai": {
+    "copilotTitle": "Co-pilot",
+    "asAgent": "Acting as AI agent",
+    "mode": {
+      "observe": "Observe",
+      "suggest": "Suggest",
+      "auto": "Auto"
+    },
+    "doIt": "Do it",
+    "queue": "Queue",
+    "dismiss": "Dismiss",
+    "empty": "Nothing to flag right now."
   }
 }

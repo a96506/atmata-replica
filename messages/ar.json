@@ -315,6 +315,107 @@
     "tenantOverride": "تجاوز المستأجر"
   },
   "common": {
-    "back": "رجوع"
+    "back": "رجوع",
+    "actions": {
+      "submit": "إرسال",
+      "approve": "اعتماد",
+      "reject": "رفض",
+      "post": "ترحيل",
+      "cancel": "إلغاء",
+      "reverse": "عكس",
+      "close": "إغلاق",
+      "edit": "تعديل",
+      "save": "حفظ",
+      "create": "إنشاء",
+      "send": "إرسال"
+    },
+    "states": {
+      "draft": "مسودة",
+      "pending": "قيد المراجعة",
+      "confirmed": "مؤكد",
+      "posted": "مُرحَّل",
+      "locked": "مقفل",
+      "archived": "مؤرشف",
+      "cancelled": "ملغى"
+    },
+    "period": {
+      "open": "مفتوحة",
+      "soft_closed": "إغلاق مؤقت",
+      "hard_closed": "إغلاق نهائي",
+      "no_period": "لا توجد فترة"
+    },
+    "empty": "لا توجد عناصر حتى الآن.",
+    "loading": "جارٍ التحميل…",
+    "error": {
+      "title": "حدث خطأ",
+      "retry": "إعادة المحاولة"
+    }
+  },
+  "adoption": {
+    "title": "تبنّي إلى",
+    "bulkTitle": "تبنّي المختار إلى",
+    "continue": "متابعة إلى النموذج",
+    "cancel": "إلغاء",
+    "previewHeading": "سيتم إنشاء",
+    "noSelection": "لم يتم اختيار أسطر.",
+    "fullyConsumed": "تم استهلاكه بالكامل",
+    "mergedFrom": "مدمج من {count} مستندات",
+    "tabLabel": "التبنّي",
+    "trailEmpty": "لا يوجد سجل تبنّي لهذا المستند بعد.",
+    "target": {
+      "rfq": "طلب عرض سعر",
+      "po": "أمر شراء",
+      "grn": "إذن استلام",
+      "vendor_bill": "فاتورة مورد",
+      "vendor_payment": "دفعة لمورد",
+      "vendor_return": "مرتجع مورد",
+      "debit_note": "إشعار مدين",
+      "so": "أمر بيع",
+      "dn": "إذن تسليم",
+      "customer_invoice": "فاتورة عميل",
+      "customer_receipt": "إيصال قبض",
+      "customer_return": "مرتجع عميل",
+      "credit_note": "إشعار دائن"
+    }
+  },
+  "rfq": {
+    "title": "طلبات عروض الأسعار",
+    "newTitle": "طلب عرض سعر جديد",
+    "compareTab": "مقارنة العروض",
+    "awardedTo": "تم الترسية على",
+    "lowest": "الأدنى",
+    "actions": {
+      "send": "إرسال",
+      "record_quotes": "تسجيل العروض",
+      "award": "ترسية"
+    }
+  },
+  "returns": {
+    "vendorTitle": "مرتجعات الموردين",
+    "customerTitle": "مرتجعات العملاء",
+    "newVendorReturn": "مرتجع مورد جديد",
+    "newCustomerReturn": "مرتجع عميل جديد",
+    "reasonCode": "السبب"
+  },
+  "debit_note": {
+    "title": "إشعارات مدينة",
+    "balance": "الرصيد"
+  },
+  "credit_note": {
+    "title": "إشعارات دائنة",
+    "balance": "الرصيد"
+  },
+  "ai": {
+    "copilotTitle": "المساعد",
+    "asAgent": "بدور وكيل الذكاء الاصطناعي",
+    "mode": {
+      "observe": "مراقبة",
+      "suggest": "اقتراح",
+      "auto": "تلقائي"
+    },
+    "doIt": "تنفيذ",
+    "queue": "إضافة للقائمة",
+    "dismiss": "تجاهل",
+    "empty": "لا يوجد ما يستحق التنبيه الآن."
   }
 }

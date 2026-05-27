@@ -4,24 +4,21 @@ import { Link } from "@/i18n/navigation";
 import { ConfirmDialogProvider } from "@/components/confirm-dialog";
 import { ToastFromQuery } from "@/components/toast-from-query";
 import { LocaleSwitcher } from "@/components/locale-switcher";
-import { DEMO_INBOX } from "@/lib/demo-data";
-
-function InboxBadgeCount() {
-  const n = DEMO_INBOX.items.length;
-  if (!n) return null;
-  return (
-    <span className="ml-1 rounded-full bg-orange-100 px-1.5 text-xs font-medium text-orange-800">
-      {n}
-    </span>
-  );
-}
+import { SessionProvider } from "@/lib/session";
+import { UserMenu } from "@/components/app/UserMenu";
+import { CompanySwitcher } from "@/components/app/CompanySwitcher";
+import {
+  GlobalSearchProvider,
+  GlobalSearchTrigger,
+} from "@/components/app/GlobalSearchProvider";
+import { NotificationsBell } from "@/components/app/NotificationsBell";
+import { RoleSwitcher } from "@/components/dev/RoleSwitcher";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const t = await getTranslations("nav");
   const tc = await getTranslations("chrome");
 
   const NAV = [
-    { href: "/inbox" as const, label: t("inbox"), badge: true },
     { href: "/dashboard" as const, label: t("dashboard") },
     { href: "/accounting" as const, label: t("accounting") },
     { href: "/sales" as const, label: t("sales") },
@@ -31,7 +28,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   ];
 
   return (
+    <SessionProvider>
     <ConfirmDialogProvider>
+    <GlobalSearchProvider>
       <div className="min-h-screen bg-slate-50">
         <div
           className="border-b border-orange-200 bg-orange-50 px-4 py-2 text-center text-xs font-medium text-orange-900"
@@ -45,6 +44,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <Link
               href="/inbox"
               className="text-lg font-semibold text-orange-600 transition-colors hover:text-orange-700 md:text-xl"
+              aria-label={tc("brand")}
             >
               {tc("brand")}
             </Link>
@@ -59,26 +59,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   className="cursor-pointer rounded-md px-3 py-1.5 text-sm whitespace-nowrap text-slate-900 transition-colors duration-150 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
                 >
                   {item.label}
-                  {item.badge && <InboxBadgeCount />}
                 </Link>
               ))}
             </nav>
           </div>
           <div className="flex items-center gap-2 text-sm md:gap-3">
+            <GlobalSearchTrigger />
+            <CompanySwitcher label={tc("tenant")} />
             <LocaleSwitcher label={tc("locale")} />
-            <span className="hidden text-slate-700 lg:inline">
-              {tc("demoUser")}
-              <span className="text-slate-500">
-                {" "}
-                · {tc("tenant")} 1 · {tc("role")}
-              </span>
-            </span>
-            <Link
-              href="/login"
-              className="cursor-pointer rounded-md bg-slate-100 px-3 py-1.5 text-sm text-slate-900 transition-colors hover:bg-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
-            >
-              {tc("signOut")}
-            </Link>
+            <NotificationsBell />
+            <UserMenu signOutLabel={tc("signOut")} />
           </div>
         </header>
 
@@ -93,7 +83,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               className="cursor-pointer rounded-md px-3 py-1.5 text-xs whitespace-nowrap text-slate-900 hover:bg-slate-100"
             >
               {item.label}
-              {item.badge && <InboxBadgeCount />}
             </Link>
           ))}
         </nav>
@@ -102,7 +91,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <Suspense fallback={null}>
           <ToastFromQuery />
         </Suspense>
+        {process.env.NODE_ENV !== "production" && <RoleSwitcher />}
       </div>
+    </GlobalSearchProvider>
     </ConfirmDialogProvider>
+    </SessionProvider>
   );
 }

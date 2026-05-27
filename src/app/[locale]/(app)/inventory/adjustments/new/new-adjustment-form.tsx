@@ -1,0 +1,234 @@
+"use client";
+
+import * as React from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "@/components/toast";
+import { useConfirm } from "@/components/confirm-dialog";
+import { DocForm } from "@/components/form/DocForm";
+import { DatePicker } from "@/components/form/DatePicker";
+import { SearchSelect } from "@/components/form/SearchSelect";
+import { ApprovalRoutePreview } from "@/components/form/ApprovalRoutePreview";
+import { previewSequence } from "@/lib/numbering";
+import type { Product, Warehouse } from "@/types";
+import type { ValidationError } from "@/components/form/ValidationSummary";
+
+type AdjLine = {
+  id: string;
+  productId: string;
+  warehouseId: string;
+  qtyDelta: number;
+  reason: "cycle_count" | "damage" | "expiry" | "theft" | "other";
+};
+
+const REASONS = [
+  { value: "cycle_count", label: "Cycle count" },
+  { value: "damage", label: "Damage" },
+  { value: "expiry", label: "Expiry" },
+  { value: "theft", label: "Theft" },
+  { value: "other", label: "Other" },
+];
+
+const APPROVAL_THRESHOLD_KWD = 5_000;
+
+export function NewAdjustmentForm({
+  locale,
+  products,
+  warehouses,
+}: {
+  locale: string;
+  products: Product[];
+  warehouses: Warehouse[];
+}) {
+  const router = useRouter();
+  const confirm = useConfirm();
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [date, setDate] = React.useState(today);
+  const [notes, setNotes] = React.useState("");
+  const [dirty, setDirty] = React.useState(false);
+  const [lines, setLines] = React.useState<AdjLine[]>([
+    {
+      id: `ln_${Date.now()}`,
+      productId: "",
+      warehouseId: warehouses[0]?.id ?? "",
+      qtyDelta: 0,
+      reason: "cycle_count",
+    },
+  ]);
+
+  const wrap =
+    <T,>(setter: (v: T) => void) =>
+    (v: T) => {
+      setDirty(true);
+      setter(v);
+    };
+
+  const setLine = (id: string, patch: Partial<AdjLine>) => {
+    setDirty(true);
+    setLines((prev) => prev.map((l) => (l.id === id ? { ...l, ...patch } : l)));
+  };
+
+  const addLine = () =>
+    setLines((prev) => [
+      ...prev,
+      {
+        id: `ln_${Date.now()}_${Math.random()}`,
+        productId: "",
+        warehouseId: warehouses[0]?.id ?? "",
+        qtyDelta: 0,
+        reason: "cycle_count",
+      },
+    ]);
+  const removeLine = (id: string) =>
+    setLines((prev) => prev.filter((l) => l.id !== id));
+
+  const estimatedValue = lines.reduce((s, l) => {
+    const p = products.find((pp) => pp.id === l.productId);
+    return s + Math.abs(l.qtyDelta) * (p?.defaultPurchasePrice || 0);
+  }, 0);
+
+  const needsApproval = estimatedValue > APPROVAL_THRESHOLD_KWD;
+
+  const errors: ValidationError[] = [];
+  if (!date) errors.push({ field: "date", message: "Date required." });
+  lines.forEach((l, i) => {
+    if (!l.productId)
+      errors.push({ field: `line ${i + 1} · product`, message: "Pick a product." });
+    if (l.qtyDelta === 0)
+      errors.push({
+        field: `line ${i + 1} · delta`,
+        message: "Δqty must be non-zero.",
+      });
+  });
+
+  const previewNumber = previewSequence("stock_adjustment", 2026, 99);
+
+  const onSubmit = async () => {
+    if (errors.length > 0) {
+      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      return;
+    }
+    const ok = await confirm({
+      title: `${needsApproval ? "Submit" : "Post"} ${previewNumber}?`,
+      description: needsApproval
+        ? `Estimated value KWD ${estimatedValue.toFixed(3)} exceeds the ${APPROVAL_THRESHOLD_KWD.toLocaleString()} threshold — routes for warehouse-manager approval. Demo · this action will not persist.`
+        : `Posts the stock adjustment immediately. Generates stock moves + a JE (Dr inventory loss / Cr inventory). Demo · this action will not persist.`,
+      confirmLabel: needsApproval ? "Submit" : "Post",
+      tone: "destructive",
+    });
+    if (!ok) return;
+    toast.success(`${needsApproval ? "Submitted" : "Posted"} (demo): ${previewNumber}`);
+    setDirty(false);
+    router.push(`/${locale}/inventory/adjustments`);
+  };
+
+  return (
+    <DocForm
+      title={`New stock adjustment · ${previewNumber}`}
+      subtitle={
+        needsApproval
+          ? `Estimated KWD ${estimatedValue.toFixed(3)} — routes for approval (> ${APPROVAL_THRESHOLD_KWD.toLocaleString()} threshold).`
+          : `Estimated KWD ${estimatedValue.toFixed(3)} — posts directly.`
+      }
+      header={
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          <DatePicker label="Date" required value={date} onChange={wrap(setDate)} />
+        </div>
+      }
+      lines={
+        <div className="space-y-2">
+          {lines.map((l, i) => (
+            <div
+              key={l.id}
+              className="grid items-end gap-3 rounded-lg border border-slate-200 bg-white p-3 md:grid-cols-[40px_minmax(0,2fr)_minmax(0,1fr)_120px_minmax(0,1fr)_70px]"
+            >
+              <div className="text-xs text-slate-400">{i + 1}</div>
+              <SearchSelect
+                label="Product"
+                required
+                value={l.productId || null}
+                onChange={(v) => setLine(l.id, { productId: v })}
+                options={products.map((p) => ({
+                  value: p.id,
+                  label: `${p.sku} · ${p.name}`,
+                }))}
+              />
+              <SearchSelect
+                label="Warehouse"
+                value={l.warehouseId || null}
+                onChange={(v) => setLine(l.id, { warehouseId: v })}
+                options={warehouses.map((w) => ({ value: w.id, label: w.name }))}
+              />
+              <div className="flex flex-col gap-1">
+                <label className="text-xs font-medium text-slate-700">
+                  Δqty (+/-)
+                </label>
+                <input
+                  type="number"
+                  step="0.001"
+                  value={l.qtyDelta}
+                  onChange={(e) =>
+                    setLine(l.id, {
+                      qtyDelta: Number.parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className={
+                    "rounded-md border bg-white px-3 py-1.5 text-right text-sm tabular-nums focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 " +
+                    (l.qtyDelta < 0
+                      ? "border-red-300"
+                      : l.qtyDelta > 0
+                        ? "border-emerald-300"
+                        : "border-slate-300")
+                  }
+                />
+              </div>
+              <SearchSelect
+                label="Reason"
+                value={l.reason}
+                onChange={(v) => setLine(l.id, { reason: v as AdjLine["reason"] })}
+                options={REASONS}
+              />
+              <button
+                type="button"
+                onClick={() => removeLine(l.id)}
+                disabled={lines.length === 1}
+                className="cursor-pointer rounded-md text-xs text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addLine}
+            className="cursor-pointer rounded-md border border-dashed border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:border-slate-400"
+          >
+            + Add line
+          </button>
+        </div>
+      }
+      notes={
+        <textarea
+          rows={3}
+          value={notes}
+          onChange={(e) => wrap(setNotes)(e.target.value)}
+          placeholder="Explanation for the adjustment…"
+          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+        />
+      }
+      approvalPreview={
+        <ApprovalRoutePreview docType="stock_adjustment" amount={estimatedValue} />
+      }
+      errors={errors}
+      dirty={dirty}
+      onSubmit={onSubmit}
+      onSaveDraft={() => {
+        toast.success(`Saved as draft (demo): ${previewNumber}`);
+        setDirty(false);
+      }}
+      onCancel={() => router.back()}
+      submitDisabled={errors.length > 0}
+      submitLabel={needsApproval ? "Submit for approval" : "Post"}
+    />
+  );
+}

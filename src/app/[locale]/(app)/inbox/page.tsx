@@ -78,7 +78,11 @@ export default async function InboxPage() {
                   )}
                 </div>
                 <div className="flex flex-col items-stretch gap-2 sm:items-end">
-                  <InboxRowActions source={item.source} id={item.id} />
+                  <InboxRowActions
+                    source={item.source}
+                    id={item.id}
+                    sourceUrl={item.source_url}
+                  />
                   <time className="text-xs text-slate-500" dateTime={item.created_at}>
                     {new Date(item.created_at).toLocaleString()}
                   </time>

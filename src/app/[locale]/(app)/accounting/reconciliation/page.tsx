@@ -1,5 +1,6 @@
 import { Link } from "@/i18n/navigation";
 import { DemoStartSession } from "./demo-start";
+import { ReconTabs } from "./recon-tabs";
 import { DEMO_INBOX } from "@/lib/demo-data";
 
 export default function ReconciliationPage() {
@@ -10,9 +11,11 @@ export default function ReconciliationPage() {
       <header>
         <h1 className="text-2xl font-semibold text-slate-900">Bank Reconciliation</h1>
         <p className="text-sm text-slate-700">
-          Start a session to match bank statement lines against journal entries.
+          Import a bank statement, define matching rules, and accept suggested matches against open bills and invoices.
         </p>
       </header>
+
+      <ReconTabs />
 
       <DemoStartSession />
 

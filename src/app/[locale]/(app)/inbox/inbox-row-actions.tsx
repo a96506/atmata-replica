@@ -1,8 +1,8 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { toast } from "@/components/toast";
-import { Link } from "@/i18n/navigation";
 
 const APPROVABLE_SOURCES = new Set([
   "audit_log",
@@ -11,7 +11,7 @@ const APPROVABLE_SOURCES = new Set([
   "duplicate_group",
 ]);
 
-const WORKSPACE_ROUTES: Record<string, string> = {
+const FALLBACK_ROUTES: Record<string, string> = {
   reconciliation: "/accounting/reconciliation",
   credit_hold: "/accounting",
 };
@@ -19,11 +19,16 @@ const WORKSPACE_ROUTES: Record<string, string> = {
 export function InboxRowActions({
   source,
   id,
+  sourceUrl,
 }: {
   source: string;
   id: number;
+  sourceUrl?: string | null;
 }) {
   const t = useTranslations("inbox");
+  const locale = useLocale();
+  const target = sourceUrl ?? FALLBACK_ROUTES[source] ?? null;
+  const href = target ? `/${locale}${target}` : null;
 
   return (
     <div className="flex flex-col items-end gap-2">
@@ -48,10 +53,10 @@ export function InboxRowActions({
             )}
           </>
         )}
-        {WORKSPACE_ROUTES[source] && (
+        {href && (
           <Link
-            href={WORKSPACE_ROUTES[source]}
-            className="cursor-pointer rounded bg-slate-100 px-3 py-1 text-xs font-medium text-slate-900 hover:bg-slate-200"
+            href={href}
+            className="cursor-pointer rounded bg-orange-100 px-3 py-1 text-xs font-medium text-orange-900 hover:bg-orange-200"
           >
             {t("openWorkspace")}
           </Link>

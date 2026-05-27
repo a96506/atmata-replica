@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { DEMO_CLOSING } from "@/lib/demo-data";
 import { CloseDemoToolbar, CloseRescanDemo, CloseStepDemo } from "./close-demo-actions";
 
@@ -14,6 +15,19 @@ const STEP_LABELS: Record<string, string> = {
   final_review: "Final P&L / Balance Sheet Review",
 };
 
+const STEP_HREF: Record<string, (locale: string) => string> = {
+  reconcile_bank: (l) => `/${l}/accounting/reconciliation`,
+  review_stale_drafts: (l) => `/${l}/accounting/journal-entries?state=draft`,
+  unbilled_deliveries: (l) => `/${l}/sales/deliveries?missingBill=1`,
+  missing_vendor_bills: (l) => `/${l}/purchasing/goods-receipts?missingBill=1`,
+  uninvoiced_revenue: (l) => `/${l}/sales/deliveries?missingBill=1`,
+  depreciation_entries: (l) => `/${l}/accounting/journal-entries`,
+  tax_validation: (l) => `/${l}/settings/tax-codes`,
+  intercompany_balances: (l) => `/${l}/accounting/journal-entries`,
+  review_adjustments: (l) => `/${l}/inventory/adjustments`,
+  final_review: (l) => `/${l}/accounting/financials`,
+};
+
 const STATUS_BADGE: Record<string, string> = {
   pending: "bg-slate-100 text-slate-800",
   needs_attention: "bg-amber-100 text-amber-800",
@@ -26,10 +40,13 @@ function defaultPeriod() {
 }
 
 export default async function ClosePage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ locale: string }>;
   searchParams: Promise<{ period?: string }>;
 }) {
+  const { locale } = await params;
   const { period: periodParam } = await searchParams;
   const period = periodParam || defaultPeriod();
   const closing = DEMO_CLOSING.period === period ? DEMO_CLOSING : { ...DEMO_CLOSING, period };
@@ -110,6 +127,14 @@ export default async function ClosePage({
                     >
                       {step.status.replace("_", " ")}
                     </span>
+                    {STEP_HREF[step.step_name] ? (
+                      <Link
+                        href={STEP_HREF[step.step_name](locale)}
+                        className="cursor-pointer rounded-md border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-900 hover:bg-slate-50"
+                      >
+                        Open list →
+                      </Link>
+                    ) : null}
                     {step.status !== "complete" && (
                       <CloseStepDemo period={period} stepName={step.step_name} />
                     )}

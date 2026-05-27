@@ -1,12 +1,19 @@
 "use client";
 
 import * as React from "react";
-import { useTranslations } from "next-intl";
+import NextLink from "next/link";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { DataTable } from "@/components/data-table";
 import { DemoUpload } from "./demo-upload";
 import type { DocumentJob } from "@/lib/demo-data";
 import { ManualInvoiceModal } from "./manual-invoice-modal";
+
+/** Mapping from OCR job_id → seeded Vendor Bill id (F7 deep-link). */
+const OCR_JOB_TO_BILL_ID: Record<number, string | null> = {
+  9001: "bill_2",
+  9002: "bill_1",
+};
 
 const STATUS_BADGE: Record<string, string> = {
   queued: "bg-slate-100 text-slate-800",
@@ -29,11 +36,13 @@ const COLUMNS = [
 
 export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJob[] }) {
   const t = useTranslations("accounting.manual");
+  const locale = useLocale();
   const [docs, setDocs] = React.useState<DocumentJob[]>(initialInvoices);
   const [modalOpen, setModalOpen] = React.useState(false);
 
   const rows = docs.map((doc) => {
     const isManual = doc.file_name.startsWith("Manual ·");
+    const linkedBillId = OCR_JOB_TO_BILL_ID[doc.job_id];
     return [
       <span key="f" className="font-medium text-slate-900">
         {doc.file_name}
@@ -60,13 +69,22 @@ export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJ
           —
         </span>
       ) : (
-        <Link
-          key="a"
-          href={`/accounting/invoices/${doc.job_id}`}
-          className="text-xs font-medium text-orange-600 hover:underline"
-        >
-          Review
-        </Link>
+        <span key="a" className="flex items-center justify-end gap-2 text-xs">
+          <Link
+            href={`/accounting/invoices/${doc.job_id}`}
+            className="font-medium text-orange-600 hover:underline"
+          >
+            Review
+          </Link>
+          {linkedBillId ? (
+            <NextLink
+              href={`/${locale}/purchasing/bills/${linkedBillId}`}
+              className="rounded bg-emerald-100 px-2 py-0.5 font-medium text-emerald-900 hover:bg-emerald-200"
+            >
+              → Bill
+            </NextLink>
+          ) : null}
+        </span>
       ),
     ];
   });
