@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { DatePicker } from "@/components/form/DatePicker";
 import {
   LineItemsEditor,
   createEmptyLineItem,
@@ -146,15 +147,11 @@ export function ManualPoModal({
               />
             </Field>
 
-            <Field>
-              <FieldLabel htmlFor="po-date">{t("documentDate")}</FieldLabel>
-              <Input
-                id="po-date"
-                type="date"
-                value={documentDate}
-                onChange={(e) => setDocumentDate(e.target.value)}
-              />
-            </Field>
+            <DatePicker
+              label={t("documentDate")}
+              value={documentDate}
+              onChange={setDocumentDate}
+            />
 
             <Field>
               <FieldLabel htmlFor="po-total">{t("grandTotal")}</FieldLabel>
@@ -176,15 +173,11 @@ export function ManualPoModal({
               />
             </Field>
 
-            <Field>
-              <FieldLabel htmlFor="po-delivery">{t("deliveryDate")}</FieldLabel>
-              <Input
-                id="po-delivery"
-                type="date"
-                value={deliveryDate}
-                onChange={(e) => setDeliveryDate(e.target.value)}
-              />
-            </Field>
+            <DatePicker
+              label={t("deliveryDate")}
+              value={deliveryDate}
+              onChange={setDeliveryDate}
+            />
 
             <Field className="sm:col-span-2">
               <FieldLabel htmlFor="po-desc">{t("description")}</FieldLabel>

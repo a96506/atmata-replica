@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { DatePicker } from "@/components/form/DatePicker";
 import type { DocumentJob } from "@/lib/demo-data";
 import {
   LineItemsEditor,
@@ -172,15 +173,11 @@ export function ManualInvoiceModal({ open, onOpenChange, onCreated }: ManualInvo
               />
             </Field>
 
-            <Field>
-              <FieldLabel htmlFor="inv-delivery">{t("deliveryDate")}</FieldLabel>
-              <Input
-                id="inv-delivery"
-                type="date"
-                value={deliveryDate}
-                onChange={(e) => setDeliveryDate(e.target.value)}
-              />
-            </Field>
+            <DatePicker
+              label={t("deliveryDate")}
+              value={deliveryDate}
+              onChange={setDeliveryDate}
+            />
 
             <Field className="sm:col-span-2">
               <FieldLabel htmlFor="inv-po">{t("referencePo")}</FieldLabel>
