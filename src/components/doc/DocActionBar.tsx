@@ -13,19 +13,8 @@ import {
 import { StateBadge } from "@/components/doc/StateBadge";
 import { useSession } from "@/lib/session";
 import { legalActions, type Action } from "@/lib/state-machines";
-import { FISCAL_PERIODS } from "@/mocks/seed/master";
-import type { DocState, DocType, PeriodStatus } from "@/types";
-
-function periodFor(date: string | undefined): PeriodStatus {
-  if (!date) return "no_period";
-  const ts = new Date(date).getTime();
-  for (const p of FISCAL_PERIODS) {
-    if (ts >= new Date(p.start).getTime() && ts <= new Date(p.end).getTime()) {
-      return p.status;
-    }
-  }
-  return "no_period";
-}
+import { periodStatusFor } from "@/lib/period";
+import type { DocState, DocType } from "@/types";
 
 const ACTION_LABEL: Record<string, string> = {
   submit: "Submit",
@@ -114,7 +103,7 @@ export function DocActionBar({
 
   const effectiveState = ephemeralState ?? currentState;
   const actions = legalActions(docType, effectiveState, role);
-  const periodStatus = periodFor(docDate);
+  const periodStatus = periodStatusFor(docDate);
   const periodBlocked =
     periodStatus === "hard_closed" ||
     (periodStatus === "soft_closed" && role !== "admin" && role !== "period_adjust");

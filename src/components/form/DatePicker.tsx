@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/popover";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
-import { FISCAL_PERIODS } from "@/mocks/seed/master";
+import { isPostingAllowed, periodStatusFor } from "@/lib/period";
 import type { PeriodStatus } from "@/types";
 
 export type DatePickerProps = {
@@ -27,17 +27,6 @@ export type DatePickerProps = {
   showPeriodHint?: boolean;
   error?: string | null;
 };
-
-function periodStatusFor(dateStr: string): PeriodStatus {
-  if (!dateStr) return "no_period";
-  const ts = new Date(dateStr).getTime();
-  for (const p of FISCAL_PERIODS) {
-    if (ts >= new Date(p.start).getTime() && ts <= new Date(p.end).getTime()) {
-      return p.status;
-    }
-  }
-  return "no_period";
-}
 
 const STATUS_HINT: Record<PeriodStatus, { label: string; classes: string }> = {
   open: { label: "Period open", classes: "text-status-success-foreground" },
@@ -77,8 +66,7 @@ export function DatePicker({
   const selectedDate = parsed && isValid(parsed) ? parsed : undefined;
   const status = periodStatusFor(value);
   const hint = STATUS_HINT[status];
-  const blocked =
-    status === "hard_closed" || (status === "soft_closed" && !hasAdjustRole);
+  const blocked = !!value && !isPostingAllowed(value, hasAdjustRole);
 
   return (
     <Field
