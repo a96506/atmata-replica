@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/toast";
 import { useConfirm } from "@/components/confirm-dialog";
 import { useSession } from "@/lib/session";
@@ -40,36 +42,31 @@ export function ApprovalActions({
 
   return (
     <div className="flex flex-wrap justify-end gap-1">
-      <Link
-        href={detailHref}
-        className="rounded bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-900 hover:bg-slate-200"
-      >
-        Open
-      </Link>
+      <Button asChild size="sm" variant="ghost">
+        <Link href={detailHref}>Open</Link>
+      </Button>
       {canAct ? (
         <>
-          <button
-            type="button"
-            onClick={onApprove}
-            className="cursor-pointer rounded bg-emerald-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-emerald-700"
-          >
+          <Button type="button" size="sm" onClick={onApprove}>
             Approve
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            size="sm"
+            variant="outline"
+            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={onReject}
-            className="cursor-pointer rounded bg-red-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-red-700"
           >
             Reject
-          </button>
+          </Button>
         </>
       ) : (
-        <span
-          className="rounded bg-slate-200 px-2.5 py-1 text-xs text-slate-500"
+        <Badge
+          variant="secondary"
           title="Switch to an approver role (admin / approver / accountant) to act."
         >
           view only
-        </span>
+        </Badge>
       )}
     </div>
   );

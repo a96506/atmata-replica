@@ -1,6 +1,17 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
+import { format, isValid, parseISO } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { cn } from "@/lib/utils";
 import { FISCAL_PERIODS } from "@/mocks/seed/master";
 import type { PeriodStatus } from "@/types";
 
@@ -29,18 +40,25 @@ function periodStatusFor(dateStr: string): PeriodStatus {
 }
 
 const STATUS_HINT: Record<PeriodStatus, { label: string; classes: string }> = {
-  open: { label: "Period open", classes: "text-emerald-700" },
+  open: { label: "Period open", classes: "text-status-success-foreground" },
   soft_closed: {
     label: "Period soft-closed — only `period_adjust` role can post here",
-    classes: "text-amber-700",
+    classes: "text-status-pending-foreground",
   },
   hard_closed: {
     label: "Period hard-closed — posting blocked",
-    classes: "text-red-700",
+    classes: "text-destructive",
   },
-  no_period: { label: "No fiscal period covers this date", classes: "text-slate-500" },
+  no_period: {
+    label: "No fiscal period covers this date",
+    classes: "text-muted-foreground",
+  },
 };
 
+/**
+ * Date field that surfaces fiscal-period consequences inline, so users learn a
+ * date is unpostable while choosing it rather than after submitting.
+ */
 export function DatePicker({
   value,
   onChange,
@@ -54,42 +72,71 @@ export function DatePicker({
   error,
 }: DatePickerProps) {
   const id = useId();
+  const [open, setOpen] = useState(false);
+  const parsed = value ? parseISO(value) : null;
+  const selectedDate = parsed && isValid(parsed) ? parsed : undefined;
   const status = periodStatusFor(value);
   const hint = STATUS_HINT[status];
   const blocked =
-    status === "hard_closed" ||
-    (status === "soft_closed" && !hasAdjustRole);
+    status === "hard_closed" || (status === "soft_closed" && !hasAdjustRole);
 
   return (
-    <div className="flex flex-col gap-1">
-      <label htmlFor={id} className="text-xs font-medium text-slate-700">
+    <Field
+      data-invalid={error || blocked ? true : undefined}
+      data-disabled={disabled ? true : undefined}
+    >
+      <FieldLabel htmlFor={id}>
         {label}
-        {required ? <span className="text-red-600"> *</span> : null}
-      </label>
-      <input
-        id={id}
-        type="date"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        min={min}
-        max={max}
-        disabled={disabled}
-        aria-invalid={!!error}
-        className={
-          "cursor-pointer rounded-md border bg-white px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 " +
-          (error
-            ? "border-red-400"
-            : blocked
-              ? "border-red-300"
-              : status === "soft_closed"
-                ? "border-amber-300"
-                : "border-slate-300")
-        }
-      />
+        {required ? (
+          <span className="text-destructive" aria-hidden>
+            {" *"}
+          </span>
+        ) : null}
+      </FieldLabel>
+
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            id={id}
+            type="button"
+            variant="outline"
+            disabled={disabled}
+            aria-invalid={!!error || blocked}
+            className="w-full justify-between font-normal tabular-nums"
+          >
+            <span className={cn(!selectedDate && "text-muted-foreground")}>
+              {selectedDate ? format(selectedDate, "dd MMM yyyy") : "Pick a date"}
+            </span>
+            <CalendarIcon className="opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-auto p-0">
+          <Calendar
+            mode="single"
+            autoFocus
+            selected={selectedDate}
+            defaultMonth={selectedDate}
+            disabled={[
+              ...(min ? [{ before: parseISO(min) }] : []),
+              ...(max ? [{ after: parseISO(max) }] : []),
+            ]}
+            onSelect={(date) => {
+              if (!date) return;
+              onChange(format(date, "yyyy-MM-dd"));
+              setOpen(false);
+            }}
+          />
+        </PopoverContent>
+      </Popover>
+
       {showPeriodHint && value ? (
-        <div className={"text-xs " + hint.classes}>{hint.label}</div>
+        <FieldDescription className={hint.classes}>
+          {hint.label}
+        </FieldDescription>
       ) : null}
-      {error ? <div className="text-xs text-red-600">{error}</div> : null}
-    </div>
+      {error ? (
+        <FieldDescription className="text-destructive">{error}</FieldDescription>
+      ) : null}
+    </Field>
   );
 }

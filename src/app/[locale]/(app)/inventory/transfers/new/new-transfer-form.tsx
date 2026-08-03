@@ -114,9 +114,9 @@ export function NewTransferForm({
             return (
               <div
                 key={l.id}
-                className="grid items-end gap-3 rounded-lg border border-slate-200 bg-white p-3 md:grid-cols-[40px_minmax(0,2fr)_120px_minmax(0,1fr)_70px]"
+                className="grid items-end gap-3 rounded-lg border border-border bg-card p-3 md:grid-cols-[40px_minmax(0,2fr)_120px_minmax(0,1fr)_70px]"
               >
-                <div className="text-xs text-slate-400">{i + 1}</div>
+                <div className="text-xs text-muted-foreground">{i + 1}</div>
                 <SearchSelect
                   label="Product"
                   required
@@ -131,7 +131,7 @@ export function NewTransferForm({
                   }))}
                 />
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-slate-700">Qty</label>
+                  <label className="text-xs font-medium text-foreground">Qty</label>
                   <input
                     type="number"
                     min={0}
@@ -140,24 +140,24 @@ export function NewTransferForm({
                     onChange={(e) =>
                       setLine(l.id, { qty: Number.parseFloat(e.target.value) || 0 })
                     }
-                    className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-right text-sm tabular-nums focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                    className="rounded-md border border-input bg-card px-3 py-1.5 text-right text-sm tabular-nums focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-slate-700">Lot</label>
+                  <label className="text-xs font-medium text-foreground">Lot</label>
                   <input
                     type="text"
                     value={l.lotNumber ?? ""}
                     placeholder={product?.lotTracked ? "Required" : "—"}
                     onChange={(e) => setLine(l.id, { lotNumber: e.target.value })}
-                    className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                    className="rounded-md border border-input bg-card px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   />
                 </div>
                 <button
                   type="button"
                   onClick={() => removeLine(l.id)}
                   disabled={lines.length === 1}
-                  className="cursor-pointer rounded-md text-xs text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400"
+                  className="cursor-pointer rounded-md text-xs text-destructive hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground"
                 >
                   Remove
                 </button>
@@ -167,7 +167,7 @@ export function NewTransferForm({
           <button
             type="button"
             onClick={addLine}
-            className="cursor-pointer rounded-md border border-dashed border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:border-slate-400"
+            className="cursor-pointer rounded-md border border-dashed border-input bg-card px-3 py-2 text-sm text-foreground hover:border-ring"
           >
             + Add line
           </button>
@@ -179,7 +179,7 @@ export function NewTransferForm({
           value={notes}
           onChange={(e) => wrap(setNotes)(e.target.value)}
           placeholder="Transfer reason…"
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+          className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       }
       errors={errors}

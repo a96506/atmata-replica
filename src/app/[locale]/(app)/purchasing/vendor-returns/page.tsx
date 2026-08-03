@@ -37,14 +37,14 @@ export default async function Page({
             <Link
               key="n"
               href={`/${locale}/purchasing/vendor-returns/${v.id}`}
-              className="font-medium text-orange-600 hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               {v.number}
             </Link>,
             <Link
               key="g"
               href={`/${locale}/purchasing/goods-receipts/${v.grnId}`}
-              className="text-orange-600 hover:underline"
+              className="text-primary hover:underline"
             >
               {v.grnId}
             </Link>,

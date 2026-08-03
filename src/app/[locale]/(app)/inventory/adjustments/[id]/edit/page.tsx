@@ -20,14 +20,14 @@ export default async function Page({
       date={adj.date}
       notes={adj.notes}
       linesPreview={
-        <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+        <ul className="divide-y divide-border rounded-xl border border-border bg-card">
           {adj.lines.map((l) => {
             const p = products.find((pp) => pp.id === l.productId);
             const w = warehouses.find((ww) => ww.id === l.warehouseId);
             return (
               <li key={l.id} className="flex items-center justify-between px-4 py-3 text-sm">
                 <span>{p ? `${p.sku} · ${p.name}` : "—"} @ {w?.name ?? "—"}</span>
-                <span className={"tabular-nums " + (l.qtyDelta < 0 ? "text-red-700" : "text-emerald-700")}>
+                <span className={"tabular-nums " + (l.qtyDelta < 0 ? "text-destructive" : "text-status-success-foreground")}>
                   {l.qtyDelta > 0 ? "+" : ""}{l.qtyDelta} · {l.reason}
                 </span>
               </li>

@@ -47,23 +47,23 @@ export function AdoptionNewShell({
   }, [targetType]);
 
   if (!hydrated) {
-    return <div className="rounded-md border border-slate-200 bg-white p-6 text-sm text-slate-500">Loading…</div>;
+    return <div className="rounded-md border border-border bg-card p-6 text-sm text-muted-foreground">Loading…</div>;
   }
 
   if (!ctx) {
     return (
-      <div className="rounded-md border border-dashed border-slate-300 bg-white p-6">
-        <div className="text-sm font-medium text-slate-900">{title}</div>
-        <p className="mt-2 text-sm text-slate-600">
+      <div className="rounded-md border border-dashed border-input bg-card p-6">
+        <div className="text-sm font-medium text-foreground">{title}</div>
+        <p className="mt-2 text-sm text-muted-foreground">
           No adoption context found in this session. Open a parent document and use the
-          <span className="mx-1 font-medium text-orange-700">Adopt to →</span>
+          <span className="mx-1 font-medium text-primary">Adopt to →</span>
           menu to start an adoption.
         </p>
         <div className="mt-4">
           <button
             type="button"
             onClick={() => router.push(backHref)}
-            className="cursor-pointer rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+            className="cursor-pointer rounded-md border border-input bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
           >
             Back
           </button>
@@ -98,19 +98,19 @@ export function AdoptionNewShell({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-slate-200 bg-white p-4 md:p-6">
-        <div className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+      <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+        <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
           New {targetType}
         </div>
-        <h1 className="mt-0.5 text-xl font-semibold text-slate-900">{title}</h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <h1 className="mt-0.5 text-xl font-semibold text-foreground">{title}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Adopted from{" "}
           {ctx.parents.map((p, i) => (
             <span key={p.docId}>
               {i > 0 ? ", " : null}
               <a
                 href={hrefForParent(p.docType, p.docId, locale)}
-                className="text-orange-700 hover:underline"
+                className="text-primary hover:underline"
               >
                 {p.docNumber}
               </a>
@@ -121,12 +121,12 @@ export function AdoptionNewShell({
         {banner ? <div className="mt-3">{banner}</div> : null}
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-white">
-        <div className="border-b border-slate-200 px-4 py-2 text-xs font-medium tracking-wide text-slate-500 uppercase">
+      <div className="rounded-lg border border-border bg-card">
+        <div className="border-b border-border px-4 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
           Lines adopted
         </div>
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium tracking-wide text-slate-500 uppercase">
+          <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-muted-foreground uppercase">
             <tr>
               <th className="px-4 py-3">#</th>
               <th className="px-4 py-3">Description</th>
@@ -136,23 +136,23 @@ export function AdoptionNewShell({
               <th className="px-4 py-3">From</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-border">
             {allLines.map((l, i) => (
               <tr key={l.lineId}>
-                <td className="px-4 py-3 text-slate-500">{i + 1}</td>
+                <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
                 <td className="px-4 py-3">{l.description}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{l.qty}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{l.unitPrice.toFixed(3)}</td>
                 <td className="px-4 py-3 text-right font-medium tabular-nums">
                   {(l.qty * l.unitPrice).toFixed(3)}
                 </td>
-                <td className="px-4 py-3 font-mono text-xs text-slate-500">{l.parentNumber}</td>
+                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{l.parentNumber}</td>
               </tr>
             ))}
           </tbody>
-          <tfoot className="border-t border-slate-200 bg-slate-50 text-sm">
+          <tfoot className="border-t border-border bg-muted/50 text-sm">
             <tr>
-              <td colSpan={4} className="px-4 py-2 text-right font-medium text-slate-700">
+              <td colSpan={4} className="px-4 py-2 text-right font-medium text-foreground">
                 Subtotal
               </td>
               <td className="px-4 py-2 text-right font-semibold tabular-nums">
@@ -168,14 +168,14 @@ export function AdoptionNewShell({
         <button
           type="button"
           onClick={onCancel}
-          className="cursor-pointer rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+          className="cursor-pointer rounded-md border border-input bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
         >
           Cancel
         </button>
         <button
           type="button"
           onClick={onSave}
-          className="cursor-pointer rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700"
+          className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary"
         >
           Save (demo)
         </button>

@@ -56,9 +56,9 @@ export function RuleBuilder() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
-        <div className="text-sm font-semibold text-slate-900">New rule</div>
-        <p className="mt-1 text-xs text-slate-600">
+      <div className="rounded-lg border border-border bg-card p-4">
+        <div className="text-sm font-semibold text-foreground">New rule</div>
+        <p className="mt-1 text-xs text-muted-foreground">
           If <em>reference contains</em> AND <em>amount in [min, max]</em> → propose match to <em>target doc</em>.
         </p>
         <div className="mt-3 grid gap-3 md:grid-cols-4">
@@ -68,7 +68,7 @@ export function RuleBuilder() {
               value={refContains}
               onChange={(e) => setRefContains(e.target.value)}
               placeholder="e.g. PCG/2026"
-              className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+              className="w-full rounded-md border border-input px-3 py-1.5 text-sm"
             />
           </Field>
           <Field label="Amount min">
@@ -78,7 +78,7 @@ export function RuleBuilder() {
               value={amountMin}
               onChange={(e) => setAmountMin(e.target.value)}
               placeholder="(optional)"
-              className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+              className="w-full rounded-md border border-input px-3 py-1.5 text-sm"
             />
           </Field>
           <Field label="Amount max">
@@ -88,7 +88,7 @@ export function RuleBuilder() {
               value={amountMax}
               onChange={(e) => setAmountMax(e.target.value)}
               placeholder="(optional)"
-              className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+              className="w-full rounded-md border border-input px-3 py-1.5 text-sm"
             />
           </Field>
           <Field label="Target doc id">
@@ -97,7 +97,7 @@ export function RuleBuilder() {
               value={targetDocId}
               onChange={(e) => setTargetDocId(e.target.value)}
               placeholder="e.g. bill_1 / inv_1"
-              className="w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm"
+              className="w-full rounded-md border border-input px-3 py-1.5 text-sm"
             />
           </Field>
         </div>
@@ -105,7 +105,7 @@ export function RuleBuilder() {
           <button
             type="button"
             onClick={addRule}
-            className="cursor-pointer rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700"
+            className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary"
           >
             Add rule
           </button>
@@ -113,11 +113,11 @@ export function RuleBuilder() {
       </div>
 
       <div>
-        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
+        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Active rules ({rules.length})
         </div>
         {rules.length === 0 ? (
-          <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-500">
+          <div className="rounded-md border border-dashed border-input bg-muted/50 p-4 text-sm text-muted-foreground">
             No rules yet. Add one above, then import a statement to see suggested matches.
           </div>
         ) : (
@@ -125,9 +125,9 @@ export function RuleBuilder() {
             {rules.map((r) => (
               <li
                 key={r.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-slate-200 bg-white p-3 text-sm"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-card p-3 text-sm"
               >
-                <div className="text-slate-800">
+                <div className="text-foreground">
                   {r.refContains ? (
                     <span>
                       ref contains <span className="font-mono">{`"${r.refContains}"`}</span>
@@ -145,7 +145,7 @@ export function RuleBuilder() {
                 <button
                   type="button"
                   onClick={() => removeRule(r.id)}
-                  className="cursor-pointer text-xs text-red-600 hover:underline"
+                  className="cursor-pointer text-xs text-destructive hover:underline"
                 >
                   Remove
                 </button>
@@ -161,7 +161,7 @@ export function RuleBuilder() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="text-xs font-medium text-slate-700">{label}</span>
+      <span className="text-xs font-medium text-foreground">{label}</span>
       <div className="mt-1">{children}</div>
     </label>
   );

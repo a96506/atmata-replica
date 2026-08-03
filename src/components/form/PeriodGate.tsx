@@ -51,11 +51,11 @@ export function PeriodGate({
         type="button"
         disabled
         title={reason}
-        className="cursor-not-allowed rounded-md bg-slate-200 px-3 py-1.5 text-sm font-medium text-slate-500"
+        className="cursor-not-allowed rounded-md bg-muted px-3 py-1.5 text-sm font-medium text-muted-foreground"
       >
         {fallbackLabel}
       </button>
-      <div className="max-w-xs text-xs text-amber-700">{reason}</div>
+      <div className="max-w-xs text-xs text-status-pending-foreground">{reason}</div>
     </div>
   );
 }

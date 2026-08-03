@@ -34,7 +34,7 @@ export function SparkLine({
   if (points.length === 0) {
     return (
       <div
-        className="flex items-center justify-center text-xs text-slate-400"
+        className="flex items-center justify-center text-xs text-muted-foreground"
         style={{ width, height }}
       >
         no data

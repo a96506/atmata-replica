@@ -7,17 +7,17 @@ import { PurchaseHistoryWithNewPo } from "./purchase-history-with-new-po";
 
 function Kpi({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-xs tracking-wide text-slate-600 uppercase">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums text-slate-900">{value}</p>
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
+      <p className="text-xs tracking-wide text-muted-foreground uppercase">{label}</p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">{value}</p>
     </div>
   );
 }
 
 function severityClass(s: string) {
-  if (s === "high") return "bg-red-100 text-red-900";
-  if (s === "medium") return "bg-amber-100 text-amber-950";
-  return "bg-slate-100 text-slate-800";
+  if (s === "high") return "bg-status-danger-muted text-destructive";
+  if (s === "medium") return "bg-status-pending-muted text-status-pending-foreground";
+  return "bg-muted text-foreground";
 }
 
 export default async function PurchasingPage() {
@@ -29,8 +29,8 @@ export default async function PurchasingPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold text-slate-900">{t("title")}</h1>
-        <p className="text-sm text-slate-700">{t("subtitle")}</p>
+        <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
+        <p className="text-sm text-foreground">{t("subtitle")}</p>
       </header>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -40,7 +40,7 @@ export default async function PurchasingPage() {
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-slate-900">{t("secPoSuggestions")}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t("secPoSuggestions")}</h2>
         <DataTable
           columns={[
             { key: "id", label: t("colId") },
@@ -66,7 +66,7 @@ export default async function PurchasingPage() {
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-slate-900">{t("secBillMatch")}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t("secBillMatch")}</h2>
         <DataTable
           columns={[
             { key: "id", label: t("colBill") },
@@ -87,11 +87,11 @@ export default async function PurchasingPage() {
         />
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">{t("secPriceAlerts")}</h2>
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-foreground">{t("secPriceAlerts")}</h2>
         <ul className="mt-3 space-y-2">
           {d.price_alerts.map((a, i) => (
-            <li key={i} className="flex flex-col gap-1 rounded-lg bg-amber-50 p-3 text-sm text-amber-950 sm:flex-row sm:items-center sm:justify-between">
+            <li key={i} className="flex flex-col gap-1 rounded-lg bg-status-pending-muted p-3 text-sm text-status-pending-foreground sm:flex-row sm:items-center sm:justify-between">
               <span>
                 <span className="font-medium">{a.vendor}</span> · {a.product}
               </span>
@@ -104,7 +104,7 @@ export default async function PurchasingPage() {
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-slate-900">{t("secVendorScores")}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t("secVendorScores")}</h2>
         <DataTable
           columns={[
             { key: "v", label: t("colVendor") },
@@ -126,7 +126,7 @@ export default async function PurchasingPage() {
       <PurchaseHistoryWithNewPo initialRows={d.purchase_history} locale={lk} />
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-slate-900">{t("secReceiving")}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t("secReceiving")}</h2>
         <DataTable
           columns={[
             { key: "ref", label: t("colTransfer") },

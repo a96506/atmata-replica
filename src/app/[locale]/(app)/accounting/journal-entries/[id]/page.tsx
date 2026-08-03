@@ -38,8 +38,8 @@ export default async function Page({
         className={
           "rounded-md border p-3 text-sm " +
           (balanced
-            ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-            : "border-red-200 bg-red-50 text-red-900")
+            ? "border-status-success-border bg-status-success-muted text-status-success-foreground"
+            : "border-status-danger-border bg-status-danger-muted text-destructive")
         }
       >
         <span className="font-medium">
@@ -48,9 +48,9 @@ export default async function Page({
         · Dr {formatMoney(totalDr, je.currency)} · Cr{" "}
         {formatMoney(totalCr, je.currency)}
       </div>
-      <div className="overflow-x-auto rounded-xl border border-slate-200">
+      <div className="overflow-x-auto rounded-xl border border-border">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium tracking-wide text-slate-700 uppercase">
+          <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-foreground uppercase">
             <tr>
               <th className="px-4 py-3">Account</th>
               <th className="px-4 py-3">Description</th>
@@ -58,18 +58,18 @@ export default async function Page({
               <th className="px-4 py-3 text-right">Credit</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-border">
             {je.lines.map((l) => {
               const acc = accounts.find((a) => a.id === l.accountId);
               return (
                 <tr key={l.id}>
                   <td className="px-4 py-3">
-                    <span className="font-mono text-xs text-slate-500">
+                    <span className="font-mono text-xs text-muted-foreground">
                       {acc?.code ?? "—"}
                     </span>{" "}
                     {acc?.name ?? l.accountId}
                   </td>
-                  <td className="px-4 py-3 text-slate-700">{l.description}</td>
+                  <td className="px-4 py-3 text-foreground">{l.description}</td>
                   <td className="px-4 py-3 text-right tabular-nums">
                     {l.debit ? formatMoney(l.debit, je.currency) : ""}
                   </td>
@@ -80,7 +80,7 @@ export default async function Page({
               );
             })}
           </tbody>
-          <tfoot className="border-t border-slate-200 bg-slate-50">
+          <tfoot className="border-t border-border bg-muted/50">
             <tr>
               <td colSpan={2} className="px-4 py-2 text-right font-medium">
                 Totals
@@ -107,7 +107,7 @@ export default async function Page({
       currentState={je.state}
       totals={
         <div>
-          <div className="text-xs text-slate-500">Debit</div>
+          <div className="text-xs text-muted-foreground">Debit</div>
           <div className="text-lg font-semibold tabular-nums">
             {formatMoney(totalDr, je.currency)}
           </div>

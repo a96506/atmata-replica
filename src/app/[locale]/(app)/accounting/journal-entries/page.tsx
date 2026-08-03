@@ -40,15 +40,15 @@ export default async function Page({
             <Link
               key="n"
               href={`/${locale}/accounting/journal-entries/${j.id}`}
-              className="font-medium text-orange-600 hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               {j.number}
             </Link>,
             j.date,
-            <span key="d" className="text-slate-700">
+            <span key="d" className="text-foreground">
               {j.description}
             </span>,
-            <span key="s" className="text-xs text-slate-500">
+            <span key="s" className="text-xs text-muted-foreground">
               {j.sourceType} · {j.sourceId}
             </span>,
             <span key="t" className="tabular-nums">

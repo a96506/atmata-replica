@@ -44,7 +44,7 @@ export default async function Page({
             <Link
               key="n"
               href={`/${locale}/purchasing/goods-receipts/${g.id}`}
-              className="font-medium text-orange-600 hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               {g.number}
             </Link>,
@@ -52,7 +52,7 @@ export default async function Page({
               <Link
                 key="p"
                 href={`/${locale}/purchasing/purchase-orders/${po.id}`}
-                className="text-orange-600 hover:underline"
+                className="text-primary hover:underline"
               >
                 {po.number}
               </Link>

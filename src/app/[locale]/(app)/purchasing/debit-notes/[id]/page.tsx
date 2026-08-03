@@ -44,11 +44,11 @@ export default async function Page({
       currentState={dn.state}
       totals={
         <div>
-          <div className="text-xs text-slate-500">Balance</div>
+          <div className="text-xs text-muted-foreground">Balance</div>
           <div className="text-lg font-semibold tabular-nums">
             {formatMoney(balance, dn.currency)}
           </div>
-          <div className="text-xs text-slate-500">of {formatMoney(dn.total, dn.currency)}</div>
+          <div className="text-xs text-muted-foreground">of {formatMoney(dn.total, dn.currency)}</div>
         </div>
       }
       tabs={[
@@ -88,7 +88,7 @@ export default async function Page({
 function Row({ k, v, bold }: { k: string; v: string; bold?: boolean }) {
   return (
     <div className="flex justify-between">
-      <span className={bold ? "font-medium text-slate-900" : "text-slate-500"}>{k}</span>
+      <span className={bold ? "font-medium text-foreground" : "text-muted-foreground"}>{k}</span>
       <span className={"tabular-nums " + (bold ? "font-semibold" : "")}>{v}</span>
     </div>
   );

@@ -14,8 +14,8 @@ type TabId = (typeof TABS)[number]["id"];
 export function ReconTabs() {
   const [active, setActive] = React.useState<TabId>("import");
   return (
-    <div className="rounded-xl border border-slate-200 bg-white">
-      <div className="flex gap-1 overflow-x-auto border-b border-slate-200 px-2" role="tablist">
+    <div className="rounded-xl border border-border bg-card">
+      <div className="flex gap-1 overflow-x-auto border-b border-border px-2" role="tablist">
         {TABS.map((t) => {
           const isActive = active === t.id;
           return (
@@ -28,8 +28,8 @@ export function ReconTabs() {
               className={
                 "cursor-pointer px-3 py-2 text-sm whitespace-nowrap " +
                 (isActive
-                  ? "border-b-2 border-orange-500 font-medium text-orange-700"
-                  : "text-slate-600 hover:text-slate-900")
+                  ? "border-b-2 border-primary font-medium text-primary"
+                  : "text-muted-foreground hover:text-foreground")
               }
             >
               {t.label}

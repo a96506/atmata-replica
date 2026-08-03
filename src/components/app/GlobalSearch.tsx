@@ -16,10 +16,10 @@ const KIND_LABEL: Record<SearchKind, string> = {
 };
 
 const KIND_TONE: Record<SearchKind, string> = {
-  doc: "bg-orange-100 text-orange-900",
-  product: "bg-emerald-100 text-emerald-900",
-  action: "bg-blue-100 text-blue-900",
-  settings: "bg-slate-200 text-slate-800",
+  doc: "bg-primary/10 text-primary",
+  product: "bg-status-success-muted text-status-success-foreground",
+  action: "bg-status-info-muted text-status-info-foreground",
+  settings: "bg-muted text-foreground",
 };
 
 export function GlobalSearch({
@@ -92,14 +92,14 @@ export function GlobalSearch({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-slate-900/40 p-4 pt-20"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-foreground/40 p-4 pt-20"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-2xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
-        <div className="flex items-center border-b border-slate-200 px-3">
-          <span aria-hidden className="mr-2 text-slate-400">⌕</span>
+      <div className="w-full max-w-2xl overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
+        <div className="flex items-center border-b border-border px-3">
+          <span aria-hidden className="mr-2 text-muted-foreground">⌕</span>
           <input
             ref={inputRef}
             type="text"
@@ -113,17 +113,17 @@ export function GlobalSearch({
             className="w-full bg-transparent px-2 py-3 text-sm focus:outline-none"
             aria-label="Global search"
           />
-          <span className="hidden text-xs text-slate-400 sm:inline">⌘K</span>
+          <span className="hidden text-xs text-muted-foreground sm:inline">⌘K</span>
         </div>
         <div className="max-h-[60vh] overflow-y-auto">
           {visible.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-slate-500">
+            <div className="px-4 py-8 text-center text-sm text-muted-foreground">
               {query.trim() ? "No matches." : "Type to search, or pick a recent."}
             </div>
           ) : (
             <ul role="listbox">
               {!query.trim() ? (
-                <li className="px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                <li className="px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Recent
                 </li>
               ) : null}
@@ -137,7 +137,7 @@ export function GlobalSearch({
                       onMouseEnter={() => setActive(i)}
                       className={
                         "flex w-full cursor-pointer items-start gap-3 px-4 py-2.5 text-left " +
-                        (isActive ? "bg-orange-50" : "hover:bg-slate-50")
+                        (isActive ? "bg-primary/10" : "hover:bg-muted")
                       }
                     >
                       <span
@@ -149,11 +149,11 @@ export function GlobalSearch({
                         {KIND_LABEL[r.kind]}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-slate-900">
+                        <span className="block truncate text-sm font-medium text-foreground">
                           {r.label}
                         </span>
                         {r.subtitle ? (
-                          <span className="block truncate text-xs text-slate-500">
+                          <span className="block truncate text-xs text-muted-foreground">
                             {r.subtitle}
                           </span>
                         ) : null}
@@ -165,7 +165,7 @@ export function GlobalSearch({
             </ul>
           )}
         </div>
-        <footer className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-3 py-2 text-[11px] text-slate-500">
+        <footer className="flex items-center justify-between border-t border-border bg-muted/50 px-3 py-2 text-[11px] text-muted-foreground">
           <span>↑ ↓ navigate · Enter select · Esc close</span>
           <span>{index.length} items indexed</span>
         </footer>

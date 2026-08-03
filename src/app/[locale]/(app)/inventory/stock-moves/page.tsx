@@ -55,7 +55,7 @@ export default async function Page({
           const wh = warehouses.find((w) => w.id === m.warehouseId);
           const hrefFn = SOURCE_HREF[m.sourceType];
           return [
-            <span id={m.id} key="id" className="font-mono text-xs text-slate-700">
+            <span id={m.id} key="id" className="font-mono text-xs text-foreground">
               {m.number}
             </span>,
             m.date,
@@ -63,7 +63,7 @@ export default async function Page({
               <Link
                 key="p"
                 href={`/${locale}/inventory/products/${encodeURIComponent(prod.sku)}`}
-                className="text-orange-600 hover:underline"
+                className="text-primary hover:underline"
               >
                 {prod.sku} · {prod.name}
               </Link>
@@ -76,8 +76,8 @@ export default async function Page({
               className={
                 "rounded-full px-2 py-0.5 text-xs font-medium " +
                 (m.direction === "in"
-                  ? "bg-emerald-100 text-emerald-900"
-                  : "bg-red-100 text-red-800")
+                  ? "bg-status-success-muted text-status-success-foreground"
+                  : "bg-status-danger-muted text-destructive")
               }
             >
               {m.direction === "in" ? "IN" : "OUT"}
@@ -94,12 +94,12 @@ export default async function Page({
               <Link
                 key="s"
                 href={hrefFn(locale, m.sourceId)}
-                className="text-xs text-orange-600 hover:underline"
+                className="text-xs text-primary hover:underline"
               >
                 {m.sourceType} · {m.sourceId}
               </Link>
             ) : (
-              <span className="text-xs text-slate-500">
+              <span className="text-xs text-muted-foreground">
                 {m.sourceType} · {m.sourceId}
               </span>
             ),

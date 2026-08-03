@@ -31,23 +31,23 @@ export default async function Page({
   ]);
 
   const linesTable = (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
+    <div className="overflow-x-auto rounded-xl border border-border">
       <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium tracking-wide text-slate-700 uppercase">
+        <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-foreground uppercase">
           <tr>
             <th className="px-4 py-3">Product</th>
             <th className="px-4 py-3 text-right">Qty</th>
             <th className="px-4 py-3">Lot</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-border">
           {trx.lines.map((l) => {
             const p = products.find((pp) => pp.id === l.productId);
             return (
               <tr key={l.id}>
                 <td className="px-4 py-3">{p ? `${p.sku} · ${p.name}` : "—"}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{l.qty}</td>
-                <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                   {l.lotNumber ?? "—"}
                 </td>
               </tr>

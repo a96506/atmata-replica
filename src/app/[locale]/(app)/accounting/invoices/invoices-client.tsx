@@ -16,13 +16,13 @@ const OCR_JOB_TO_BILL_ID: Record<number, string | null> = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  queued: "bg-slate-100 text-slate-800",
-  processing: "bg-blue-100 text-blue-800",
-  completed: "bg-green-100 text-green-800",
-  review_needed: "bg-amber-100 text-amber-800",
-  extracted: "bg-purple-100 text-purple-800",
-  approved: "bg-emerald-100 text-emerald-800",
-  failed: "bg-red-100 text-red-800",
+  queued: "bg-muted text-foreground",
+  processing: "bg-status-info-muted text-status-info-foreground",
+  completed: "bg-status-success-muted text-status-success-foreground",
+  review_needed: "bg-status-pending-muted text-status-pending-foreground",
+  extracted: "bg-status-info-muted text-status-info-foreground",
+  approved: "bg-status-success-muted text-status-success-foreground",
+  failed: "bg-status-danger-muted text-destructive",
 };
 
 const COLUMNS = [
@@ -44,14 +44,14 @@ export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJ
     const isManual = doc.file_name.startsWith("Manual ·");
     const linkedBillId = OCR_JOB_TO_BILL_ID[doc.job_id];
     return [
-      <span key="f" className="font-medium text-slate-900">
+      <span key="f" className="font-medium text-foreground">
         {doc.file_name}
       </span>,
       doc.extraction?.vendor || doc.matched_vendor_name || "—",
       doc.extraction ? `${doc.extraction.currency || "KWD"} ${doc.extraction.total.toFixed(3)}` : "—",
       doc.confidence > 0 ? (
         <span
-          className={`text-xs font-medium ${doc.confidence >= 0.9 ? "text-green-700" : doc.confidence >= 0.7 ? "text-amber-700" : "text-red-700"}`}
+          className={`text-xs font-medium ${doc.confidence >= 0.9 ? "text-status-success-foreground" : doc.confidence >= 0.7 ? "text-status-pending-foreground" : "text-destructive"}`}
         >
           {(doc.confidence * 100).toFixed(0)}%
         </span>
@@ -60,26 +60,26 @@ export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJ
       ),
       <span
         key="s"
-        className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[doc.status] ?? "bg-slate-100 text-slate-800"}`}
+        className={`inline-block rounded px-2 py-0.5 text-xs font-medium ${STATUS_BADGE[doc.status] ?? "bg-muted text-foreground"}`}
       >
         {doc.status}
       </span>,
       isManual ? (
-        <span key="a" className="text-xs text-slate-500">
+        <span key="a" className="text-xs text-muted-foreground">
           —
         </span>
       ) : (
         <span key="a" className="flex items-center justify-end gap-2 text-xs">
           <Link
             href={`/accounting/invoices/${doc.job_id}`}
-            className="font-medium text-orange-600 hover:underline"
+            className="font-medium text-primary hover:underline"
           >
             Review
           </Link>
           {linkedBillId ? (
             <NextLink
               href={`/${locale}/purchasing/bills/${linkedBillId}`}
-              className="rounded bg-emerald-100 px-2 py-0.5 font-medium text-emerald-900 hover:bg-emerald-200"
+              className="rounded bg-status-success-muted px-2 py-0.5 font-medium text-status-success-foreground hover:bg-status-success/90"
             >
               → Bill
             </NextLink>
@@ -93,13 +93,13 @@ export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJ
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Invoices</h1>
-          <p className="text-sm text-slate-700">Upload PDFs for AI extraction, then review and approve.</p>
+          <h1 className="text-2xl font-semibold text-foreground">Invoices</h1>
+          <p className="text-sm text-foreground">Upload PDFs for AI extraction, then review and approve.</p>
         </div>
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="shrink-0 cursor-pointer rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700"
+          className="shrink-0 cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary"
         >
           {t("newInvoice")}
         </button>

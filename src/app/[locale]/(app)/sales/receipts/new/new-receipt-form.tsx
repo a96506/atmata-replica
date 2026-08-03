@@ -146,8 +146,8 @@ export function NewReceiptForm({
             currency="KWD"
             required
           />
-          <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs">
-            <div className="text-slate-500">Allocated / Unallocated</div>
+          <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-xs">
+            <div className="text-muted-foreground">Allocated / Unallocated</div>
             <div className="mt-0.5 font-mono tabular-nums">
               {formatMoney(allocated, "KWD")} / {formatMoney(unallocated, "KWD")}
             </div>
@@ -155,9 +155,9 @@ export function NewReceiptForm({
         </div>
       }
       lines={
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium tracking-wide text-slate-700 uppercase">
+            <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-foreground uppercase">
               <tr>
                 <th className="px-4 py-3">Invoice</th>
                 <th className="px-4 py-3 text-right">Total</th>
@@ -165,10 +165,10 @@ export function NewReceiptForm({
                 <th className="px-4 py-3 text-right">Allocate</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {open.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 py-6 text-center text-xs text-slate-500">
+                  <td colSpan={4} className="px-4 py-6 text-center text-xs text-muted-foreground">
                     No open invoices for the selected customer.
                   </td>
                 </tr>
@@ -200,7 +200,7 @@ export function NewReceiptForm({
                                 Number.parseFloat(e.target.value) || 0,
                               )
                             }
-                            className="w-32 rounded-md border border-slate-300 bg-white px-2 py-1 text-right text-sm tabular-nums focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                            className="w-32 rounded-md border border-input bg-card px-2 py-1 text-right text-sm tabular-nums focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                           />
                         </div>
                       </td>

@@ -29,9 +29,9 @@ const STEP_HREF: Record<string, (locale: string) => string> = {
 };
 
 const STATUS_BADGE: Record<string, string> = {
-  pending: "bg-slate-100 text-slate-800",
-  needs_attention: "bg-amber-100 text-amber-800",
-  complete: "bg-green-100 text-green-800",
+  pending: "bg-muted text-foreground",
+  needs_attention: "bg-status-pending-muted text-status-pending-foreground",
+  complete: "bg-status-success-muted text-status-success-foreground",
 };
 
 function defaultPeriod() {
@@ -55,33 +55,33 @@ export default async function ClosePage({
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Month-End Close</h1>
-          <p className="text-sm text-slate-700">10-step AI-assisted closing checklist.</p>
+          <h1 className="text-2xl font-semibold text-foreground">Month-End Close</h1>
+          <p className="text-sm text-foreground">10-step AI-assisted closing checklist.</p>
         </div>
         <CloseDemoToolbar period={period} />
       </header>
 
       {closing && (
         <>
-          <div className="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-center">
             <div className="flex-1">
-              <p className="text-sm text-slate-600">Period</p>
-              <p className="text-lg font-semibold text-slate-900">{closing.period}</p>
+              <p className="text-sm text-muted-foreground">Period</p>
+              <p className="text-lg font-semibold text-foreground">{closing.period}</p>
             </div>
             <div className="flex-1">
-              <p className="text-sm text-slate-600">Status</p>
-              <p className="text-lg font-semibold capitalize text-slate-900">{closing.status}</p>
+              <p className="text-sm text-muted-foreground">Status</p>
+              <p className="text-lg font-semibold capitalize text-foreground">{closing.status}</p>
             </div>
             <div className="flex-1">
-              <p className="text-sm text-slate-600">Progress</p>
+              <p className="text-sm text-muted-foreground">Progress</p>
               <div className="mt-1 flex items-center gap-2">
-                <div className="h-2 flex-1 rounded-full bg-slate-200">
+                <div className="h-2 flex-1 rounded-full bg-muted">
                   <div
-                    className="h-2 rounded-full bg-orange-500 transition-all duration-300"
+                    className="h-2 rounded-full bg-primary transition-all duration-300"
                     style={{ width: `${closing.overall_progress_pct}%` }}
                   />
                 </div>
-                <span className="text-sm font-medium text-slate-900">
+                <span className="text-sm font-medium text-foreground">
                   {closing.overall_progress_pct.toFixed(0)}%
                 </span>
               </div>
@@ -90,9 +90,9 @@ export default async function ClosePage({
           </div>
 
           {closing.summary && (
-            <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-              <h2 className="mb-2 font-semibold text-slate-900">AI Summary</h2>
-              <p className="text-sm text-slate-800">{closing.summary}</p>
+            <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+              <h2 className="mb-2 font-semibold text-foreground">AI Summary</h2>
+              <p className="text-sm text-foreground">{closing.summary}</p>
             </div>
           )}
 
@@ -103,17 +103,17 @@ export default async function ClosePage({
               .map((step) => (
                 <div
                   key={step.step_name}
-                  className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-800">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">
                       {step.step_order}
                     </span>
                     <div>
-                      <p className="text-sm font-medium text-slate-900">
+                      <p className="text-sm font-medium text-foreground">
                         {STEP_LABELS[step.step_name] ?? step.step_name}
                       </p>
-                      <p className="text-xs text-slate-600">
+                      <p className="text-xs text-muted-foreground">
                         {step.items_found} found · {step.items_resolved} resolved
                         {step.notes && <> · {step.notes}</>}
                       </p>
@@ -122,7 +122,7 @@ export default async function ClosePage({
                   <div className="flex items-center gap-2">
                     <span
                       className={`rounded px-2 py-0.5 text-xs font-medium ${
-                        STATUS_BADGE[step.status] ?? "bg-slate-100 text-slate-800"
+                        STATUS_BADGE[step.status] ?? "bg-muted text-foreground"
                       }`}
                     >
                       {step.status.replace("_", " ")}
@@ -130,7 +130,7 @@ export default async function ClosePage({
                     {STEP_HREF[step.step_name] ? (
                       <Link
                         href={STEP_HREF[step.step_name](locale)}
-                        className="cursor-pointer rounded-md border border-slate-300 bg-white px-2 py-0.5 text-xs font-medium text-slate-900 hover:bg-slate-50"
+                        className="cursor-pointer rounded-md border border-input bg-card px-2 py-0.5 text-xs font-medium text-foreground hover:bg-muted"
                       >
                         Open list →
                       </Link>

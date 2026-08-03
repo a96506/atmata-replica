@@ -20,7 +20,7 @@ export default async function Page({
       date={trx.date}
       notes={trx.notes}
       linesPreview={
-        <ul className="divide-y divide-slate-100 rounded-xl border border-slate-200 bg-white">
+        <ul className="divide-y divide-border rounded-xl border border-border bg-card">
           {trx.lines.map((l) => {
             const p = products.find((pp) => pp.id === l.productId);
             return (

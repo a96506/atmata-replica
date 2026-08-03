@@ -34,7 +34,7 @@ export function BillListClient({
           <Link
             key="n"
             href={`/${locale}/purchasing/bills/${b.id}`}
-            className="font-medium text-orange-600 hover:underline"
+            className="font-medium text-primary hover:underline"
           >
             {b.number}
           </Link>,
@@ -43,7 +43,7 @@ export function BillListClient({
             <Link
               key="p"
               href={`/${locale}/purchasing/purchase-orders/${b.poId}`}
-              className="text-orange-600 hover:underline"
+              className="text-primary hover:underline"
             >
               {b.poId}
             </Link>
@@ -63,7 +63,7 @@ export function BillListClient({
         const first = bills.find((b) => b.id === ids[0]);
         if (!first || first.state !== "posted") {
           return (
-            <span className="text-xs text-slate-600">
+            <span className="text-xs text-muted-foreground">
               Select posted bills to bulk-adopt into a payment.
             </span>
           );

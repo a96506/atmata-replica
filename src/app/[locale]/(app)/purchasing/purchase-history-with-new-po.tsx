@@ -27,11 +27,11 @@ export function PurchaseHistoryWithNewPo({
   return (
     <section className="space-y-2">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="text-lg font-semibold text-slate-900">{t("secPurchaseHistory")}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t("secPurchaseHistory")}</h2>
         <button
           type="button"
           onClick={() => setModalOpen(true)}
-          className="shrink-0 cursor-pointer rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700"
+          className="shrink-0 cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary"
         >
           {tm("newPo")}
         </button>

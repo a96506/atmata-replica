@@ -97,13 +97,13 @@ export function FileDrop({
         className={
           "flex cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed p-8 text-center transition-colors " +
           (dragOver
-            ? "border-orange-500 bg-orange-50"
-            : "border-slate-300 bg-white hover:border-slate-400")
+            ? "border-primary bg-primary/10"
+            : "border-input bg-card hover:border-ring")
         }
       >
-        <span className="text-sm font-medium text-slate-900">{label}</span>
-        <span className="text-xs text-slate-500">{hint}</span>
-        <span className="mt-1 text-xs text-slate-400">
+        <span className="text-sm font-medium text-foreground">{label}</span>
+        <span className="text-xs text-muted-foreground">{hint}</span>
+        <span className="mt-1 text-xs text-muted-foreground">
           Demo · files are not actually uploaded.
         </span>
         <input
@@ -122,17 +122,17 @@ export function FileDrop({
           {files.map((f) => (
             <li
               key={f.id}
-              className="flex items-center justify-between gap-3 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+              className="flex items-center justify-between gap-3 rounded-md border border-border bg-card px-3 py-2 text-sm"
             >
               <div className="min-w-0 flex-1">
                 <div className="truncate font-medium">{f.name}</div>
-                <div className="text-xs text-slate-500">
+                <div className="text-xs text-muted-foreground">
                   {humanSize(f.size)} · {f.mime || "unknown"}
                 </div>
                 {f.progress < 100 ? (
-                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                  <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                     <div
-                      className="h-full bg-orange-500 transition-all"
+                      className="h-full bg-primary transition-all"
                       style={{ width: `${f.progress}%` }}
                     />
                   </div>
@@ -142,8 +142,8 @@ export function FileDrop({
                 className={
                   "shrink-0 rounded-full px-2 py-0.5 text-xs font-medium " +
                   (f.progress >= 100
-                    ? "bg-emerald-100 text-emerald-800"
-                    : "bg-amber-100 text-amber-900")
+                    ? "bg-status-success-muted text-status-success-foreground"
+                    : "bg-status-pending-muted text-status-pending-foreground")
                 }
               >
                 {f.progress >= 100 ? "uploaded" : `${Math.floor(f.progress)}%`}

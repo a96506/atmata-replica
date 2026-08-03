@@ -223,7 +223,7 @@ export function NewBillForm({
       banner={
         <div className="space-y-2">
           {adoptionIsThin && adoptionParent ? (
-            <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+            <div className="rounded-md border border-status-pending-border bg-status-pending-muted p-3 text-sm text-status-pending-foreground">
               <strong>Multi-hop adoption from {adoptionParent.docType.toUpperCase()} {adoptionParent.docNumber}.</strong>{" "}
               No PO or GRN in this chain — pick the supplier, currency, and payment term manually.
             </div>
@@ -251,8 +251,8 @@ export function NewBillForm({
               hint={po ? "Locked by source PO" : undefined}
             />
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-slate-700">
-                Vendor invoice number <span className="text-red-600">*</span>
+              <label className="text-xs font-medium text-foreground">
+                Vendor invoice number <span className="text-destructive">*</span>
               </label>
               <input
                 type="text"
@@ -260,12 +260,12 @@ export function NewBillForm({
                 onChange={(e) => wrap(setInvoiceNumber)(e.target.value)}
                 placeholder="As printed on the supplier invoice"
                 className={
-                  "rounded-md border bg-white px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 " +
-                  (duplicate ? "border-amber-400" : "border-slate-300")
+                  "rounded-md border bg-card px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
+                  (duplicate ? "border-status-pending-border" : "border-input")
                 }
               />
               {duplicate ? (
-                <div className="text-xs text-amber-700">
+                <div className="text-xs text-status-pending-foreground">
                   Already on {duplicate.number}.
                 </div>
               ) : null}

@@ -12,10 +12,10 @@ export type RichConfirmRow = {
 };
 
 const TONE: Record<string, string> = {
-  default: "text-slate-700",
-  good: "text-emerald-700",
-  bad: "text-red-700",
-  warn: "text-amber-700",
+  default: "text-foreground",
+  good: "text-status-success-foreground",
+  bad: "text-destructive",
+  warn: "text-status-pending-foreground",
 };
 
 export function RichConfirmPreview({
@@ -29,12 +29,12 @@ export function RichConfirmPreview({
 }) {
   return (
     <div className="space-y-3 text-sm">
-      {intro ? <div className="text-slate-700">{intro}</div> : null}
-      <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+      {intro ? <div className="text-foreground">{intro}</div> : null}
+      <div className="rounded-md border border-border bg-muted/50 p-3">
         <dl className="grid grid-cols-2 gap-x-3 gap-y-1">
           {rows.map((r) => (
             <span key={r.label} className="contents">
-              <dt className="text-xs text-slate-500">{r.label}</dt>
+              <dt className="text-xs text-muted-foreground">{r.label}</dt>
               <dd className={"text-xs font-medium tabular-nums " + (TONE[r.tone ?? "default"])}>
                 {r.value}
               </dd>
@@ -43,7 +43,7 @@ export function RichConfirmPreview({
         </dl>
       </div>
       {warnings?.length ? (
-        <ul className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900">
+        <ul className="rounded-md border border-status-pending-border bg-status-pending-muted p-2 text-xs text-status-pending-foreground">
           {warnings.map((w, i) => (
             <li key={i}>• {w}</li>
           ))}

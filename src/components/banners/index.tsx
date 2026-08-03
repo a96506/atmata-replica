@@ -23,10 +23,10 @@ type Tone = "info" | "warn" | "block" | "good";
 
 /** Tones resolve to the shared status tokens so banners theme with the app. */
 const TONES: Record<Tone, string> = {
-  info: "border-status-info-border bg-status-info text-status-info-foreground",
-  warn: "border-status-warning-border bg-status-warning text-status-warning-foreground",
-  block: "border-status-danger-border bg-status-danger text-status-danger-foreground",
-  good: "border-status-success-border bg-status-success text-status-success-foreground",
+  info: "border-status-info-border bg-status-info-muted text-status-info-foreground",
+  warn: "border-status-pending-border bg-status-pending-muted text-status-pending-foreground",
+  block: "border-status-danger-border bg-status-danger-muted text-status-danger-foreground",
+  good: "border-status-success-border bg-status-success-muted text-status-success-foreground",
 };
 
 const ICONS: Record<Tone, LucideIcon> = {

@@ -28,7 +28,7 @@ export function AdoptionTrail({ locale, ancestry, descendants }: AdoptionTrailPr
   const t = useTranslations("adoption");
   if (!ancestry && !descendants) {
     return (
-      <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
+      <div className="rounded-md border border-dashed border-input bg-muted/50 p-6 text-center text-sm text-muted-foreground">
         {t("trailEmpty")}
       </div>
     );
@@ -56,7 +56,7 @@ export function AdoptionTrail({ locale, ancestry, descendants }: AdoptionTrailPr
               ))}
             </div>
             {ci < columns.length - 1 ? (
-              <div className="flex items-center text-slate-400">→</div>
+              <div className="flex items-center text-muted-foreground">→</div>
             ) : null}
           </React.Fragment>
         ))}
@@ -68,11 +68,11 @@ export function AdoptionTrail({ locale, ancestry, descendants }: AdoptionTrailPr
 function TrailCard({ node, locale }: { node: AdoptionTreeNode; locale: string }) {
   const href = hrefFor(node.docType, node.docId, locale);
   const content = (
-    <div className="rounded-lg border border-slate-200 bg-white p-3 hover:border-orange-300">
-      <div className="text-[10px] font-medium tracking-wide text-slate-500 uppercase">
+    <div className="rounded-lg border border-border bg-card p-3 hover:border-primary/30">
+      <div className="text-[10px] font-medium tracking-wide text-muted-foreground uppercase">
         {labelFor(node.docType)}
       </div>
-      <div className="mt-0.5 font-mono text-xs text-slate-900">{node.docNumber}</div>
+      <div className="mt-0.5 font-mono text-xs text-foreground">{node.docNumber}</div>
       <div className="mt-1">
         <StateBadge state={node.state} />
       </div>
@@ -90,12 +90,12 @@ function TrailCard({ node, locale }: { node: AdoptionTreeNode; locale: string })
 function StateBadge({ state }: { state: string }) {
   const tone =
     state === "posted" || state === "awarded" || state === "closed"
-      ? "bg-emerald-100 text-emerald-900"
+      ? "bg-status-success-muted text-status-success-foreground"
       : state === "draft"
-        ? "bg-slate-100 text-slate-700"
+        ? "bg-muted text-foreground"
         : state === "cancelled"
-          ? "bg-red-100 text-red-800"
-          : "bg-amber-100 text-amber-900";
+          ? "bg-status-danger-muted text-destructive"
+          : "bg-status-pending-muted text-status-pending-foreground";
   return (
     <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${tone}`}>
       {state}

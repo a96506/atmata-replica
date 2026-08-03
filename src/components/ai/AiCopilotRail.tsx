@@ -111,17 +111,17 @@ export function AiCopilotRail({ locale, scope, suggestions }: AiCopilotRailProps
   const isAgent = session.role === "ai_agent";
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white">
-      <header className="flex items-center justify-between border-b border-slate-100 px-3 py-2">
+    <div className="rounded-lg border border-border bg-card">
+      <header className="flex items-center justify-between border-b border-border px-3 py-2">
         <div className="flex items-center gap-2">
-          <span aria-hidden className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 text-xs font-semibold text-orange-700">
+          <span aria-hidden className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
             ai
           </span>
           <div>
-            <div className="text-sm font-semibold text-slate-900">
+            <div className="text-sm font-semibold text-foreground">
               {isAgent ? t("asAgent") : t("copilotTitle")}
             </div>
-            <div className="text-[10px] uppercase tracking-wide text-slate-500">
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
               {scope.kind === "doc" ? `${scope.docType}` : "list"}
             </div>
           </div>
@@ -130,7 +130,7 @@ export function AiCopilotRail({ locale, scope, suggestions }: AiCopilotRailProps
           type="button"
           aria-label={collapsed ? "Expand" : "Collapse"}
           onClick={() => setCollapsed((v) => !v)}
-          className="cursor-pointer rounded-md px-2 py-1 text-xs text-slate-500 hover:bg-slate-100"
+          className="cursor-pointer rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
         >
           {collapsed ? "▾" : "▴"}
         </button>
@@ -141,7 +141,7 @@ export function AiCopilotRail({ locale, scope, suggestions }: AiCopilotRailProps
           <ModeSegmented mode={mode} onChange={changeMode} t={t} />
 
           {visible.length === 0 ? (
-            <div className="rounded-md border border-dashed border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
+            <div className="rounded-md border border-dashed border-border bg-muted/50 p-3 text-xs text-muted-foreground">
               {t("empty")}
             </div>
           ) : (
@@ -179,7 +179,7 @@ function ModeSegmented({
     { id: "auto", label: t("mode.auto"), title: "Queue accepted actions to the approval inbox with a bot-proposed badge." },
   ];
   return (
-    <div role="tablist" className="flex rounded-md border border-slate-200 bg-slate-50 p-0.5 text-xs">
+    <div role="tablist" className="flex rounded-md border border-border bg-muted/50 p-0.5 text-xs">
       {opts.map((o) => {
         const active = mode === o.id;
         return (
@@ -192,7 +192,7 @@ function ModeSegmented({
             onClick={() => onChange(o.id)}
             className={
               "flex-1 cursor-pointer rounded-md px-2 py-1 " +
-              (active ? "bg-white font-medium text-slate-900 shadow-sm" : "text-slate-600")
+              (active ? "bg-card font-medium text-foreground shadow-sm" : "text-muted-foreground")
             }
           >
             {o.label}
@@ -218,19 +218,19 @@ function SuggestionCard({
 }) {
   const tone =
     s.severity === "critical"
-      ? "border-red-200 bg-red-50"
+      ? "border-status-danger-border bg-status-danger-muted"
       : s.severity === "warning"
-        ? "border-amber-200 bg-amber-50"
+        ? "border-status-pending-border bg-status-pending-muted"
         : s.severity === "advice"
-          ? "border-orange-200 bg-orange-50"
-          : "border-slate-200 bg-slate-50";
+          ? "border-primary/30 bg-primary/10"
+          : "border-border bg-muted/50";
 
   return (
     <div className={`rounded-md border p-3 text-sm ${tone}`}>
       <div className="flex items-start justify-between gap-2">
         <div>
-          <div className="font-medium text-slate-900">{s.title}</div>
-          <div className="mt-0.5 text-xs text-slate-700">{s.rationale}</div>
+          <div className="font-medium text-foreground">{s.title}</div>
+          <div className="mt-0.5 text-xs text-foreground">{s.rationale}</div>
         </div>
         <ConfidenceChip value={s.confidence} />
       </div>
@@ -239,7 +239,7 @@ function SuggestionCard({
           <button
             type="button"
             onClick={onAct}
-            className="cursor-pointer rounded-md bg-orange-600 px-3 py-1 text-xs font-medium text-white hover:bg-orange-700"
+            className="cursor-pointer rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground hover:bg-primary"
           >
             {mode === "auto" ? `${t("queue")}: ${s.primaryAction.label}` : `${t("doIt")}: ${s.primaryAction.label}`}
           </button>
@@ -250,7 +250,7 @@ function SuggestionCard({
           <button
             type="button"
             onClick={onDismiss}
-            className="cursor-pointer text-xs text-slate-500 hover:text-slate-700"
+            className="cursor-pointer text-xs text-muted-foreground hover:text-foreground"
           >
             {t("dismiss")}
           </button>
@@ -265,7 +265,7 @@ function SuggestionCard({
 function ConfidenceChip({ value }: { value: number }) {
   const pct = Math.round(value * 100);
   const tone =
-    pct >= 90 ? "bg-emerald-100 text-emerald-800" : pct >= 70 ? "bg-orange-100 text-orange-800" : "bg-slate-100 text-slate-700";
+    pct >= 90 ? "bg-status-success-muted text-status-success-foreground" : pct >= 70 ? "bg-primary/10 text-primary" : "bg-muted text-foreground";
   return (
     <span
       className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium tabular-nums ${tone}`}

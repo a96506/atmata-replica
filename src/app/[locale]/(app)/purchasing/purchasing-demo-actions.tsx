@@ -9,21 +9,21 @@ export function PoSuggestionActions({ id }: { id: string }) {
     <div className="flex flex-wrap justify-end gap-1">
       <button
         type="button"
-        className="cursor-pointer rounded-md bg-orange-600 px-2 py-1 text-xs font-medium text-white hover:bg-orange-700"
+        className="cursor-pointer rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary"
         onClick={() => toast.success(t("approvePo", { id }))}
       >
         {t("approve")}
       </button>
       <button
         type="button"
-        className="cursor-pointer rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-900 hover:bg-slate-200"
+        className="cursor-pointer rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
         onClick={() => toast.message(t("adjustPo", { id }))}
       >
         {t("adjust")}
       </button>
       <button
         type="button"
-        className="cursor-pointer rounded-md px-2 py-1 text-xs text-slate-600 hover:text-red-600"
+        className="cursor-pointer rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-destructive"
         onClick={() => toast.message(t("rejectPo", { id }))}
       >
         {t("reject")}
@@ -38,14 +38,14 @@ export function BillMatchActions({ id, status }: { id: string; status: string })
     <div className="flex flex-wrap justify-end gap-1">
       <button
         type="button"
-        className="cursor-pointer rounded-md bg-orange-600 px-2 py-1 text-xs font-medium text-white hover:bg-orange-700"
+        className="cursor-pointer rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary"
         onClick={() => toast.success(t("approveBill", { id }))}
       >
         {t("approveMatch")}
       </button>
       <button
         type="button"
-        className="cursor-pointer rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-900 hover:bg-slate-200"
+        className="cursor-pointer rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
         onClick={() => toast.message(t("flagBill", { id, status }))}
       >
         {t("flag")}
@@ -59,7 +59,7 @@ export function ReceivingDemoActions({ refCode }: { refCode: string }) {
   return (
     <button
       type="button"
-      className="cursor-pointer rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-900 hover:bg-slate-200"
+      className="cursor-pointer rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
       onClick={() => toast.success(t("confirmReceipt", { ref: refCode }))}
     >
       {t("confirmReceiptBtn")}

@@ -249,7 +249,7 @@ export function NewPoForm({
           value={notes}
           onChange={(e) => wrap(setNotes)(e.target.value)}
           placeholder="Internal notes (visible to approver)…"
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+          className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           rows={3}
         />
       }

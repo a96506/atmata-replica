@@ -12,10 +12,10 @@ export default async function Page({
   const usage = (c.exposure / c.creditLimit) * 100;
   return (
     <div className="space-y-4">
-      <div className="rounded-lg border border-slate-200 bg-white p-4">
-        <div className="text-xs uppercase tracking-wide text-slate-500">Customer</div>
-        <h1 className="text-xl font-semibold text-slate-900">{c.name}</h1>
-        <p className="text-sm text-slate-600">VAT {c.vatNumber ?? "—"}</p>
+      <div className="rounded-lg border border-border bg-card p-4">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground">Customer</div>
+        <h1 className="text-xl font-semibold text-foreground">{c.name}</h1>
+        <p className="text-sm text-muted-foreground">VAT {c.vatNumber ?? "—"}</p>
       </div>
       <div className="grid gap-3 md:grid-cols-3">
         <Kpi label="Credit limit" value={c.creditLimit.toLocaleString()} />
@@ -30,9 +30,9 @@ export default async function Page({
 
 function Kpi({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-1 text-lg font-semibold tabular-nums text-slate-900">{value}</div>
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{value}</div>
     </div>
   );
 }

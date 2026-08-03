@@ -34,7 +34,7 @@ export function PoListClient({
           <Link
             key="n"
             href={`/${locale}/purchasing/purchase-orders/${po.id}`}
-            className="font-medium text-orange-600 hover:underline"
+            className="font-medium text-primary hover:underline"
           >
             {po.number}
           </Link>,
@@ -52,7 +52,7 @@ export function PoListClient({
         const first = pos.find((p) => p.id === ids[0]);
         if (!first || (first.state !== "confirmed" && first.state !== "posted")) {
           return (
-            <span className="text-xs text-slate-600">
+            <span className="text-xs text-muted-foreground">
               Select confirmed or posted POs to bulk-adopt.
             </span>
           );

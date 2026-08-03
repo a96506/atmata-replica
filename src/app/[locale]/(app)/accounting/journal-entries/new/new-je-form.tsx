@@ -115,8 +115,8 @@ export function NewJeForm({
           className={
             "rounded-md border p-2 text-xs " +
             (balanced
-              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-              : "border-amber-200 bg-amber-50 text-amber-900")
+              ? "border-status-success-border bg-status-success-muted text-status-success-foreground"
+              : "border-status-pending-border bg-status-pending-muted text-status-pending-foreground")
           }
         >
           <span className="font-medium">{balanced ? "Balanced" : "Unbalanced"}</span> ·
@@ -127,15 +127,15 @@ export function NewJeForm({
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           <DatePicker label="JE date" required value={date} onChange={wrap(setDate)} />
           <div className="md:col-span-2">
-            <label className="text-xs font-medium text-slate-700">
-              Description <span className="text-red-600">*</span>
+            <label className="text-xs font-medium text-foreground">
+              Description <span className="text-destructive">*</span>
             </label>
             <input
               type="text"
               value={description}
               onChange={(e) => wrap(setDescription)(e.target.value)}
               placeholder="What is this entry for?"
-              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+              className="mt-1 w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
         </div>
@@ -145,9 +145,9 @@ export function NewJeForm({
           {lines.map((l, i) => (
             <div
               key={l.id}
-              className="grid items-end gap-3 rounded-lg border border-slate-200 bg-white p-3 md:grid-cols-[40px_minmax(0,2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_70px]"
+              className="grid items-end gap-3 rounded-lg border border-border bg-card p-3 md:grid-cols-[40px_minmax(0,2fr)_minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_70px]"
             >
-              <div className="text-xs text-slate-400">{i + 1}</div>
+              <div className="text-xs text-muted-foreground">{i + 1}</div>
               <SearchSelect
                 label="Account"
                 required
@@ -160,12 +160,12 @@ export function NewJeForm({
                 }))}
               />
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-slate-700">Description</label>
+                <label className="text-xs font-medium text-foreground">Description</label>
                 <input
                   type="text"
                   value={l.description}
                   onChange={(e) => setLine(l.id, { description: e.target.value })}
-                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                  className="rounded-md border border-input bg-card px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
               <MoneyInput
@@ -184,7 +184,7 @@ export function NewJeForm({
                 type="button"
                 onClick={() => removeLine(l.id)}
                 disabled={lines.length <= 2}
-                className="cursor-pointer rounded-md text-xs text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400"
+                className="cursor-pointer rounded-md text-xs text-destructive hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground"
               >
                 Remove
               </button>
@@ -193,7 +193,7 @@ export function NewJeForm({
           <button
             type="button"
             onClick={addLine}
-            className="cursor-pointer rounded-md border border-dashed border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:border-slate-400"
+            className="cursor-pointer rounded-md border border-dashed border-input bg-card px-3 py-2 text-sm text-foreground hover:border-ring"
           >
             + Add line
           </button>

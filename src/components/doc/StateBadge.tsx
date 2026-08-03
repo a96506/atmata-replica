@@ -30,10 +30,10 @@ const STATE_TONE: Record<string, Tone> = {
 
 const TONE_CLASS: Record<Tone, string> = {
   neutral: "bg-muted text-muted-foreground border-transparent",
-  info: "bg-status-info text-status-info-foreground border-transparent",
-  success: "bg-status-success text-status-success-foreground border-transparent",
-  warning: "bg-status-warning text-status-warning-foreground border-transparent",
-  danger: "bg-status-danger text-status-danger-foreground border-transparent",
+  info: "bg-status-info-muted text-status-info-foreground border-transparent",
+  success: "bg-status-success-muted text-status-success-foreground border-transparent",
+  warning: "bg-status-pending-muted text-status-pending-foreground border-transparent",
+  danger: "bg-status-danger-muted text-status-danger-foreground border-transparent",
   strong: "bg-foreground text-background border-transparent",
 };
 

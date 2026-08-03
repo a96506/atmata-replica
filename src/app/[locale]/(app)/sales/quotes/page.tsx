@@ -38,7 +38,7 @@ export default async function Page({
             <Link
               key="n"
               href={`/${locale}/sales/quotes/${q.id}`}
-              className="font-medium text-orange-600 hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               {q.number}
             </Link>,

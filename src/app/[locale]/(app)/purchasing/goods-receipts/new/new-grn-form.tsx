@@ -195,7 +195,7 @@ export function NewGrnForm({
           onChange={(e) => wrap(setNotes)(e.target.value)}
           placeholder="Condition notes, packaging issues, etc."
           rows={3}
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+          className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       }
       errors={errors}

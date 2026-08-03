@@ -47,9 +47,9 @@ export function DocLines({
   const fmt = (n: number) => formatMoney(n, currency);
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
+    <div className="overflow-x-auto rounded-xl border border-border">
       <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium tracking-wide text-slate-700 uppercase">
+        <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-foreground uppercase">
           <tr>
             <th className="px-4 py-3">#</th>
             <th className="px-4 py-3">Description</th>
@@ -62,7 +62,7 @@ export function DocLines({
             {extraColumn ? <th className="px-4 py-3">{extraColumn.header}</th> : null}
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-border">
           {lines.map((l, i) => {
             const net = l.qty * l.unitPrice - (l.discount ?? 0);
             const tc = taxCodes.find((t) => t.id === l.taxCodeId);
@@ -70,13 +70,13 @@ export function DocLines({
             subtotal += net;
             taxTotal += taxAmt;
             return (
-              <tr key={l.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3 text-slate-500">{i + 1}</td>
+              <tr key={l.id} className="hover:bg-muted">
+                <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
                 <td className="px-4 py-3">
                   {l.sku && locale ? (
                     <Link
                       href={`/${locale}/inventory/products/${encodeURIComponent(l.sku)}`}
-                      className="text-slate-900 hover:text-orange-700 hover:underline"
+                      className="text-foreground hover:text-primary hover:underline"
                     >
                       {l.description}
                     </Link>
@@ -92,7 +92,7 @@ export function DocLines({
                   )}
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums">{fmt(l.unitPrice)}</td>
-                <td className="px-4 py-3 text-right text-xs text-slate-500">
+                <td className="px-4 py-3 text-right text-xs text-muted-foreground">
                   {tc ? `${tc.code} · ${(tc.rate * 100).toFixed(0)}%` : "—"}
                 </td>
                 <td className="px-4 py-3 text-right tabular-nums">{fmt(net)}</td>
@@ -103,19 +103,19 @@ export function DocLines({
             );
           })}
         </tbody>
-        <tfoot className="border-t border-slate-200 bg-slate-50 text-sm">
+        <tfoot className="border-t border-border bg-muted/50 text-sm">
           <tr>
-            <td colSpan={5} className="px-4 py-2 text-right text-slate-500">Subtotal</td>
+            <td colSpan={5} className="px-4 py-2 text-right text-muted-foreground">Subtotal</td>
             <td className="px-4 py-2 text-right tabular-nums">{fmt(subtotal)}</td>
             <td colSpan={2}></td>
           </tr>
           <tr>
-            <td colSpan={5} className="px-4 py-2 text-right text-slate-500">Tax</td>
+            <td colSpan={5} className="px-4 py-2 text-right text-muted-foreground">Tax</td>
             <td className="px-4 py-2 text-right tabular-nums">{fmt(taxTotal)}</td>
             <td colSpan={2}></td>
           </tr>
           <tr>
-            <td colSpan={5} className="px-4 py-2 text-right font-medium text-slate-900">Total</td>
+            <td colSpan={5} className="px-4 py-2 text-right font-medium text-foreground">Total</td>
             <td className="px-4 py-2 text-right font-semibold tabular-nums">{fmt(subtotal + taxTotal)}</td>
             <td colSpan={2}></td>
           </tr>

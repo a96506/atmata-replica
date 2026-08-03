@@ -33,8 +33,8 @@ export default async function SettingsPage({
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold text-slate-900">{t("title")}</h1>
-        <p className="text-sm text-slate-700">{t("subtitle")}</p>
+        <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
+        <p className="text-sm text-foreground">{t("subtitle")}</p>
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -42,10 +42,10 @@ export default async function SettingsPage({
           <Link
             key={tile.href}
             href={`/${locale}${tile.href}`}
-            className="block rounded-lg border border-slate-200 bg-white p-4 hover:border-orange-300 hover:bg-orange-50"
+            className="block rounded-lg border border-border bg-card p-4 hover:border-primary/30 hover:bg-primary/10"
           >
-            <div className="text-sm font-semibold text-slate-900">{tile.label}</div>
-            <div className="mt-0.5 text-xs text-slate-600">{tile.desc}</div>
+            <div className="text-sm font-semibold text-foreground">{tile.label}</div>
+            <div className="mt-0.5 text-xs text-muted-foreground">{tile.desc}</div>
           </Link>
         ))}
       </div>

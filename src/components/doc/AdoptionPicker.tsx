@@ -155,25 +155,25 @@ export function AdoptionPicker({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="grid max-h-[90vh] w-full max-w-5xl grid-rows-[auto_1fr_auto] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
-        <header className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
+      <div className="grid max-h-[90vh] w-full max-w-5xl grid-rows-[auto_1fr_auto] overflow-hidden rounded-xl border border-border bg-card shadow-xl">
+        <header className="flex items-center justify-between border-b border-border px-5 py-3">
           <div>
-            <div className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+            <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
               {t("title")}
             </div>
-            <h2 className="text-lg font-semibold text-slate-900">
+            <h2 className="text-lg font-semibold text-foreground">
               {translateTarget(t, targetType)}
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="cursor-pointer rounded-md px-2 py-1 text-sm text-slate-500 hover:bg-slate-100"
+            className="cursor-pointer rounded-md px-2 py-1 text-sm text-muted-foreground hover:bg-muted"
             aria-label="Close"
           >
             ✕
@@ -181,7 +181,7 @@ export function AdoptionPicker({
         </header>
 
         {hops > 0 ? (
-          <div className="border-b border-amber-200 bg-amber-50 px-5 py-2 text-xs text-amber-900">
+          <div className="border-b border-status-pending-border bg-status-pending-muted px-5 py-2 text-xs text-status-pending-foreground">
             <strong>Skipping {hops} hop{hops === 1 ? "" : "s"}.</strong>{" "}
             Fields the source doesn't carry (supplier, currency, bank account, etc.) must be filled on the next form.
           </div>
@@ -189,19 +189,19 @@ export function AdoptionPicker({
 
         <div className="grid grid-cols-1 gap-0 overflow-hidden lg:grid-cols-[1.4fr_1fr]">
           {/* Left: parent lines */}
-          <div className="overflow-y-auto border-b border-slate-200 lg:border-r lg:border-b-0">
+          <div className="overflow-y-auto border-b border-border lg:border-r lg:border-b-0">
             {parents.map((parent) => {
               const rows = draft
                 .map((d, idx) => ({ d, idx }))
                 .filter((x) => x.d.parentDocId === parent.docId);
               return (
-                <section key={parent.docId} className="border-b border-slate-100 last:border-b-0">
-                  <div className="sticky top-0 z-10 flex items-center justify-between bg-slate-50 px-4 py-2 text-xs">
-                    <span className="font-mono text-slate-700">{parent.docNumber}</span>
-                    <span className="text-slate-500">{parent.docType.toUpperCase()}</span>
+                <section key={parent.docId} className="border-b border-border last:border-b-0">
+                  <div className="sticky top-0 z-10 flex items-center justify-between bg-muted/50 px-4 py-2 text-xs">
+                    <span className="font-mono text-foreground">{parent.docNumber}</span>
+                    <span className="text-muted-foreground">{parent.docType.toUpperCase()}</span>
                   </div>
                   <table className="w-full text-left text-sm">
-                    <thead className="border-b border-slate-100 text-xs text-slate-500">
+                    <thead className="border-b border-border text-xs text-muted-foreground">
                       <tr>
                         <th className="w-8 px-3 py-2"></th>
                         <th className="px-3 py-2">Description</th>
@@ -209,7 +209,7 @@ export function AdoptionPicker({
                         <th className="px-3 py-2 text-right">/ max</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-100">
+                    <tbody className="divide-y divide-border">
                       {rows.map(({ d, idx }) => {
                         const disabled = d.maxQty === 0;
                         return (
@@ -226,9 +226,9 @@ export function AdoptionPicker({
                               />
                             </td>
                             <td className="px-3 py-2">
-                              <div className="text-sm text-slate-900">{d.description}</div>
+                              <div className="text-sm text-foreground">{d.description}</div>
                               {disabled ? (
-                                <div className="text-xs text-slate-500">{t("fullyConsumed")}</div>
+                                <div className="text-xs text-muted-foreground">{t("fullyConsumed")}</div>
                               ) : null}
                             </td>
                             <td className="px-3 py-2 text-right tabular-nums">
@@ -246,10 +246,10 @@ export function AdoptionPicker({
                                   );
                                   update(idx, { qty: v });
                                 }}
-                                className="w-24 rounded-md border border-slate-300 px-2 py-1 text-right text-sm"
+                                className="w-24 rounded-md border border-input px-2 py-1 text-right text-sm"
                               />
                             </td>
-                            <td className="px-3 py-2 text-right text-xs text-slate-500 tabular-nums">
+                            <td className="px-3 py-2 text-right text-xs text-muted-foreground tabular-nums">
                               / {d.maxQty}
                             </td>
                           </tr>
@@ -263,34 +263,34 @@ export function AdoptionPicker({
           </div>
 
           {/* Right: live preview of merged target lines */}
-          <aside className="overflow-y-auto bg-slate-50">
-            <div className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-medium tracking-wide text-slate-500 uppercase">
+          <aside className="overflow-y-auto bg-muted/50">
+            <div className="sticky top-0 z-10 border-b border-border bg-muted/50 px-4 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
               {t("previewHeading")}
             </div>
             <div className="p-4">
               {preview.length === 0 ? (
-                <div className="text-sm text-slate-500">{t("noSelection")}</div>
+                <div className="text-sm text-muted-foreground">{t("noSelection")}</div>
               ) : (
                 <ul className="space-y-2">
                   {preview.map((p) => (
                     <li
                       key={p.productId + p.unitPrice}
-                      className="rounded-md border border-slate-200 bg-white p-3 text-sm"
+                      className="rounded-md border border-border bg-card p-3 text-sm"
                     >
-                      <div className="text-slate-900">{p.description}</div>
-                      <div className="mt-1 flex justify-between text-xs text-slate-500">
+                      <div className="text-foreground">{p.description}</div>
+                      <div className="mt-1 flex justify-between text-xs text-muted-foreground">
                         <span>
-                          qty <span className="tabular-nums text-slate-900">{p.qty}</span> ×{" "}
-                          <span className="tabular-nums text-slate-900">
+                          qty <span className="tabular-nums text-foreground">{p.qty}</span> ×{" "}
+                          <span className="tabular-nums text-foreground">
                             {p.unitPrice.toFixed(3)}
                           </span>
                         </span>
-                        <span className="tabular-nums text-slate-900">
+                        <span className="tabular-nums text-foreground">
                           {(p.qty * p.unitPrice).toFixed(3)} {currency}
                         </span>
                       </div>
                       {p.sources.length > 1 ? (
-                        <div className="mt-1 text-xs text-slate-500">
+                        <div className="mt-1 text-xs text-muted-foreground">
                           {t("mergedFrom", { count: p.sources.length })}: {p.sources.join(", ")}
                         </div>
                       ) : null}
@@ -302,10 +302,10 @@ export function AdoptionPicker({
           </aside>
         </div>
 
-        <footer className="flex items-center justify-between border-t border-slate-200 bg-white px-5 py-3">
-          <div className="text-sm text-slate-600">
+        <footer className="flex items-center justify-between border-t border-border bg-card px-5 py-3">
+          <div className="text-sm text-muted-foreground">
             {selected.length} line{selected.length === 1 ? "" : "s"} ·{" "}
-            <span className="font-medium tabular-nums text-slate-900">
+            <span className="font-medium tabular-nums text-foreground">
               {subtotal.toFixed(3)} {currency}
             </span>
           </div>
@@ -313,14 +313,14 @@ export function AdoptionPicker({
             <button
               type="button"
               onClick={onClose}
-              className="cursor-pointer rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
+              className="cursor-pointer rounded-md border border-input bg-card px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
             >
               {t("cancel")}
             </button>
             <button
               type="button"
               onClick={continueToForm}
-              className="cursor-pointer rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 disabled:opacity-50"
+              className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary disabled:opacity-50"
               disabled={selected.length === 0}
             >
               {t("continue")}

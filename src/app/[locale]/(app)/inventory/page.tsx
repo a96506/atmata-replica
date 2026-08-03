@@ -6,10 +6,10 @@ import { InventoryDemoToolbar, ShipmentNoteDemo } from "./inventory-demo-actions
 function AbcBadge({ abc }: { abc: "A" | "B" | "C" }) {
   const cls =
     abc === "A"
-      ? "bg-orange-100 text-orange-900"
+      ? "bg-primary/10 text-primary"
       : abc === "B"
-        ? "bg-slate-200 text-slate-900"
-        : "bg-slate-100 text-slate-700";
+        ? "bg-muted text-foreground"
+        : "bg-muted text-foreground";
   return (
     <span className={`rounded px-2 py-0.5 text-xs font-semibold ${cls}`} title={abc}>
       ABC · {abc}
@@ -18,8 +18,8 @@ function AbcBadge({ abc }: { abc: "A" | "B" | "C" }) {
 }
 
 function alertTone(s: string) {
-  if (s === "critical") return "border-red-200 bg-red-50 text-red-950";
-  return "border-amber-200 bg-amber-50 text-amber-950";
+  if (s === "critical") return "border-status-danger-border bg-status-danger-muted text-status-danger-foreground";
+  return "border-status-pending-border bg-status-pending-muted text-status-pending-foreground";
 }
 
 export default async function InventoryPage() {
@@ -30,14 +30,14 @@ export default async function InventoryPage() {
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">{t("title")}</h1>
-          <p className="text-sm text-slate-700">{t("subtitle")}</p>
+          <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
+          <p className="text-sm text-foreground">{t("subtitle")}</p>
         </div>
         <InventoryDemoToolbar />
       </header>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-slate-900">{t("secReorder")}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t("secReorder")}</h2>
         <div className="grid gap-2">
           {d.reorder_alerts.map((a) => (
             <div
@@ -52,7 +52,7 @@ export default async function InventoryPage() {
                 </p>
                 <p className="mt-0.5">{t("reorderShort", { n: a.short_by })}</p>
               </div>
-              <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-medium uppercase">
+              <span className="rounded-full bg-card/80 px-3 py-1 text-xs font-medium uppercase">
                 {t(`severity.${a.severity}`)}
               </span>
             </div>
@@ -61,7 +61,7 @@ export default async function InventoryPage() {
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-slate-900">{t("secStock")}</h2>
+        <h2 className="text-lg font-semibold text-foreground">{t("secStock")}</h2>
         <DataTable
           columns={[
             { key: "sku", label: t("colSku") },
@@ -83,8 +83,8 @@ export default async function InventoryPage() {
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-semibold text-slate-900">{t("secForecast")}</h2>
-        <p className="text-sm text-slate-600">{t("forecastHint")}</p>
+        <h2 className="text-lg font-semibold text-foreground">{t("secForecast")}</h2>
+        <p className="text-sm text-muted-foreground">{t("forecastHint")}</p>
         <DataTable
           columns={[
             { key: "sku", label: t("colSku") },
@@ -98,7 +98,7 @@ export default async function InventoryPage() {
 
       <section className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-2">
-          <h2 className="text-lg font-semibold text-slate-900">{t("secInbound")}</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t("secInbound")}</h2>
           <DataTable
             columns={[
               { key: "ref", label: t("colTransfer") },
@@ -117,7 +117,7 @@ export default async function InventoryPage() {
           />
         </div>
         <div className="space-y-2">
-          <h2 className="text-lg font-semibold text-slate-900">{t("secOutbound")}</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t("secOutbound")}</h2>
           <DataTable
             columns={[
               { key: "ref", label: t("colTransfer") },

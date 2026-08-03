@@ -1,6 +1,13 @@
 "use client";
 
 import { useId } from "react";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { cn } from "@/lib/utils";
 import type { Currency } from "@/types";
 
 const PRECISION: Record<Currency, number> = {
@@ -22,6 +29,10 @@ export type MoneyInputProps = {
   className?: string;
 };
 
+/**
+ * Currency-aware amount field. The currency code sits in a leading addon so
+ * the number itself stays right-aligned and tabular for column scanning.
+ */
 export function MoneyInput({
   value,
   onChange,
@@ -35,19 +46,29 @@ export function MoneyInput({
 }: MoneyInputProps) {
   const id = useId();
   const decimals = PRECISION[currency];
+
   return (
-    <div className={"flex flex-col gap-1 " + (className ?? "")}>
+    <Field
+      className={cn(className)}
+      data-invalid={error ? true : undefined}
+      data-disabled={disabled ? true : undefined}
+    >
       {label ? (
-        <label htmlFor={id} className="text-xs font-medium text-slate-700">
+        <FieldLabel htmlFor={id}>
           {label}
-          {required ? <span className="text-red-600"> *</span> : null}
-        </label>
+          {required ? (
+            <span className="text-destructive" aria-hidden>
+              {" *"}
+            </span>
+          ) : null}
+        </FieldLabel>
       ) : null}
-      <div className="flex items-stretch overflow-hidden rounded-md border border-slate-300 bg-white focus-within:ring-2 focus-within:ring-orange-500">
-        <span className="flex items-center bg-slate-50 px-2 text-xs font-medium text-slate-600">
-          {currency}
-        </span>
-        <input
+
+      <InputGroup>
+        <InputGroupAddon>
+          <span className="text-xs font-medium">{currency}</span>
+        </InputGroupAddon>
+        <InputGroupInput
           id={id}
           type="number"
           inputMode="decimal"
@@ -60,10 +81,13 @@ export function MoneyInput({
           }}
           disabled={disabled}
           aria-invalid={!!error}
-          className="w-full px-3 py-1.5 text-right text-sm tabular-nums focus:outline-none disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+          className="text-end tabular-nums"
         />
-      </div>
-      {error ? <div className="text-xs text-red-600">{error}</div> : null}
-    </div>
+      </InputGroup>
+
+      {error ? (
+        <FieldDescription className="text-destructive">{error}</FieldDescription>
+      ) : null}
+    </Field>
   );
 }

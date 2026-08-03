@@ -22,8 +22,8 @@ export default async function FinancialsPage({
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900">Financial statements</h1>
-          <p className="text-sm text-slate-700">Posted entries only. KWD with 3 decimal places.</p>
+          <h1 className="text-2xl font-semibold text-foreground">Financial statements</h1>
+          <p className="text-sm text-foreground">Posted entries only. KWD with 3 decimal places.</p>
         </div>
         <nav className="flex flex-wrap gap-2" aria-label="Statement type">
           {types.map((t) => (
@@ -32,8 +32,8 @@ export default async function FinancialsPage({
               href={`/accounting/financials?type=${t.id}`}
               className={`rounded-md border px-3 py-1.5 text-sm transition-colors ${
                 t.id === type
-                  ? "border-orange-500 bg-orange-50 text-orange-800"
-                  : "cursor-pointer border-slate-300 bg-white text-slate-900 hover:bg-slate-50"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "cursor-pointer border-input bg-card text-foreground hover:bg-muted"
               }`}
             >
               {t.label}
@@ -42,12 +42,12 @@ export default async function FinancialsPage({
         </nav>
       </header>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
         <header className="mb-4 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">
+          <h2 className="text-lg font-semibold text-foreground">
             {String(stmt.statement_type).toUpperCase()} — {stmt.period}
           </h2>
-          <span className="text-xs text-slate-600">
+          <span className="text-xs text-muted-foreground">
             Generated {new Date(stmt.generated_at).toLocaleString()}
           </span>
         </header>
@@ -56,7 +56,7 @@ export default async function FinancialsPage({
             {stmt.line_items.map((row, i) => (
               <tr
                 key={i}
-                className={`border-t border-slate-100 ${row.label.startsWith("---") ? "bg-slate-50 font-semibold" : ""}`}
+                className={`border-t border-border ${row.label.startsWith("---") ? "bg-muted/50 font-semibold" : ""}`}
               >
                 <td className="py-2">{row.label.replace(/-/g, "")}</td>
                 <td className="py-2 text-right tabular-nums">{row.formatted}</td>
@@ -65,7 +65,7 @@ export default async function FinancialsPage({
           </tbody>
           <tfoot>
             {Object.entries(stmt.formatted_totals).map(([k, v]) => (
-              <tr key={k} className="border-t-2 border-slate-300 font-semibold">
+              <tr key={k} className="border-t-2 border-input font-semibold">
                 <td className="py-2">{k}</td>
                 <td className="py-2 text-right tabular-nums">{v}</td>
               </tr>
@@ -73,7 +73,7 @@ export default async function FinancialsPage({
           </tfoot>
         </table>
         {stmt.notes && stmt.notes.length > 0 && (
-          <ul className="mt-4 space-y-1 text-xs text-slate-600">
+          <ul className="mt-4 space-y-1 text-xs text-muted-foreground">
             {stmt.notes.map((n, i) => (
               <li key={i}>• {n}</li>
             ))}

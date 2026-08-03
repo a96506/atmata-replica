@@ -245,7 +245,7 @@ function Row({
         className={cn(
           "mt-1.5 size-2 shrink-0 rounded-full",
           tone === "danger" && "bg-status-danger-foreground",
-          tone === "warning" && "bg-status-warning-foreground",
+          tone === "warning" && "bg-status-pending-foreground",
           tone === "muted" && "bg-muted-foreground/40",
         )}
         aria-hidden

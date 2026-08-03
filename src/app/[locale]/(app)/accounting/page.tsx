@@ -17,18 +17,18 @@ export default async function AccountingPage() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold text-slate-900">{t("title")}</h1>
-        <p className="text-sm text-slate-700">{t("subtitle")}</p>
+        <h1 className="text-2xl font-semibold text-foreground">{t("title")}</h1>
+        <p className="text-sm text-foreground">{t("subtitle")}</p>
       </header>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {cards.map((c) => (
           <Link
             key={c.href}
             href={c.href}
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-shadow duration-200 hover:shadow-md"
+            className="rounded-2xl border border-border bg-card p-5 shadow-sm transition-shadow duration-200 hover:shadow-md"
           >
-            <h2 className="font-semibold text-slate-900">{c.label}</h2>
-            <p className="mt-1 text-sm text-slate-700">{c.desc}</p>
+            <h2 className="font-semibold text-foreground">{c.label}</h2>
+            <p className="mt-1 text-sm text-foreground">{c.desc}</p>
           </Link>
         ))}
       </div>

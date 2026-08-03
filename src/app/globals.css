@@ -275,6 +275,12 @@
   html {
     @apply font-sans;
     -webkit-tap-highlight-color: transparent;
+    /* Native widgets (date pickers, scrollbars, form controls) follow the
+       active theme instead of staying stuck in light mode. */
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
   }
   /* Keyboard focus is always visible and always brand-colored */
   :focus-visible {

@@ -34,24 +34,24 @@ export function TaxBreakdown({
   const taxTotal = [...taxMap.values()].reduce((acc, b) => acc + b.tax, 0);
 
   return (
-    <div className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
+    <div className="rounded-md border border-border bg-muted/50 p-3 text-sm">
       <div className="flex items-center justify-between">
-        <span className="text-slate-600">Subtotal</span>
+        <span className="text-muted-foreground">Subtotal</span>
         <span className="tabular-nums">{formatMoney(subtotal, currency)}</span>
       </div>
       {[...taxMap.values()].map((b) => (
         <div key={b.code} className="mt-1 flex items-center justify-between text-xs">
-          <span className="text-slate-500">
+          <span className="text-muted-foreground">
             {b.code} · {(b.rate * 100).toFixed(0)}% on {formatMoney(b.base, currency)}
           </span>
           <span className="tabular-nums">{formatMoney(b.tax, currency)}</span>
         </div>
       ))}
       {taxMap.size === 0 ? (
-        <div className="mt-1 text-xs text-slate-500">No tax codes applied (exempt).</div>
+        <div className="mt-1 text-xs text-muted-foreground">No tax codes applied (exempt).</div>
       ) : null}
-      <div className="mt-2 flex items-center justify-between border-t border-slate-200 pt-2">
-        <span className="font-medium text-slate-900">Total</span>
+      <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
+        <span className="font-medium text-foreground">Total</span>
         <span className="text-base font-semibold tabular-nums">
           {formatMoney(subtotal + taxTotal, currency)}
         </span>

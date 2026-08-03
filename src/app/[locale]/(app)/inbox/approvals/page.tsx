@@ -155,18 +155,18 @@ export default async function Page({
             <div key="d">
               <Link
                 href={r.detailHref(locale)}
-                className="font-medium text-orange-600 hover:underline"
+                className="font-medium text-primary hover:underline"
               >
                 {r.number}
               </Link>
-              <div className="text-xs text-slate-500">{r.docType}</div>
+              <div className="text-xs text-muted-foreground">{r.docType}</div>
             </div>,
             r.party,
             r.date,
             <span key="t" className="tabular-nums">
               {formatMoney(r.total, r.currency)}
             </span>,
-            <span key="r" className="text-xs text-slate-600">
+            <span key="r" className="text-xs text-muted-foreground">
               {chain.length === 0
                 ? "auto-confirm"
                 : chain.map((c) => c.approverName).join(" → ")}
