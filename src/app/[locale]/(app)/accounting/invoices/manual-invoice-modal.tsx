@@ -146,15 +146,11 @@ export function ManualInvoiceModal({ open, onOpenChange, onCreated }: ManualInvo
               />
             </Field>
 
-            <Field>
-              <FieldLabel htmlFor="inv-date">{t("documentDate")}</FieldLabel>
-              <Input
-                id="inv-date"
-                type="date"
-                value={documentDate}
-                onChange={(e) => setDocumentDate(e.target.value)}
-              />
-            </Field>
+            <DatePicker
+              label={t("documentDate")}
+              value={documentDate}
+              onChange={setDocumentDate}
+            />
 
             <Field>
               <FieldLabel htmlFor="inv-total">{t("grandTotal")}</FieldLabel>
