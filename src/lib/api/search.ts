@@ -151,13 +151,6 @@ const ACTIONS: SearchResult[] = [
     href: (l) => `/${l}/accounting/reconciliation`,
     keywords: ["bank", "recon", "match"],
   },
-  {
-    id: "act_approvals",
-    kind: "action",
-    label: "Open approval inbox",
-    href: (l) => `/${l}/inbox/approvals`,
-    keywords: ["approve", "approval", "pending"],
-  },
 ];
 
 const SETTINGS_PAGES: Array<{ slug: string; label: string; keywords?: string[] }> = [

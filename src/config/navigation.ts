@@ -78,12 +78,6 @@ export const navigation: NavModule[] = [
       {
         items: [
           { href: "/inbox", label: "Inbox", icon: Inbox, keywords: ["ai", "queue", "tasks"] },
-          {
-            href: "/inbox/approvals",
-            label: "Approvals",
-            icon: ShieldCheck,
-            keywords: ["approve", "pending", "authorize"],
-          },
         ],
       },
     ],
