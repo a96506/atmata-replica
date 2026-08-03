@@ -4,10 +4,42 @@ import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { toast } from "@/components/toast";
 import { formatKwd } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 type Line = { sku: string; label: string; suggested_unit: number; qty: number };
 
-export function SalesQuickQuoteDemo({ products, localeKey }: { products: Line[]; localeKey: "en" | "ar" }) {
+export function SalesQuickQuoteDemo({
+  products,
+  localeKey,
+}: {
+  products: Line[];
+  localeKey: "en" | "ar";
+}) {
   const t = useTranslations("sales.quickQuote");
   const [customer, setCustomer] = useState("kuwait_retail");
   const [exceptional, setExceptional] = useState(false);
@@ -18,110 +50,124 @@ export function SalesQuickQuoteDemo({ products, localeKey }: { products: Line[];
     [lines],
   );
 
+  /** Maps the selected customer id back to its translated label for the toast. */
+  const customerLabel = t(
+    customer === "kuwait_retail"
+      ? "custRetail"
+      : customer === "gulf_foods"
+        ? "custFoods"
+        : "custPharma",
+  );
+
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900">{t("title")}</h2>
-      <p className="mt-1 text-sm text-slate-600">{t("hint")}</p>
+    <Card>
+      <CardHeader>
+        <CardTitle>{t("title")}</CardTitle>
+        <CardDescription>{t("hint")}</CardDescription>
+      </CardHeader>
 
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
-        <label className="block text-sm">
-          <span className="font-medium text-slate-800">{t("customer")}</span>
-          <select
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none"
-            value={customer}
-            onChange={(e) => setCustomer(e.target.value)}
-          >
-            <option value="kuwait_retail">{t("custRetail")}</option>
-            <option value="gulf_foods">{t("custFoods")}</option>
-            <option value="city_pharma">{t("custPharma")}</option>
-          </select>
-        </label>
-        <label className="flex cursor-pointer items-end gap-2 pb-1 text-sm text-slate-800">
-          <input
-            type="checkbox"
-            checked={exceptional}
-            onChange={(e) => setExceptional(e.target.checked)}
-            className="size-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
-          />
-          {t("exceptionalTag")}
-        </label>
-      </div>
+      <CardContent className="flex flex-col gap-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="quick-quote-customer">{t("customer")}</Label>
+            <Select value={customer} onValueChange={setCustomer}>
+              <SelectTrigger id="quick-quote-customer" className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="kuwait_retail">{t("custRetail")}</SelectItem>
+                <SelectItem value="gulf_foods">{t("custFoods")}</SelectItem>
+                <SelectItem value="city_pharma">{t("custPharma")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-      <div className="mt-4 overflow-x-auto rounded-xl border border-slate-100">
-        <table className="w-full min-w-[520px] text-sm">
-          <thead className="bg-slate-50 text-left text-xs tracking-wide text-slate-700 uppercase">
-            <tr>
-              <th className="px-3 py-2">{t("colSku")}</th>
-              <th className="px-3 py-2">{t("colProduct")}</th>
-              <th className="px-3 py-2 text-right">{t("colSugPrice")}</th>
-              <th className="px-3 py-2 text-right">{t("colQty")}</th>
-              <th className="px-3 py-2 text-right">{t("colLine")}</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {lines.map((line, i) => (
-              <tr key={line.sku}>
-                <td className="px-3 py-2 font-mono text-xs text-slate-700">{line.sku}</td>
-                <td className="px-3 py-2 text-slate-900">{line.label}</td>
-                <td className="px-3 py-2 text-right tabular-nums text-slate-700">
-                  {formatKwd(line.suggested_unit, localeKey)}
-                </td>
-                <td className="px-3 py-2 text-right">
-                  <input
-                    type="number"
-                    min={1}
-                    className="w-16 rounded border border-slate-300 px-2 py-1 text-right tabular-nums"
-                    value={line.qty}
-                    onChange={(e) => {
-                      const q = Math.max(1, Number(e.target.value) || 1);
-                      setLines((prev) => prev.map((l, j) => (j === i ? { ...l, qty: q } : l)));
-                    }}
-                  />
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums font-medium text-slate-900">
-                  {formatKwd(line.suggested_unit * line.qty, localeKey)}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-slate-700">
-          <span className="font-medium">{t("subtotal")}</span>{" "}
-          <span className="tabular-nums text-slate-900">{formatKwd(subtotal, localeKey)}</span>
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="cursor-pointer rounded-lg bg-slate-100 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-200"
-            onClick={() => toast.message(t("toastPdf"))}
-          >
-            {t("previewPdf")}
-          </button>
-          <button
-            type="button"
-            className="cursor-pointer rounded-lg bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700"
-            onClick={() =>
-              toast.success(
-                t("toastSend", {
-                  customer: t(
-                    customer === "kuwait_retail"
-                      ? "custRetail"
-                      : customer === "gulf_foods"
-                        ? "custFoods"
-                        : "custPharma",
-                  ),
-                  exceptional: exceptional ? t("yes") : t("no"),
-                }),
-              )
-            }
-          >
-            {t("sendQuote")}
-          </button>
+          <div className="flex items-end gap-2 pb-1">
+            <Checkbox
+              id="quick-quote-exceptional"
+              checked={exceptional}
+              onCheckedChange={(checked) => setExceptional(checked === true)}
+            />
+            <Label htmlFor="quick-quote-exceptional" className="font-normal">
+              {t("exceptionalTag")}
+            </Label>
+          </div>
         </div>
-      </div>
-    </div>
+
+        <div className="overflow-x-auto rounded-xl border border-border">
+          <Table className="min-w-[520px]">
+            <TableHeader>
+              <TableRow>
+                <TableHead>{t("colSku")}</TableHead>
+                <TableHead>{t("colProduct")}</TableHead>
+                <TableHead className="text-right">{t("colSugPrice")}</TableHead>
+                <TableHead className="text-right">{t("colQty")}</TableHead>
+                <TableHead className="text-right">{t("colLine")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {lines.map((line, i) => (
+                <TableRow key={line.sku}>
+                  <TableCell className="font-mono text-xs">
+                    {line.sku}
+                  </TableCell>
+                  <TableCell>{line.label}</TableCell>
+                  <TableCell className="text-right tabular-nums">
+                    {formatKwd(line.suggested_unit, localeKey)}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Input
+                      type="number"
+                      min={1}
+                      aria-label={`${t("colQty")} — ${line.label}`}
+                      className="ms-auto w-16 text-right tabular-nums"
+                      value={line.qty}
+                      onChange={(e) => {
+                        const q = Math.max(1, Number(e.target.value) || 1);
+                        setLines((prev) =>
+                          prev.map((l, j) => (j === i ? { ...l, qty: q } : l)),
+                        );
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell className="text-right font-medium tabular-nums">
+                    {formatKwd(line.suggested_unit * line.qty, localeKey)}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm">
+            <span className="font-medium">{t("subtotal")}</span>{" "}
+            <span className="tabular-nums">{formatKwd(subtotal, localeKey)}</span>
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => toast.message(t("toastPdf"))}
+            >
+              {t("previewPdf")}
+            </Button>
+            <Button
+              type="button"
+              onClick={() =>
+                toast.success(
+                  t("toastSend", {
+                    customer: customerLabel,
+                    exceptional: exceptional ? t("yes") : t("no"),
+                  }),
+                )
+              }
+            >
+              {t("sendQuote")}
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

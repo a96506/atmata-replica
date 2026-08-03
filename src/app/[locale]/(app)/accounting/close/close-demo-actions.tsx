@@ -9,11 +9,11 @@ export function CloseDemoToolbar({ period }: { period: string }) {
         name="period"
         type="month"
         defaultValue={period}
-        className="rounded-md border border-slate-300 px-3 py-1.5 text-sm focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none"
+        className="rounded-md border border-input px-3 py-1.5 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
       />
       <button
         type="button"
-        className="cursor-pointer rounded-md bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-slate-200"
+        className="cursor-pointer rounded-md bg-muted px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
         onClick={() => toast.message("Period filter is visual-only in this template.")}
       >
         Go
@@ -26,7 +26,7 @@ export function CloseStartDemo({ period }: { period: string }) {
   return (
     <button
       type="button"
-      className="mt-4 cursor-pointer rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700"
+      className="mt-4 cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary"
       onClick={() => toast.success(`Run close for ${period} (demo)`)}
     >
       Run close for {period}
@@ -38,7 +38,7 @@ export function CloseRescanDemo({ period }: { period: string }) {
   return (
     <button
       type="button"
-      className="cursor-pointer rounded-md bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-slate-200"
+      className="cursor-pointer rounded-md bg-muted px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
       onClick={() => toast.message(`Re-scan ${period} (demo)`)}
     >
       Re-scan
@@ -50,7 +50,7 @@ export function CloseStepDemo({ period, stepName }: { period: string; stepName: 
   return (
     <button
       type="button"
-      className="cursor-pointer rounded bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
+      className="cursor-pointer rounded bg-status-success-muted text-status-success-foreground ring-1 ring-status-success-border px-3 py-1 text-xs font-medium hover:bg-status-success/20"
       onClick={() => toast.success(`Step ${stepName} marked complete (demo) · ${period}`)}
     >
       Mark complete

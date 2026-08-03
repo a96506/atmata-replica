@@ -37,24 +37,24 @@ export default async function Page({
   const netPay = vpay.amount - whtWithheld;
 
   const whtBlock = whtRate > 0 ? (
-    <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm">
-      <div className="font-semibold text-amber-900">
+    <div className="rounded-md border border-status-pending-border bg-status-pending-muted p-3 text-sm">
+      <div className="font-semibold text-status-pending-foreground">
         Withholding tax — {(whtRate * 100).toFixed(0)}%
       </div>
       <div className="mt-2 grid grid-cols-3 gap-3 text-xs">
         <div>
-          <div className="text-amber-800">Gross</div>
+          <div className="text-status-pending-foreground">Gross</div>
           <div className="font-mono tabular-nums">{formatMoney(vpay.amount, vpay.currency)}</div>
         </div>
         <div>
-          <div className="text-amber-800">Withheld</div>
-          <div className="font-mono tabular-nums text-red-700">
+          <div className="text-status-pending-foreground">Withheld</div>
+          <div className="font-mono tabular-nums text-destructive">
             −{formatMoney(whtWithheld, vpay.currency)}
           </div>
         </div>
         <div>
-          <div className="text-amber-800">Net paid</div>
-          <div className="font-mono font-semibold tabular-nums text-emerald-700">
+          <div className="text-status-pending-foreground">Net paid</div>
+          <div className="font-mono font-semibold tabular-nums text-status-success-foreground">
             {formatMoney(netPay, vpay.currency)}
           </div>
         </div>
@@ -63,21 +63,21 @@ export default async function Page({
   ) : null;
 
   const allocations = (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
+    <div className="overflow-x-auto rounded-xl border border-border">
       <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium tracking-wide text-slate-700 uppercase">
+        <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-foreground uppercase">
           <tr>
             <th className="px-4 py-3">Bill</th>
             <th className="px-4 py-3 text-right">Allocated</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-border">
           {vpay.allocations.map((a) => (
             <tr key={a.billId}>
               <td className="px-4 py-3">
                 <Link
                   href={`/${locale}/purchasing/bills/${a.billId}`}
-                  className="text-orange-600 hover:underline"
+                  className="text-primary hover:underline"
                 >
                   {a.billId}
                 </Link>
@@ -101,7 +101,7 @@ export default async function Page({
       currentState={vpay.state}
       totals={
         <div>
-          <div className="text-xs text-slate-500">Amount</div>
+          <div className="text-xs text-muted-foreground">Amount</div>
           <div className="text-lg font-semibold tabular-nums">
             {formatMoney(vpay.amount, vpay.currency)}
           </div>

@@ -10,14 +10,30 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Info,
+  TriangleAlert,
+  type LucideIcon,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Tone = "info" | "warn" | "block" | "good";
 
+/** Tones resolve to the shared status tokens so banners theme with the app. */
 const TONES: Record<Tone, string> = {
-  info: "border-sky-200 bg-sky-50 text-sky-900",
-  warn: "border-amber-200 bg-amber-50 text-amber-900",
-  block: "border-red-200 bg-red-50 text-red-900",
-  good: "border-emerald-200 bg-emerald-50 text-emerald-900",
+  info: "border-status-info-border bg-status-info-muted text-status-info-foreground",
+  warn: "border-status-pending-border bg-status-pending-muted text-status-pending-foreground",
+  block: "border-status-danger-border bg-status-danger-muted text-status-danger-foreground",
+  good: "border-status-success-border bg-status-success-muted text-status-success-foreground",
+};
+
+const ICONS: Record<Tone, LucideIcon> = {
+  info: Info,
+  warn: TriangleAlert,
+  block: AlertCircle,
+  good: CheckCircle2,
 };
 
 function Banner({
@@ -31,12 +47,18 @@ function Banner({
   body?: ReactNode;
   action?: ReactNode;
 }) {
+  const Icon = ICONS[tone];
+
   return (
-    <div role="alert" className={"rounded-md border p-3 text-sm " + TONES[tone]}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <div
+      role="alert"
+      className={cn("flex gap-3 rounded-lg border p-3 text-sm", TONES[tone])}
+    >
+      <Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
+      <div className="flex min-w-0 flex-1 flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="font-semibold">{title}</div>
-          {body ? <div className="mt-1">{body}</div> : null}
+          {body ? <div className="mt-1 opacity-90">{body}</div> : null}
         </div>
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>
@@ -142,7 +164,7 @@ export function DuplicateBillBanner({
       action={
         <Link
           href={`/${locale}/purchasing/bills/${existingBillId}`}
-          className="rounded bg-amber-200 px-2 py-1 text-xs font-medium hover:bg-amber-300"
+          className="ring-current/25 hover:bg-current/10 rounded-md px-2 py-1 text-xs font-medium ring-1 transition-colors"
         >
           View existing
         </Link>

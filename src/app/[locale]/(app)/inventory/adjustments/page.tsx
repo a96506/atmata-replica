@@ -38,7 +38,7 @@ export default async function Page({
             <Link
               key="n"
               href={`/${locale}/inventory/adjustments/${a.id}`}
-              className="font-medium text-orange-600 hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               {a.number}
             </Link>,
@@ -48,7 +48,7 @@ export default async function Page({
               key="d"
               className={
                 "tabular-nums " +
-                (netDelta < 0 ? "text-red-700" : netDelta > 0 ? "text-emerald-700" : "")
+                (netDelta < 0 ? "text-destructive" : netDelta > 0 ? "text-status-success-foreground" : "")
               }
             >
               {netDelta > 0 ? "+" : ""}

@@ -135,25 +135,25 @@ export function StatementImporter() {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-4">
+      <div className="rounded-xl border border-dashed border-input bg-card p-4">
         <label className="flex flex-col items-start gap-2">
-          <span className="text-sm font-medium text-slate-900">Import bank statement CSV</span>
-          <span className="text-xs text-slate-500">
+          <span className="text-sm font-medium text-foreground">Import bank statement CSV</span>
+          <span className="text-xs text-muted-foreground">
             Expected header: <span className="font-mono">date, description, [reference], amount</span>. Parsed in-browser; no upload to server.
           </span>
           <input
             type="file"
             accept=".csv,text/csv"
             onChange={onFileChange}
-            className="block w-full cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-orange-600 file:px-3 file:py-1 file:text-sm file:font-medium file:text-white hover:file:bg-orange-700"
+            className="block w-full cursor-pointer rounded-md border border-input bg-card px-3 py-2 text-sm file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1 file:text-sm file:font-medium file:text-primary-foreground hover:file:bg-primary"
           />
         </label>
       </div>
 
       {rows.length > 0 ? (
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium uppercase text-slate-500">
+            <thead className="border-b border-border bg-muted/50 text-xs font-medium uppercase text-muted-foreground">
               <tr>
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Description</th>
@@ -162,7 +162,7 @@ export function StatementImporter() {
                 <th className="px-4 py-3">Suggested match</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {rows.map((r) => (
                 <tr key={r.id}>
                   <td className="px-4 py-3">{r.date}</td>
@@ -171,7 +171,7 @@ export function StatementImporter() {
                   <td
                     className={
                       "px-4 py-3 text-right tabular-nums " +
-                      (r.amount < 0 ? "text-red-700" : "text-emerald-700")
+                      (r.amount < 0 ? "text-destructive" : "text-status-success-foreground")
                     }
                   >
                     {r.amount.toFixed(3)}
@@ -179,22 +179,22 @@ export function StatementImporter() {
                   <td className="px-4 py-3">
                     {r.match ? (
                       <div className="flex items-center gap-2">
-                        <span className="rounded-md bg-emerald-50 px-2 py-0.5 font-mono text-xs text-emerald-900">
+                        <span className="rounded-md bg-status-success-muted px-2 py-0.5 font-mono text-xs text-status-success-foreground">
                           → {r.match.docId}
                         </span>
-                        <span className="text-xs text-slate-500">
+                        <span className="text-xs text-muted-foreground">
                           {Math.round(r.match.confidence * 100)}% · {r.match.reason}
                         </span>
                         <button
                           type="button"
                           onClick={() => acceptMatch(r)}
-                          className="cursor-pointer rounded-md bg-orange-600 px-2 py-0.5 text-xs font-medium text-white hover:bg-orange-700"
+                          className="cursor-pointer rounded-md bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground hover:bg-primary"
                         >
                           Accept
                         </button>
                       </div>
                     ) : (
-                      <span className="text-xs text-slate-500">No rule matched</span>
+                      <span className="text-xs text-muted-foreground">No rule matched</span>
                     )}
                   </td>
                 </tr>

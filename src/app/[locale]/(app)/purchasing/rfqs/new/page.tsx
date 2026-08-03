@@ -13,7 +13,7 @@ export default async function Page({
       title="New RFQ"
       backHref={`/${locale}/purchasing/rfqs`}
       banner={
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+        <div className="rounded-md border border-status-pending-border bg-status-pending-muted px-3 py-2 text-xs text-status-pending-foreground">
           After save, invite vendors and record their quotes on the RFQ detail page.
         </div>
       }

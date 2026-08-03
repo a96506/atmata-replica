@@ -3,28 +3,18 @@
 import * as React from "react";
 import { toast } from "@/components/toast";
 import { useConfirm } from "@/components/confirm-dialog";
+import { AlertCircle } from "lucide-react";
 import { ActionBar } from "@/components/doc/ActionBar";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
-  DemoModeBanner,
   PeriodLockBanner,
   PostedWatermarkBanner,
 } from "@/components/banners";
 import { StateBadge } from "@/components/doc/StateBadge";
 import { useSession } from "@/lib/session";
 import { legalActions, type Action } from "@/lib/state-machines";
-import { FISCAL_PERIODS } from "@/mocks/seed/master";
-import type { DocState, DocType, PeriodStatus } from "@/types";
-
-function periodFor(date: string | undefined): PeriodStatus {
-  if (!date) return "no_period";
-  const ts = new Date(date).getTime();
-  for (const p of FISCAL_PERIODS) {
-    if (ts >= new Date(p.start).getTime() && ts <= new Date(p.end).getTime()) {
-      return p.status;
-    }
-  }
-  return "no_period";
-}
+import { periodStatusFor } from "@/lib/period";
+import type { DocState, DocType } from "@/types";
 
 const ACTION_LABEL: Record<string, string> = {
   submit: "Submit",
@@ -113,7 +103,7 @@ export function DocActionBar({
 
   const effectiveState = ephemeralState ?? currentState;
   const actions = legalActions(docType, effectiveState, role);
-  const periodStatus = periodFor(docDate);
+  const periodStatus = periodStatusFor(docDate);
   const periodBlocked =
     periodStatus === "hard_closed" ||
     (periodStatus === "soft_closed" && role !== "admin" && role !== "period_adjust");
@@ -159,9 +149,45 @@ export function DocActionBar({
     effectiveState === "archived";
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-3">
+      {/* Row 1: current state + the available transitions, side by side. The
+          demo notice moved to the app shell, so this bar leads with substance
+          instead of three stacked informational banners. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <div className="flex items-center gap-2">
+          <span className="text-muted-foreground text-xs">Current state</span>
+          <StateBadge state={effectiveState} />
+        </div>
+
+        <div className="ms-auto">
+          <ActionBar
+            actions={actions}
+            onAction={handle}
+            disabled={!!blockedReason || periodBlocked}
+            resolveLabel={(a) => ACTION_LABEL[a.id] ?? a.id}
+          />
+        </div>
+      </div>
+
+      {/* Row 2: only genuinely blocking conditions get a banner. */}
+      {blockedReason ? (
+        <Alert variant="destructive">
+          <AlertCircle />
+          <AlertTitle>Blocked</AlertTitle>
+          <AlertDescription>{blockedReason}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      {posted ? <PostedWatermarkBanner /> : null}
+
+      {!posted &&
+      docDate &&
+      (periodStatus === "hard_closed" || periodStatus === "soft_closed") ? (
+        <PeriodLockBanner status={periodStatus} date={docDate} />
+      ) : null}
+
       {ephemeralState ? (
-        <div className="rounded-md border border-orange-200 bg-orange-50 p-2 text-xs text-orange-900">
+        <p className="text-muted-foreground text-xs">
           <span className="font-medium">Demo state advance:</span>{" "}
           {ephemeralHistory.map((h, i) => (
             <span key={i}>
@@ -171,40 +197,8 @@ export function DocActionBar({
             </span>
           ))}
           {" · "}refresh resets.
-        </div>
-      ) : (
-        <DemoModeBanner />
-      )}
-
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-slate-500">Current state:</span>
-        <StateBadge state={effectiveState} />
-        {posted ? null : (
-          <span className="text-xs text-slate-400">
-            {actions.length === 0 ? "No legal actions for your role." : null}
-          </span>
-        )}
-      </div>
-
-      {blockedReason ? (
-        <div className="rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-900">
-          <span className="font-medium">Blocked:</span> {blockedReason}
-        </div>
+        </p>
       ) : null}
-
-      {posted ? <PostedWatermarkBanner /> : null}
-      {!posted &&
-      docDate &&
-      (periodStatus === "hard_closed" || periodStatus === "soft_closed") ? (
-        <PeriodLockBanner status={periodStatus} date={docDate} />
-      ) : null}
-
-      <ActionBar
-        actions={actions}
-        onAction={handle}
-        disabled={!!blockedReason || periodBlocked}
-        resolveLabel={(a) => ACTION_LABEL[a.id] ?? a.id}
-      />
     </div>
   );
 }

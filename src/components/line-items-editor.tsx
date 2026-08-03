@@ -62,9 +62,9 @@ export function LineItemsEditor({ items, onChange, readOnly, labels }: LineItems
 
   return (
     <div className="space-y-2">
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium tracking-wide text-slate-700 uppercase">
+          <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-foreground uppercase">
             <tr>
               <th className="w-10 px-3 py-2">{labels.itemNo}</th>
               <th className="min-w-[140px] px-3 py-2">{labels.description}</th>
@@ -72,23 +72,23 @@ export function LineItemsEditor({ items, onChange, readOnly, labels }: LineItems
               <th className="w-28 px-3 py-2">{labels.unitPrice}</th>
               <th className="w-28 px-3 py-2 text-right">{labels.total}</th>
               {!ro && (
-                <th className="w-24 px-3 py-2 text-right text-slate-500">{labels.actionsHeader}</th>
+                <th className="w-24 px-3 py-2 text-right text-muted-foreground">{labels.actionsHeader}</th>
               )}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-border">
             {items.map((row, idx) => {
               const lineTotal = (Number(row.qty) || 0) * (Number(row.unit_price) || 0);
               return (
                 <tr key={row.id}>
-                  <td className="px-3 py-2 tabular-nums text-slate-600">{idx + 1}</td>
+                  <td className="px-3 py-2 tabular-nums text-muted-foreground">{idx + 1}</td>
                   <td className="px-3 py-2">
                     <input
                       type="text"
                       value={row.description}
                       disabled={ro}
                       onChange={(e) => updateRow(row.id, { description: e.target.value })}
-                      className="w-full min-w-[120px] rounded border border-slate-300 px-2 py-1 text-sm disabled:bg-slate-50"
+                      className="w-full min-w-[120px] rounded border border-input px-2 py-1 text-sm disabled:bg-muted/50"
                     />
                   </td>
                   <td className="px-3 py-2">
@@ -99,7 +99,7 @@ export function LineItemsEditor({ items, onChange, readOnly, labels }: LineItems
                       value={Number.isNaN(row.qty) ? "" : row.qty}
                       disabled={ro}
                       onChange={(e) => updateRow(row.id, { qty: e.target.value === "" ? 0 : Number(e.target.value) })}
-                      className="w-full rounded border border-slate-300 px-2 py-1 text-sm tabular-nums disabled:bg-slate-50"
+                      className="w-full rounded border border-input px-2 py-1 text-sm tabular-nums disabled:bg-muted/50"
                     />
                   </td>
                   <td className="px-3 py-2">
@@ -114,10 +114,10 @@ export function LineItemsEditor({ items, onChange, readOnly, labels }: LineItems
                           unit_price: e.target.value === "" ? 0 : Number(e.target.value),
                         })
                       }
-                      className="w-full rounded border border-slate-300 px-2 py-1 text-sm tabular-nums disabled:bg-slate-50"
+                      className="w-full rounded border border-input px-2 py-1 text-sm tabular-nums disabled:bg-muted/50"
                     />
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums font-medium text-slate-900">
+                  <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
                     {lineTotal.toFixed(3)}
                   </td>
                   {!ro && (
@@ -126,7 +126,7 @@ export function LineItemsEditor({ items, onChange, readOnly, labels }: LineItems
                         type="button"
                         disabled={items.length <= 1}
                         onClick={() => removeRow(row.id)}
-                        className="cursor-pointer text-xs text-slate-600 underline decoration-slate-400 hover:text-red-700 disabled:cursor-not-allowed disabled:text-slate-300 disabled:no-underline"
+                        className="cursor-pointer text-xs text-muted-foreground underline decoration-muted-foreground hover:text-destructive disabled:cursor-not-allowed disabled:text-muted-foreground/50 disabled:no-underline"
                       >
                         {labels.removeRow}
                       </button>
@@ -136,12 +136,12 @@ export function LineItemsEditor({ items, onChange, readOnly, labels }: LineItems
               );
             })}
           </tbody>
-          <tfoot className="border-t border-slate-200 bg-slate-50">
+          <tfoot className="border-t border-border bg-muted/50">
             <tr>
-              <td colSpan={4} className="px-3 py-2 text-right text-xs font-medium text-slate-600 uppercase">
+              <td colSpan={4} className="px-3 py-2 text-right text-xs font-medium text-muted-foreground uppercase">
                 {labels.footerGrandTotal}
               </td>
-              <td className="px-3 py-2 text-right text-sm font-semibold tabular-nums text-slate-900">
+              <td className="px-3 py-2 text-right text-sm font-semibold tabular-nums text-foreground">
                 {footerTotal.toFixed(3)}
               </td>
               {!ro && <td />}
@@ -153,7 +153,7 @@ export function LineItemsEditor({ items, onChange, readOnly, labels }: LineItems
         <button
           type="button"
           onClick={addRow}
-          className="cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 hover:bg-slate-50"
+          className="cursor-pointer rounded-md border border-input bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
         >
           {labels.addRow}
         </button>

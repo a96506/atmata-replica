@@ -22,7 +22,7 @@ export default async function Page({
           {rcp.allocations.map((a) => (
             <li
               key={a.invoiceId}
-              className="flex items-center justify-between rounded border border-slate-200 bg-slate-50 px-3 py-2"
+              className="flex items-center justify-between rounded border border-border bg-muted/50 px-3 py-2"
             >
               <span className="font-medium">{a.invoiceId}</span>
               <span className="tabular-nums">

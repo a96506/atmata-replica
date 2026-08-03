@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
+import { Button } from "@/components/ui/button";
 import { toast } from "@/components/toast";
 
 const APPROVABLE_SOURCES = new Set([
@@ -35,31 +36,30 @@ export function InboxRowActions({
       <div className="flex flex-wrap justify-end gap-1">
         {APPROVABLE_SOURCES.has(source) && (
           <>
-            <button
+            <Button
               type="button"
-              className="cursor-pointer rounded bg-green-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-green-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-500"
+              size="sm"
               onClick={() => toast.success(`${t("approve")} · #${id} (demo)`)}
             >
               {t("approve")}
-            </button>
+            </Button>
             {source === "audit_log" && (
-              <button
+              <Button
                 type="button"
-                className="cursor-pointer rounded bg-red-600 px-3 py-1 text-xs font-medium text-white transition-colors hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500"
+                size="sm"
+                variant="outline"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                 onClick={() => toast.message(`${t("reject")} · #${id} (demo)`)}
               >
                 {t("reject")}
-              </button>
+              </Button>
             )}
           </>
         )}
         {href && (
-          <Link
-            href={href}
-            className="cursor-pointer rounded bg-orange-100 px-3 py-1 text-xs font-medium text-orange-900 hover:bg-orange-200"
-          >
-            {t("openWorkspace")}
-          </Link>
+          <Button asChild size="sm" variant="ghost">
+            <Link href={href}>{t("openWorkspace")}</Link>
+          </Button>
         )}
       </div>
     </div>

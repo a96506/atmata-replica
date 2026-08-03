@@ -22,7 +22,7 @@ export default async function Page({
           { key: "score", label: "Score" },
         ]}
         rows={rows.map((c) => [
-          <Link key="n" href={`/${locale}/settings/customers/${c.id}`} className="font-medium text-orange-600 hover:underline">
+          <Link key="n" href={`/${locale}/settings/customers/${c.id}`} className="font-medium text-primary hover:underline">
             {c.name}
           </Link>,
           c.vatNumber ?? "—",

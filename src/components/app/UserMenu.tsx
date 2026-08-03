@@ -1,13 +1,31 @@
 "use client";
 
-import * as React from "react";
-import { DropdownMenu } from "radix-ui";
-import { useSession } from "@/lib/session";
+import { LogOut } from "lucide-react";
+import { ROLE_OPTIONS, useSession } from "@/lib/session";
 import { useRouter } from "@/i18n/navigation";
+import type { Role } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function UserMenu({ signOutLabel }: { signOutLabel: string }) {
-  const { user, role, signOut } = useSession();
+  const { user, role, setRole, signOut } = useSession();
   const router = useRouter();
+
   const initials = user.name
     .split(" ")
     .map((part) => part.charAt(0))
@@ -16,46 +34,76 @@ export function UserMenu({ signOutLabel }: { signOutLabel: string }) {
     .toUpperCase();
 
   return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>
-        <button
-          type="button"
-          className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-2 py-1 text-sm text-slate-900 transition-colors hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          className="h-9 gap-2 px-1.5"
           aria-label={user.name}
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-orange-100 text-xs font-semibold text-orange-800">
-            {initials}
+          <Avatar className="size-7">
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <span className="hidden max-w-[14ch] truncate text-sm lg:inline">
+            {user.name}
           </span>
-          <span className="hidden md:inline">{user.name}</span>
-        </button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          align="end"
-          sideOffset={6}
-          className="z-50 min-w-[220px] rounded-lg border border-slate-200 bg-white p-1 shadow-lg"
-        >
-          <div className="px-3 py-2">
-            <div className="text-sm font-medium text-slate-900">{user.name}</div>
-            <div className="text-xs text-slate-500">{user.email}</div>
-            <div className="mt-1 text-xs text-slate-500">
-              <span className="rounded bg-slate-100 px-1.5 py-0.5 font-mono">
-                {role}
-              </span>
-            </div>
+        </Button>
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent align="end" className="w-60">
+        <DropdownMenuLabel className="font-normal">
+          <div className="flex flex-col gap-1">
+            <span className="text-sm font-medium">{user.name}</span>
+            <span className="text-muted-foreground text-xs">{user.email}</span>
+            <Badge variant="secondary" className="mt-1 w-fit font-mono text-[10px]">
+              {role}
+            </Badge>
           </div>
-          <DropdownMenu.Separator className="my-1 h-px bg-slate-100" />
-          <DropdownMenu.Item
+        </DropdownMenuLabel>
+
+        <DropdownMenuSeparator />
+
+        {/* Role impersonation is a demo affordance; it previously floated over
+            page content as a fixed pill. Nested here it stays discoverable
+            without covering table cells. */}
+        <DropdownMenuGroup>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>Switch role</DropdownMenuSubTrigger>
+            <DropdownMenuSubContent className="max-h-72 overflow-y-auto">
+              <DropdownMenuRadioGroup
+                value={role}
+                onValueChange={(value) => setRole(value as Role)}
+              >
+                {ROLE_OPTIONS.map((option) => (
+                  <DropdownMenuRadioItem
+                    key={option}
+                    value={option}
+                    className="font-mono text-xs"
+                  >
+                    {option}
+                  </DropdownMenuRadioItem>
+                ))}
+              </DropdownMenuRadioGroup>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        </DropdownMenuGroup>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuGroup>
+          <DropdownMenuItem
             onSelect={() => {
               signOut();
               router.push("/login");
             }}
-            className="cursor-pointer rounded-md px-3 py-2 text-sm text-slate-900 outline-none data-[highlighted]:bg-slate-100"
           >
+            <LogOut data-icon="inline-start" />
             {signOutLabel}
-          </DropdownMenu.Item>
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+          </DropdownMenuItem>
+        </DropdownMenuGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

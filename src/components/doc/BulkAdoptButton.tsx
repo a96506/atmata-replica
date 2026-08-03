@@ -77,16 +77,16 @@ export function BulkAdoptButton({
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
-          className="cursor-pointer rounded-md bg-orange-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-700"
+          className="cursor-pointer rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary"
         >
           {t("bulkTitle")} ▾
         </button>
         {menuOpen ? (
           <div
             role="menu"
-            className="absolute right-0 z-30 mt-1 min-w-[260px] rounded-md border border-slate-200 bg-white py-1 shadow-md"
+            className="absolute right-0 z-30 mt-1 min-w-[260px] rounded-md border border-border bg-card py-1 shadow-md"
           >
-            <div className="border-b border-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+            <div className="border-b border-border px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               Direct
             </div>
             {targets
@@ -97,14 +97,14 @@ export function BulkAdoptButton({
                   type="button"
                   role="menuitem"
                   onClick={() => choose(tg.targetType, 0)}
-                  className="block w-full cursor-pointer px-3 py-1.5 text-left text-sm text-slate-900 hover:bg-orange-50"
+                  className="block w-full cursor-pointer px-3 py-1.5 text-left text-sm text-foreground hover:bg-primary/10"
                 >
                   {tryT(t, `target.${tg.targetType}`, tg.targetType)}
                 </button>
               ))}
             {targets.some((tg) => (tg.hops ?? 0) > 0) ? (
               <>
-                <div className="border-b border-t border-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                <div className="border-b border-t border-border px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
                   Multi-hop
                 </div>
                 {targets
@@ -116,10 +116,10 @@ export function BulkAdoptButton({
                       type="button"
                       role="menuitem"
                       onClick={() => choose(tg.targetType, tg.hops ?? 0)}
-                      className="block w-full cursor-pointer px-3 py-1.5 text-left text-sm text-slate-900 hover:bg-orange-50"
+                      className="block w-full cursor-pointer px-3 py-1.5 text-left text-sm text-foreground hover:bg-primary/10"
                     >
                       <div>{tryT(t, `target.${tg.targetType}`, tg.targetType)}</div>
-                      <div className="text-[11px] text-slate-500">
+                      <div className="text-[11px] text-muted-foreground">
                         skips {tg.hops} hop{tg.hops === 1 ? "" : "s"}
                       </div>
                     </button>

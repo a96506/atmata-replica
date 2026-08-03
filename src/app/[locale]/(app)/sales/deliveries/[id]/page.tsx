@@ -53,7 +53,7 @@ export default async function Page({
       currentState={dn.state}
       totals={
         <div>
-          <div className="text-xs text-slate-500">Qty shipped</div>
+          <div className="text-xs text-muted-foreground">Qty shipped</div>
           <div className="text-lg font-semibold tabular-nums">{totalQty}</div>
         </div>
       }

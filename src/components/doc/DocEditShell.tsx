@@ -3,6 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/toast";
 import { useConfirm } from "@/components/confirm-dialog";
 import { DocForm } from "@/components/form/DocForm";
@@ -89,31 +91,29 @@ export function DocEditShell({
         <UnsavedChangesGuard dirty={false} />
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="text-xs font-medium tracking-wide text-slate-500 uppercase">
+            <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
               {docNumber}
             </div>
-            <h1 className="mt-0.5 text-xl font-semibold text-slate-900">
+            <h1 className="mt-0.5 text-xl font-semibold text-foreground">
               {docTitle}
             </h1>
           </div>
           <StateBadge state={state} />
         </div>
         <PostedWatermarkBanner />
-        <div className="rounded-lg border border-slate-200 bg-white p-4 md:p-6">
-          <h2 className="mb-3 text-sm font-semibold tracking-wide text-slate-500 uppercase">
+        <div className="rounded-lg border border-border bg-card p-4 md:p-6">
+          <h2 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
             Lines (read-only)
           </h2>
           {linesPreview}
         </div>
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 pt-4">
-          <Link
-            href={backHref}
-            className="cursor-pointer rounded-md px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-          >
-            Back to document
-          </Link>
-          <button
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border pt-4">
+          <Button asChild variant="ghost">
+            <Link href={backHref}>Back to document</Link>
+          </Button>
+          <Button
             type="button"
+            variant="destructive"
             onClick={async () => {
               const ok = await confirm({
                 title: `Reverse ${docNumber}?`,
@@ -124,10 +124,9 @@ export function DocEditShell({
               });
               if (ok) toast.success(`Reverse queued (demo) · ${docNumber}`);
             }}
-            className="cursor-pointer rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
           >
             Reverse
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -144,13 +143,14 @@ export function DocEditShell({
               by="Khalid (warehouse)"
               at="2 min ago"
               onReload={
-                <button
+                <Button
                   type="button"
+                  size="sm"
+                  variant="outline"
                   onClick={() => router.refresh()}
-                  className="cursor-pointer rounded-md bg-amber-600 px-3 py-1 text-xs font-medium text-white hover:bg-amber-700"
                 >
                   Reload
-                </button>
+                </Button>
               }
             />
           ) : null}
@@ -158,7 +158,7 @@ export function DocEditShell({
             <DatePicker label="Date" value={editedDate} onChange={wrap(setEditedDate)} />
             <div className="flex items-end">
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-xs text-slate-500">Current state:</span>
+                <span className="text-xs text-muted-foreground">Current state:</span>
                 <StateBadge state={state} />
               </div>
             </div>
@@ -167,7 +167,7 @@ export function DocEditShell({
       }
       lines={
         <div>
-          <div className="mb-2 text-xs text-slate-500">
+          <div className="mb-2 text-xs text-muted-foreground">
             Line edits are out of scope on the edit page — to change lines, cancel
             this draft and create a new document via the +New flow.
           </div>
@@ -175,12 +175,11 @@ export function DocEditShell({
         </div>
       }
       notes={
-        <textarea
+        <Textarea
           rows={4}
           value={editedNotes}
           onChange={(e) => wrap(setEditedNotes)(e.target.value)}
           placeholder="Internal notes…"
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
         />
       }
       errors={[]}

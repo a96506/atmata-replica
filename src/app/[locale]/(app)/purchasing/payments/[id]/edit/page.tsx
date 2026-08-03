@@ -22,7 +22,7 @@ export default async function Page({
           {vpay.allocations.map((a) => (
             <li
               key={a.billId}
-              className="flex items-center justify-between rounded border border-slate-200 bg-slate-50 px-3 py-2"
+              className="flex items-center justify-between rounded border border-border bg-muted/50 px-3 py-2"
             >
               <span className="font-medium">{a.billId}</span>
               <span className="tabular-nums">

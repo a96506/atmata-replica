@@ -27,7 +27,7 @@ export default async function Page({
           <Link
             key="sku"
             href={`/${locale}/inventory/products/${encodeURIComponent(p.sku)}`}
-            className="font-mono text-xs font-medium text-orange-600 hover:underline"
+            className="font-mono text-xs font-medium text-primary hover:underline"
           >
             {p.sku}
           </Link>,

@@ -49,7 +49,7 @@ export default async function Page({
       currentState={vr.state}
       totals={
         <div>
-          <div className="text-xs text-slate-500">Total returned</div>
+          <div className="text-xs text-muted-foreground">Total returned</div>
           <div className="text-lg font-semibold tabular-nums">
             {totalQty} units · {totalValue.toFixed(3)} KWD
           </div>

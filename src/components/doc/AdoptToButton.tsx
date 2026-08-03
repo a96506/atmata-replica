@@ -102,7 +102,7 @@ export function AdoptToButton(props: AdoptToButtonProps) {
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
-          className="cursor-pointer rounded-md border border-orange-300 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-900 hover:bg-orange-100"
+          className="cursor-pointer rounded-md border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10"
           aria-haspopup="menu"
           aria-expanded={menuOpen}
         >
@@ -111,7 +111,7 @@ export function AdoptToButton(props: AdoptToButtonProps) {
         {menuOpen ? (
           <div
             role="menu"
-            className="absolute right-0 z-30 mt-1 min-w-[260px] rounded-md border border-slate-200 bg-white py-1 shadow-md"
+            className="absolute right-0 z-30 mt-1 min-w-[260px] rounded-md border border-border bg-card py-1 shadow-md"
           >
             <Group title="Direct">
               {targets
@@ -161,7 +161,7 @@ export function AdoptToButton(props: AdoptToButtonProps) {
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="border-b border-slate-100 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+      <div className="border-b border-border px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </div>
       {children}
@@ -183,10 +183,10 @@ function MenuItem({
       type="button"
       role="menuitem"
       onClick={onClick}
-      className="block w-full cursor-pointer px-3 py-1.5 text-left text-sm text-slate-900 hover:bg-orange-50"
+      className="block w-full cursor-pointer px-3 py-1.5 text-left text-sm text-foreground hover:bg-primary/10"
     >
       <div>{label}</div>
-      {subtitle ? <div className="text-[11px] text-slate-500">{subtitle}</div> : null}
+      {subtitle ? <div className="text-[11px] text-muted-foreground">{subtitle}</div> : null}
     </button>
   );
 }

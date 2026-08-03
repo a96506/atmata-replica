@@ -140,9 +140,9 @@ export function NewAdjustmentForm({
           {lines.map((l, i) => (
             <div
               key={l.id}
-              className="grid items-end gap-3 rounded-lg border border-slate-200 bg-white p-3 md:grid-cols-[40px_minmax(0,2fr)_minmax(0,1fr)_120px_minmax(0,1fr)_70px]"
+              className="grid items-end gap-3 rounded-lg border border-border bg-card p-3 md:grid-cols-[40px_minmax(0,2fr)_minmax(0,1fr)_120px_minmax(0,1fr)_70px]"
             >
-              <div className="text-xs text-slate-400">{i + 1}</div>
+              <div className="text-xs text-muted-foreground">{i + 1}</div>
               <SearchSelect
                 label="Product"
                 required
@@ -160,7 +160,7 @@ export function NewAdjustmentForm({
                 options={warehouses.map((w) => ({ value: w.id, label: w.name }))}
               />
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-slate-700">
+                <label className="text-xs font-medium text-foreground">
                   Δqty (+/-)
                 </label>
                 <input
@@ -173,12 +173,12 @@ export function NewAdjustmentForm({
                     })
                   }
                   className={
-                    "rounded-md border bg-white px-3 py-1.5 text-right text-sm tabular-nums focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 " +
+                    "rounded-md border bg-card px-3 py-1.5 text-right text-sm tabular-nums focus:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
                     (l.qtyDelta < 0
-                      ? "border-red-300"
+                      ? "border-status-danger-border"
                       : l.qtyDelta > 0
-                        ? "border-emerald-300"
-                        : "border-slate-300")
+                        ? "border-status-success-border"
+                        : "border-input")
                   }
                 />
               </div>
@@ -192,7 +192,7 @@ export function NewAdjustmentForm({
                 type="button"
                 onClick={() => removeLine(l.id)}
                 disabled={lines.length === 1}
-                className="cursor-pointer rounded-md text-xs text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400"
+                className="cursor-pointer rounded-md text-xs text-destructive hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground"
               >
                 Remove
               </button>
@@ -201,7 +201,7 @@ export function NewAdjustmentForm({
           <button
             type="button"
             onClick={addLine}
-            className="cursor-pointer rounded-md border border-dashed border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:border-slate-400"
+            className="cursor-pointer rounded-md border border-dashed border-input bg-card px-3 py-2 text-sm text-foreground hover:border-ring"
           >
             + Add line
           </button>
@@ -213,7 +213,7 @@ export function NewAdjustmentForm({
           value={notes}
           onChange={(e) => wrap(setNotes)(e.target.value)}
           placeholder="Explanation for the adjustment…"
-          className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+          className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       }
       approvalPreview={

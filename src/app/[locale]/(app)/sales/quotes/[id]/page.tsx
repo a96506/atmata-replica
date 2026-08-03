@@ -57,7 +57,7 @@ export default async function Page({
       currentState={isExpired ? "expired" : stateAlias}
       totals={
         <div>
-          <div className="text-xs text-slate-500">Total</div>
+          <div className="text-xs text-muted-foreground">Total</div>
           <div className="text-lg font-semibold tabular-nums">
             {formatMoney(q.total, q.currency)}
           </div>

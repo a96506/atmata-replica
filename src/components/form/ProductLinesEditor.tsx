@@ -1,9 +1,15 @@
 "use client";
 
+import { useId } from "react";
+import { Plus, Trash2 } from "lucide-react";
 import { SearchSelect } from "./SearchSelect";
 import { MoneyInput } from "./MoneyInput";
 import { LotPicker } from "./LotPicker";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { formatMoney } from "@/lib/money";
+import { cn } from "@/lib/utils";
 import type { Currency, Product, TaxCode } from "@/types";
 
 export type LineDraft = {
@@ -47,6 +53,9 @@ export function ProductLinesEditor({
   enableLot = true,
   readOnly,
 }: ProductLinesEditorProps) {
+  // Line ids embed Date.now(), so they differ between the server and client
+  // render. Field ids derive from a stable useId + row index instead.
+  const uid = useId();
   const visibleProducts = filter ? products.filter(filter) : products;
 
   const productOptions = visibleProducts.map((p) => ({
@@ -54,7 +63,9 @@ export function ProductLinesEditor({
     label: `${p.sku} · ${p.name}`,
     hint: `${p.uom} · default ${p.defaultPurchasePrice || p.defaultSalePrice} ${currency}`,
     badges: [
-      ...(p.lotTracked ? [{ label: "lot-tracked", tone: "amber" as const }] : []),
+      ...(p.lotTracked
+        ? [{ label: "lot-tracked", tone: "amber" as const }]
+        : []),
       ...(!p.purchasable && filter
         ? [{ label: "not purchasable", tone: "slate" as const }]
         : []),
@@ -110,156 +121,167 @@ export function ProductLinesEditor({
   };
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-2">
-        {lines.length === 0 ? (
-          <div className="rounded-md border border-dashed border-slate-300 bg-slate-50 p-6 text-center text-sm text-slate-500">
-            No lines yet. Click <span className="font-medium">Add line</span> to start.
-          </div>
-        ) : null}
-        {lines.map((l, i) => {
-          const product = products.find((p) => p.id === l.productId);
-          const net = l.qty * l.unitPrice;
-          const tc = taxCodes.find((t) => t.id === l.taxCodeId);
-          const taxAmt = net * (tc?.rate ?? 0);
-          const total = net + taxAmt;
-          const overReceive =
-            typeof l.poLineQtyRemaining === "number" &&
-            l.qty > l.poLineQtyRemaining;
-          const needsLot =
-            enableLot && product?.lotTracked && !l.lotNumber;
+    <div className="flex flex-col gap-3">
+      {lines.length === 0 ? (
+        <div className="text-muted-foreground rounded-lg border border-dashed p-6 text-center text-sm">
+          No lines yet. Use <span className="font-medium">Add line</span> to
+          start.
+        </div>
+      ) : null}
 
-          return (
-            <div
-              key={l.id}
-              className="rounded-lg border border-slate-200 bg-white p-3"
-            >
-              <div className="flex flex-wrap items-start gap-3">
-                <div className="w-8 shrink-0 pt-7 text-xs text-slate-400">
-                  {i + 1}
-                </div>
-                <div className="grid flex-1 gap-3 sm:grid-cols-2 md:grid-cols-4">
-                  <div className="md:col-span-2">
-                    <SearchSelect
-                      label="Product"
-                      placeholder="Pick a product…"
-                      required
-                      value={l.productId || null}
-                      onChange={(v) => patch(l.id, { productId: v })}
-                      options={productOptions}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-medium text-slate-700">
-                      {qtyLabel}
-                      <span className="text-red-600"> *</span>
-                    </label>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      min={0}
-                      step="0.001"
-                      value={l.qty}
-                      disabled={readOnly}
-                      onChange={(e) =>
-                        patch(l.id, {
-                          qty: Number.parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      className={
-                        "rounded-md border bg-white px-3 py-1.5 text-right text-sm tabular-nums focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 disabled:cursor-not-allowed disabled:bg-slate-50 " +
-                        (overReceive ? "border-red-400" : "border-slate-300")
-                      }
-                    />
-                    {overReceive ? (
-                      <div className="text-xs text-red-700">
-                        Exceeds remaining {l.poLineQtyRemaining}
-                      </div>
-                    ) : null}
-                  </div>
-                  <MoneyInput
-                    label="Unit price"
-                    required
-                    value={l.unitPrice}
-                    onChange={(v) => patch(l.id, { unitPrice: v })}
-                    currency={currency}
-                    disabled={readOnly}
-                  />
-                </div>
-              </div>
+      {lines.map((l, i) => {
+        const product = products.find((p) => p.id === l.productId);
+        const net = l.qty * l.unitPrice;
+        const tc = taxCodes.find((t) => t.id === l.taxCodeId);
+        const total = net + net * (tc?.rate ?? 0);
+        const overReceive =
+          typeof l.poLineQtyRemaining === "number" &&
+          l.qty > l.poLineQtyRemaining;
+        const needsLot = enableLot && product?.lotTracked && !l.lotNumber;
 
-              <div className="mt-3 grid gap-3 sm:grid-cols-2 md:grid-cols-4">
-                <div className="md:col-span-2">
-                  <label className="text-xs font-medium text-slate-700">
-                    Description
-                  </label>
-                  <input
-                    type="text"
-                    value={l.description}
-                    disabled={readOnly}
-                    onChange={(e) =>
-                      patch(l.id, { description: e.target.value })
-                    }
-                    className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 disabled:cursor-not-allowed disabled:bg-slate-50"
-                  />
-                </div>
+        return (
+          <div
+            key={l.id}
+            className="bg-card flex flex-col gap-3 rounded-lg border p-3"
+          >
+            {/* Line identity: number, product, and the row-level remove action. */}
+            <div className="flex items-end gap-2">
+              <span className="text-muted-foreground bg-muted flex size-6 shrink-0 items-center justify-center rounded text-xs font-medium tabular-nums">
+                {i + 1}
+              </span>
+              <div className="min-w-0 flex-1">
                 <SearchSelect
-                  label="Tax code"
-                  value={l.taxCodeId || null}
-                  onChange={(v) => patch(l.id, { taxCodeId: v })}
-                  options={taxOptions}
+                  label="Product"
+                  placeholder="Pick a product…"
+                  required
+                  value={l.productId || null}
+                  onChange={(v) => patch(l.id, { productId: v })}
+                  options={productOptions}
                   disabled={readOnly}
                 />
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-slate-700">
-                    Line total
-                  </label>
-                  <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-right text-sm font-medium tabular-nums">
-                    {formatMoney(total, currency)}
-                  </div>
-                </div>
               </div>
-
-              {needsLot ? (
-                <div className="mt-3 sm:max-w-sm">
-                  <LotPicker
-                    required
-                    value={l.lotNumber ?? null}
-                    onChange={(v) => patch(l.id, { lotNumber: v })}
-                    lots={[
-                      { lotNumber: "DC-2026-Q2", qtyAvailable: 4, expiry: "2027-06-30" },
-                      { lotNumber: "DC-2026-Q1", qtyAvailable: 2, expiry: "2027-01-31" },
-                    ]}
-                  />
-                </div>
-              ) : null}
-
               {!readOnly ? (
-                <div className="mt-3 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => removeRow(l.id)}
-                    disabled={lines.length === 1}
-                    className="cursor-pointer text-xs text-red-600 hover:underline disabled:cursor-not-allowed disabled:text-slate-400"
-                  >
-                    Remove line
-                  </button>
-                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeRow(l.id)}
+                  disabled={lines.length === 1}
+                  aria-label={`Remove line ${i + 1}`}
+                  className="text-muted-foreground hover:text-destructive shrink-0"
+                >
+                  <Trash2 />
+                </Button>
               ) : null}
             </div>
-          );
-        })}
-      </div>
+
+            {/* Numeric grid: quantities and money stay grouped and aligned. */}
+            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-4">
+              <Field data-invalid={overReceive ? true : undefined}>
+                <FieldLabel htmlFor={`${uid}-${i}-qty`}>
+                  {qtyLabel}
+                  <span className="text-destructive" aria-hidden>
+                    {" *"}
+                  </span>
+                </FieldLabel>
+                <Input
+                  id={`${uid}-${i}-qty`}
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step="0.001"
+                  value={l.qty}
+                  disabled={readOnly}
+                  aria-invalid={overReceive}
+                  onChange={(e) =>
+                    patch(l.id, {
+                      qty: Number.parseFloat(e.target.value) || 0,
+                    })
+                  }
+                  className="text-end tabular-nums"
+                />
+                {overReceive ? (
+                  <FieldDescription className="text-destructive">
+                    Exceeds remaining {l.poLineQtyRemaining}
+                  </FieldDescription>
+                ) : null}
+              </Field>
+
+              <MoneyInput
+                label="Unit price"
+                required
+                value={l.unitPrice}
+                onChange={(v) => patch(l.id, { unitPrice: v })}
+                currency={currency}
+                disabled={readOnly}
+              />
+
+              <SearchSelect
+                label="Tax code"
+                value={l.taxCodeId || null}
+                onChange={(v) => patch(l.id, { taxCodeId: v })}
+                options={taxOptions}
+                disabled={readOnly}
+              />
+
+              <Field>
+                <FieldLabel>Line total</FieldLabel>
+                <output
+                  className={cn(
+                    "bg-muted/50 text-foreground flex h-9 items-center justify-end rounded-md border px-3 text-sm font-medium tabular-nums",
+                  )}
+                >
+                  {formatMoney(total, currency)}
+                </output>
+              </Field>
+            </div>
+
+            <Field>
+              <FieldLabel htmlFor={`${uid}-${i}-desc`}>Description</FieldLabel>
+              <Input
+                id={`${uid}-${i}-desc`}
+                type="text"
+                value={l.description}
+                disabled={readOnly}
+                onChange={(e) => patch(l.id, { description: e.target.value })}
+              />
+            </Field>
+
+            {needsLot ? (
+              <div className="sm:max-w-sm">
+                <LotPicker
+                  required
+                  value={l.lotNumber ?? null}
+                  onChange={(v) => patch(l.id, { lotNumber: v })}
+                  lots={[
+                    {
+                      lotNumber: "DC-2026-Q2",
+                      qtyAvailable: 4,
+                      expiry: "2027-06-30",
+                    },
+                    {
+                      lotNumber: "DC-2026-Q1",
+                      qtyAvailable: 2,
+                      expiry: "2027-01-31",
+                    },
+                  ]}
+                />
+              </div>
+            ) : null}
+          </div>
+        );
+      })}
 
       {!readOnly ? (
-        <button
+        <Button
           type="button"
+          variant="outline"
           onClick={addRow}
-          className="cursor-pointer rounded-md border border-dashed border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 hover:border-slate-400 hover:text-slate-900"
+          className="self-start border-dashed"
         >
-          + Add line
-        </button>
+          <Plus data-icon="inline-start" />
+          Add line
+        </Button>
       ) : null}
     </div>
   );

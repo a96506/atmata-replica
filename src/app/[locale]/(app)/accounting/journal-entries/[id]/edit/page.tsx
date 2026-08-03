@@ -19,9 +19,9 @@ export default async function Page({
       state={je.state}
       date={je.date}
       linesPreview={
-        <div className="overflow-x-auto rounded-xl border border-slate-200">
+        <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium tracking-wide text-slate-700 uppercase">
+            <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-foreground uppercase">
               <tr>
                 <th className="px-4 py-3">Account</th>
                 <th className="px-4 py-3">Description</th>
@@ -29,18 +29,18 @@ export default async function Page({
                 <th className="px-4 py-3 text-right">Credit</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {je.lines.map((l) => {
                 const acc = accounts.find((a) => a.id === l.accountId);
                 return (
                   <tr key={l.id}>
                     <td className="px-4 py-3">
-                      <span className="font-mono text-xs text-slate-500">
+                      <span className="font-mono text-xs text-muted-foreground">
                         {acc?.code ?? "—"}
                       </span>{" "}
                       {acc?.name ?? l.accountId}
                     </td>
-                    <td className="px-4 py-3 text-slate-700">{l.description}</td>
+                    <td className="px-4 py-3 text-foreground">{l.description}</td>
                     <td className="px-4 py-3 text-right tabular-nums">
                       {l.debit ? formatMoney(l.debit, je.currency) : ""}
                     </td>

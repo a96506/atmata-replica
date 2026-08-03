@@ -141,7 +141,7 @@ export function NewInvoiceForm({
       }
       banner={
         isSaudi ? (
-          <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-900">
+          <div className="rounded-md border border-status-success-border bg-status-success-muted p-3 text-sm text-status-success-foreground">
             <span className="font-medium">FATOORA Phase 2 active</span> · Buyer VAT,
             seller VAT and QR payload required on post. Active company:{" "}
             {activeCompany?.name}.
@@ -180,15 +180,15 @@ export function NewInvoiceForm({
           {isSaudi ? (
             <>
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-slate-700">
-                  Buyer VAT{isB2B ? <span className="text-red-600"> *</span> : null}
+                <label className="text-xs font-medium text-foreground">
+                  Buyer VAT{isB2B ? <span className="text-destructive"> *</span> : null}
                 </label>
                 <input
                   type="text"
                   value={buyerVat}
                   onChange={(e) => wrap(setBuyerVat)(e.target.value)}
                   placeholder="SA3xxxxxxxxxxxxx"
-                  className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+                  className="rounded-md border border-input bg-card px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </div>
               <label className="flex items-center gap-2 self-end text-sm">

@@ -8,8 +8,8 @@ export type CreateChildLink = {
 export function CreateChildLinks({ links }: { links: CreateChildLink[] }) {
   if (links.length === 0) return null;
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3">
-      <div className="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase">
+    <div className="rounded-lg border border-border bg-card p-3">
+      <div className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
         Quick actions
       </div>
       <div className="flex flex-wrap gap-2">
@@ -17,7 +17,7 @@ export function CreateChildLinks({ links }: { links: CreateChildLink[] }) {
           <Link
             key={l.href}
             href={l.href}
-            className="cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-slate-50 hover:text-orange-700"
+            className="cursor-pointer rounded-md border border-input bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted hover:text-primary"
           >
             + {l.label}
           </Link>
@@ -37,7 +37,7 @@ export function NewDocButton({
   return (
     <Link
       href={href}
-      className="inline-flex cursor-pointer items-center rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+      className="inline-flex cursor-pointer items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       + {label}
     </Link>

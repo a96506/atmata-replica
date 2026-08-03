@@ -8,7 +8,7 @@ export function InventoryDemoToolbar() {
   return (
     <button
       type="button"
-      className="cursor-pointer rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-slate-200"
+      className="cursor-pointer rounded-lg bg-muted px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
       onClick={() => toast.message(t("refreshDemo"))}
     >
       {t("refresh")}
@@ -21,7 +21,7 @@ export function ShipmentNoteDemo({ refCode }: { refCode: string }) {
   return (
     <button
       type="button"
-      className="cursor-pointer text-xs text-orange-700 hover:underline"
+      className="cursor-pointer text-xs text-primary hover:underline"
       onClick={() => toast.message(t("delayNote", { ref: refCode }))}
     >
       {t("viewDelay")}

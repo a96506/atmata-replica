@@ -59,12 +59,12 @@ export default async function Page({
       totals={
         <div className="space-y-1">
           <div>
-            <div className="text-xs text-slate-500">Total</div>
+            <div className="text-xs text-muted-foreground">Total</div>
             <div className="text-lg font-semibold tabular-nums">
               {formatMoney(inv.total, inv.currency)}
             </div>
           </div>
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-muted-foreground">
             Paid <span className="tabular-nums">{formatMoney(inv.paid, inv.currency)}</span>
             {" · "}Balance{" "}
             <span className="tabular-nums">{formatMoney(balance, inv.currency)}</span>

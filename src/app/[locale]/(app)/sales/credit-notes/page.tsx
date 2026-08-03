@@ -36,14 +36,14 @@ export default async function Page({
             <Link
               key="n"
               href={`/${locale}/sales/credit-notes/${c.id}`}
-              className="font-medium text-orange-600 hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               {c.number}
             </Link>,
             <Link
               key="cr"
               href={`/${locale}/sales/returns/${c.customerReturnId}`}
-              className="text-orange-600 hover:underline"
+              className="text-primary hover:underline"
             >
               {c.customerReturnId}
             </Link>,
@@ -52,7 +52,7 @@ export default async function Page({
               <Link
                 key="i"
                 href={`/${locale}/sales/invoices/${c.invoiceId}`}
-                className="text-orange-600 hover:underline"
+                className="text-primary hover:underline"
               >
                 {c.invoiceId}
               </Link>

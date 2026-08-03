@@ -1,3 +1,6 @@
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+
 export type ValidationError = {
   field: string;
   message: string;
@@ -12,18 +15,18 @@ export function ValidationSummary({
 }) {
   if (errors.length === 0) return null;
   return (
-    <div
-      role="alert"
-      className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-900"
-    >
-      <div className="font-medium">{title}</div>
-      <ul className="mt-2 list-disc space-y-0.5 pl-5">
-        {errors.map((e, i) => (
-          <li key={`${e.field}-${i}`}>
-            <span className="font-mono text-xs">{e.field}</span> — {e.message}
-          </li>
-        ))}
-      </ul>
-    </div>
+    <Alert variant="destructive">
+      <AlertCircle />
+      <AlertTitle>{title}</AlertTitle>
+      <AlertDescription>
+        <ul className="list-disc ps-4">
+          {errors.map((e, i) => (
+            <li key={`${e.field}-${i}`}>
+              <span className="font-mono text-xs">{e.field}</span> — {e.message}
+            </li>
+          ))}
+        </ul>
+      </AlertDescription>
+    </Alert>
   );
 }

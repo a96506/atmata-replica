@@ -16,7 +16,7 @@ export function ReconDemoActions({
       {hasMatch && (
         <button
           type="button"
-          className="cursor-pointer rounded bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700"
+          className="cursor-pointer rounded bg-status-success-muted text-status-success-foreground ring-1 ring-status-success-border px-3 py-1 text-xs font-medium hover:bg-status-success/20"
           onClick={() => toast.success(`Match line ${bankLineId} (demo) · session ${sessionId}`)}
         >
           Match
@@ -24,7 +24,7 @@ export function ReconDemoActions({
       )}
       <button
         type="button"
-        className="cursor-pointer rounded bg-slate-200 px-3 py-1 text-xs font-medium text-slate-900 hover:bg-slate-300"
+        className="cursor-pointer rounded bg-muted px-3 py-1 text-xs font-medium text-foreground hover:bg-muted"
         onClick={() => toast.message(`Skip line ${bankLineId} (demo)`)}
       >
         Skip

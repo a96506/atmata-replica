@@ -53,7 +53,7 @@ export default async function Page({
       currentState={grn.state}
       totals={
         <div>
-          <div className="text-xs text-slate-500">Qty received</div>
+          <div className="text-xs text-muted-foreground">Qty received</div>
           <div className="text-lg font-semibold tabular-nums">{totalQty}</div>
         </div>
       }
@@ -86,7 +86,7 @@ export default async function Page({
                 render: (line) => {
                   const orig = grn.lines.find((g) => g.id === line.id);
                   return orig ? (
-                    <span className="font-mono text-xs text-slate-500">
+                    <span className="font-mono text-xs text-muted-foreground">
                       {orig.poLineId}
                     </span>
                   ) : null;

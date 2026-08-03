@@ -86,9 +86,9 @@ export default async function Page({
           id: "warehouses",
           label: `By warehouse (${byWarehouse.length})`,
           content: (
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <div className="overflow-x-auto rounded-xl border border-border">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium uppercase text-slate-500">
+                <thead className="border-b border-border bg-muted/50 text-xs font-medium uppercase text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3">Warehouse</th>
                     <th className="px-4 py-3 text-right">On hand</th>
@@ -96,7 +96,7 @@ export default async function Page({
                     <th className="px-4 py-3 text-right">Out moves</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {byWarehouse.map((r) => (
                     <tr key={r.warehouseId}>
                       <td className="px-4 py-3">{r.warehouseName}</td>
@@ -107,7 +107,7 @@ export default async function Page({
                   ))}
                   {byWarehouse.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-4 py-6 text-center text-sm text-slate-500">
+                      <td colSpan={4} className="px-4 py-6 text-center text-sm text-muted-foreground">
                         No stock recorded yet.
                       </td>
                     </tr>
@@ -121,9 +121,9 @@ export default async function Page({
           id: "moves",
           label: `Stock moves (${moves.length})`,
           content: (
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <div className="overflow-x-auto rounded-xl border border-border">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium uppercase text-slate-500">
+                <thead className="border-b border-border bg-muted/50 text-xs font-medium uppercase text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3">Date</th>
                     <th className="px-4 py-3">Warehouse</th>
@@ -134,7 +134,7 @@ export default async function Page({
                     <th className="px-4 py-3">Source</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {moves.map((m) => {
                     const hrefFn = SOURCE_HREF[m.sourceType];
                     return (
@@ -146,8 +146,8 @@ export default async function Page({
                             className={
                               "rounded-full px-2 py-0.5 text-xs font-medium " +
                               (m.direction === "in"
-                                ? "bg-emerald-100 text-emerald-900"
-                                : "bg-red-100 text-red-800")
+                                ? "bg-status-success-muted text-status-success-foreground"
+                                : "bg-status-danger-muted text-destructive")
                             }
                           >
                             {m.direction === "in" ? "IN" : "OUT"}
@@ -158,17 +158,17 @@ export default async function Page({
                           {m.qty}
                         </td>
                         <td className="px-4 py-3 text-right tabular-nums">{m.costPerUnit.toFixed(3)}</td>
-                        <td className="px-4 py-3 font-mono text-xs text-slate-500">{m.lotNumber ?? "—"}</td>
+                        <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{m.lotNumber ?? "—"}</td>
                         <td className="px-4 py-3 text-xs">
                           {hrefFn ? (
                             <Link
                               href={hrefFn(locale, m.sourceId)}
-                              className="text-orange-600 hover:underline"
+                              className="text-primary hover:underline"
                             >
                               {m.sourceType} · {m.sourceId}
                             </Link>
                           ) : (
-                            <span className="text-slate-500">
+                            <span className="text-muted-foreground">
                               {m.sourceType} · {m.sourceId}
                             </span>
                           )}
@@ -185,15 +185,15 @@ export default async function Page({
           id: "lots",
           label: `Lots (${lots.length})`,
           content: lots.length === 0 ? (
-            <div className="text-sm text-slate-500">
+            <div className="text-sm text-muted-foreground">
               {product.lotTracked
                 ? "No lot history yet."
                 : "This product is not lot-tracked."}
             </div>
           ) : (
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <div className="overflow-x-auto rounded-xl border border-border">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium uppercase text-slate-500">
+                <thead className="border-b border-border bg-muted/50 text-xs font-medium uppercase text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3">Lot</th>
                     <th className="px-4 py-3">By warehouse</th>
@@ -202,11 +202,11 @@ export default async function Page({
                     <th className="px-4 py-3">Last seen</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {lots.map((lot) => (
                     <tr key={lot.lotNumber}>
                       <td className="px-4 py-3 font-mono text-xs">{lot.lotNumber}</td>
-                      <td className="px-4 py-3 text-xs text-slate-600">
+                      <td className="px-4 py-3 text-xs text-muted-foreground">
                         {lot.byWarehouse
                           .map((w) => `${w.warehouseName}: ${w.onHand}`)
                           .join(" · ")}
@@ -227,8 +227,8 @@ export default async function Page({
           content: (
             <div className="space-y-4">
               {purchaseSpark.length > 1 ? (
-                <div className="rounded-lg border border-slate-200 bg-white p-3">
-                  <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+                <div className="rounded-lg border border-border bg-card p-3">
+                  <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Unit price over time
                   </div>
                   <SparkLine points={purchaseSpark} ariaLabel="Purchase unit price over time" />
@@ -241,7 +241,7 @@ export default async function Page({
                   ref: (
                     <Link
                       href={`/${locale}/purchasing/purchase-orders/${p.docId}`}
-                      className="text-orange-600 hover:underline"
+                      className="text-primary hover:underline"
                     >
                       {p.docNumber}
                     </Link>
@@ -260,8 +260,8 @@ export default async function Page({
           content: (
             <div className="space-y-4">
               {salesSpark.length > 1 ? (
-                <div className="rounded-lg border border-slate-200 bg-white p-3">
-                  <div className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+                <div className="rounded-lg border border-border bg-card p-3">
+                  <div className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Sale price over time
                   </div>
                   <SparkLine
@@ -279,7 +279,7 @@ export default async function Page({
                   ref: (
                     <Link
                       href={`/${locale}/sales/invoices/${s.docId}`}
-                      className="text-orange-600 hover:underline"
+                      className="text-primary hover:underline"
                     >
                       {s.docNumber}
                     </Link>
@@ -296,9 +296,9 @@ export default async function Page({
           id: "vendors",
           label: `Vendors (${vendors.length})`,
           content: (
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <div className="overflow-x-auto rounded-xl border border-border">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium uppercase text-slate-500">
+                <thead className="border-b border-border bg-muted/50 text-xs font-medium uppercase text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3">Vendor</th>
                     <th className="px-4 py-3 text-right">Qty</th>
@@ -307,7 +307,7 @@ export default async function Page({
                     <th className="px-4 py-3 text-right">POs</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {vendors.map((v) => (
                     <tr key={v.supplierId}>
                       <td className="px-4 py-3">{v.supplierName}</td>
@@ -326,9 +326,9 @@ export default async function Page({
           id: "customers",
           label: `Customers (${customers.length})`,
           content: (
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <div className="overflow-x-auto rounded-xl border border-border">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium uppercase text-slate-500">
+                <thead className="border-b border-border bg-muted/50 text-xs font-medium uppercase text-muted-foreground">
                   <tr>
                     <th className="px-4 py-3">Customer</th>
                     <th className="px-4 py-3 text-right">Qty</th>
@@ -337,7 +337,7 @@ export default async function Page({
                     <th className="px-4 py-3 text-right">Invoices</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {customers.map((c) => (
                     <tr key={c.customerId}>
                       <td className="px-4 py-3">{c.customerName}</td>
@@ -358,7 +358,7 @@ export default async function Page({
           content: (
             <div className="space-y-3">
               {aiCards.length === 0 ? (
-                <div className="text-sm text-slate-500">No notable patterns right now.</div>
+                <div className="text-sm text-muted-foreground">No notable patterns right now.</div>
               ) : (
                 aiCards.map((c, i) => (
                   <div
@@ -366,14 +366,14 @@ export default async function Page({
                     className={
                       "rounded-md border p-3 text-sm " +
                       (c.tone === "warn"
-                        ? "border-amber-200 bg-amber-50"
+                        ? "border-status-pending-border bg-status-pending-muted"
                         : c.tone === "critical"
-                          ? "border-red-200 bg-red-50"
-                          : "border-orange-200 bg-orange-50")
+                          ? "border-status-danger-border bg-status-danger-muted"
+                          : "border-primary/30 bg-primary/10")
                     }
                   >
-                    <div className="font-medium text-slate-900">{c.title}</div>
-                    <div className="mt-0.5 text-xs text-slate-700">{c.rationale}</div>
+                    <div className="font-medium text-foreground">{c.title}</div>
+                    <div className="mt-0.5 text-xs text-foreground">{c.rationale}</div>
                   </div>
                 ))
               )}
@@ -387,9 +387,9 @@ export default async function Page({
 
 function Kpi({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-3">
-      <div className="text-xs uppercase tracking-wide text-slate-500">{label}</div>
-      <div className="mt-1 text-lg font-semibold tabular-nums text-slate-900">{value}</div>
+    <div className="rounded-lg border border-border bg-card p-3">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div className="mt-1 text-lg font-semibold tabular-nums text-foreground">{value}</div>
     </div>
   );
 }
@@ -397,7 +397,7 @@ function Kpi({ label, value }: { label: string; value: number | string }) {
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
     <div>
-      <div className="text-xs text-slate-500">{label}</div>
+      <div className="text-xs text-muted-foreground">{label}</div>
       <div className="text-sm font-semibold tabular-nums">{value}</div>
     </div>
   );
@@ -416,9 +416,9 @@ function HistoryTable({
   }>;
 }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
+    <div className="overflow-x-auto rounded-xl border border-border">
       <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium uppercase text-slate-500">
+        <thead className="border-b border-border bg-muted/50 text-xs font-medium uppercase text-muted-foreground">
           <tr>
             <th className="px-4 py-3">Date</th>
             <th className="px-4 py-3">Partner</th>
@@ -428,10 +428,10 @@ function HistoryTable({
             <th className="px-4 py-3 text-right">Total</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-border">
           {rows.length === 0 ? (
             <tr>
-              <td colSpan={6} className="px-4 py-6 text-center text-sm text-slate-500">
+              <td colSpan={6} className="px-4 py-6 text-center text-sm text-muted-foreground">
                 No history yet.
               </td>
             </tr>

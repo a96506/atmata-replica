@@ -19,7 +19,7 @@ export function SaudiInvoicePrintButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-slate-50"
+        className="cursor-pointer rounded-md border border-input bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
       >
         Print invoice (EN/AR)
       </button>

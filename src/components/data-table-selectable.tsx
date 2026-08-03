@@ -30,7 +30,7 @@ export function SelectableDataTable({
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-800">
+      <div className="rounded-xl border border-dashed border-input bg-card p-8 text-center text-sm text-foreground">
         {emptyMessage}
       </div>
     );
@@ -58,13 +58,13 @@ export function SelectableDataTable({
   return (
     <div className="space-y-3">
       {selected.size > 0 ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm">
-          <span className="text-orange-900">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-primary/30 bg-primary/10 px-3 py-2 text-sm">
+          <span className="text-primary">
             <strong>{selected.size}</strong> selected
             <button
               type="button"
               onClick={clear}
-              className="ml-2 cursor-pointer text-xs text-orange-700 hover:underline"
+              className="ml-2 cursor-pointer text-xs text-primary hover:underline"
             >
               Clear
             </button>
@@ -72,9 +72,9 @@ export function SelectableDataTable({
           {renderBulkActions ? <span>{renderBulkActions(selectedArr, clear)}</span> : null}
         </div>
       ) : null}
-      <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium tracking-wide text-slate-700 uppercase">
+          <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-foreground uppercase">
             <tr>
               <th className="w-10 px-4 py-3">
                 <input
@@ -94,14 +94,14 @@ export function SelectableDataTable({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-border">
             {rows.map((cells, i) => {
               const id = rowIds[i];
               const isSel = selected.has(id);
               return (
                 <tr
                   key={id}
-                  className={isSel ? "bg-orange-50/40" : "hover:bg-slate-50"}
+                  className={isSel ? "bg-primary/10/40" : "hover:bg-muted"}
                 >
                   <td className="px-4 py-3">
                     <input

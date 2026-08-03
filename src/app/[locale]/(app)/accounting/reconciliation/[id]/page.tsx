@@ -6,10 +6,10 @@ import { ReconDemoActions } from "./recon-demo-actions";
 function confidenceBadge(v: number) {
   const pct = (v * 100).toFixed(0);
   if (v >= 0.9)
-    return <span className="rounded bg-green-50 px-2 py-0.5 text-xs font-medium text-green-800">{pct}%</span>;
+    return <span className="rounded bg-status-success-muted px-2 py-0.5 text-xs font-medium text-status-success-foreground">{pct}%</span>;
   if (v >= 0.7)
-    return <span className="rounded bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800">{pct}%</span>;
-  return <span className="rounded bg-red-50 px-2 py-0.5 text-xs font-medium text-red-800">{pct}%</span>;
+    return <span className="rounded bg-status-pending-muted px-2 py-0.5 text-xs font-medium text-status-pending-foreground">{pct}%</span>;
+  return <span className="rounded bg-status-danger-muted px-2 py-0.5 text-xs font-medium text-destructive">{pct}%</span>;
 }
 
 const COLUMNS = [
@@ -37,7 +37,7 @@ export default async function ReconciliationWorkspacePage({
   };
 
   const rows = data.suggestions.map((s) => [
-    <span key="ref" className="font-medium text-slate-900">
+    <span key="ref" className="font-medium text-foreground">
       {s.bank_ref || `#${s.bank_line_id}`}
     </span>,
     <span key="amt" className="tabular-nums">
@@ -48,7 +48,7 @@ export default async function ReconciliationWorkspacePage({
       {s.matched_amount > 0 ? s.matched_amount.toFixed(3) : "—"}
     </span>,
     confidenceBadge(s.confidence),
-    <span key="type" className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-800">
+    <span key="type" className="rounded bg-muted px-2 py-0.5 text-xs text-foreground">
       {s.match_type}
     </span>,
     <ReconDemoActions
@@ -62,11 +62,11 @@ export default async function ReconciliationWorkspacePage({
   return (
     <div className="space-y-6">
       <header>
-        <Link href="/accounting/reconciliation" className="text-sm text-slate-700 hover:underline">
+        <Link href="/accounting/reconciliation" className="text-sm text-foreground hover:underline">
           &larr; Reconciliation
         </Link>
-        <h1 className="mt-1 text-2xl font-semibold text-slate-900">Session #{data.session_id}</h1>
-        <p className="text-sm text-slate-700">
+        <h1 className="mt-1 text-2xl font-semibold text-foreground">Session #{data.session_id}</h1>
+        <p className="text-sm text-foreground">
           {data.total} suggestion{data.total !== 1 ? "s" : ""} · Page {data.page}
         </p>
       </header>

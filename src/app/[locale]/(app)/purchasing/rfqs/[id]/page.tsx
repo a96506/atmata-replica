@@ -52,9 +52,9 @@ export default async function Page({
           id: "lines",
           label: "Lines",
           content: (
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <div className="overflow-x-auto rounded-xl border border-border">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium tracking-wide text-slate-500 uppercase">
+                <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   <tr>
                     <th className="px-4 py-3">#</th>
                     <th className="px-4 py-3">Description</th>
@@ -62,13 +62,13 @@ export default async function Page({
                     <th className="px-4 py-3">From PR line(s)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {rfq.lines.map((l, i) => (
                     <tr key={l.id}>
-                      <td className="px-4 py-3 text-slate-500">{i + 1}</td>
+                      <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
                       <td className="px-4 py-3">{l.description}</td>
                       <td className="px-4 py-3 text-right tabular-nums">{l.qty}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-slate-500">
+                      <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
                         {l.prLineIds?.join(", ") ?? "—"}
                       </td>
                     </tr>
@@ -82,9 +82,9 @@ export default async function Page({
           id: "compare",
           label: `Compare quotes (${rfq.quotes.length})`,
           content: (
-            <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <div className="overflow-x-auto rounded-xl border border-border">
               <table className="w-full text-left text-sm">
-                <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium tracking-wide text-slate-500 uppercase">
+                <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   <tr>
                     <th className="px-4 py-3">Line</th>
                     {rfq.quotes.map((q) => {
@@ -94,11 +94,11 @@ export default async function Page({
                           key={q.id}
                           className={
                             "px-4 py-3 text-center " +
-                            (q.id === awardedQuoteId ? "bg-emerald-50 text-emerald-900" : "")
+                            (q.id === awardedQuoteId ? "bg-status-success-muted text-status-success-foreground" : "")
                           }
                         >
                           <div>{sup?.name ?? q.vendorId}</div>
-                          <div className="font-mono text-[10px] text-slate-500">
+                          <div className="font-mono text-[10px] text-muted-foreground">
                             {q.currency} · {q.lineQuotes[0]?.leadTimeDays ?? "?"}d
                           </div>
                         </th>
@@ -106,7 +106,7 @@ export default async function Page({
                     })}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-border">
                   {rfq.lines.map((line) => {
                     // Find lowest unit price across vendors for this line.
                     const prices = rfq.quotes
@@ -118,7 +118,7 @@ export default async function Page({
                         <td className="px-4 py-3">{line.description}</td>
                         {rfq.quotes.map((q) => {
                           const lq = q.lineQuotes.find((x) => x.rfqLineId === line.id);
-                          if (!lq) return <td key={q.id} className="px-4 py-3 text-center text-slate-400">—</td>;
+                          if (!lq) return <td key={q.id} className="px-4 py-3 text-center text-muted-foreground">—</td>;
                           const isLowest = lowest !== null && lq.unitPrice === lowest;
                           return (
                             <td
@@ -126,15 +126,15 @@ export default async function Page({
                               className={
                                 "px-4 py-3 text-center tabular-nums " +
                                 (q.id === awardedQuoteId
-                                  ? "bg-emerald-50 font-semibold text-emerald-900"
+                                  ? "bg-status-success-muted font-semibold text-status-success-foreground"
                                   : isLowest
-                                    ? "text-emerald-700"
+                                    ? "text-status-success-foreground"
                                     : "")
                               }
                             >
                               {lq.unitPrice.toFixed(3)}
                               {isLowest && q.id !== awardedQuoteId ? (
-                                <div className="text-[10px] font-normal text-emerald-600">lowest</div>
+                                <div className="text-[10px] font-normal text-status-success-foreground">lowest</div>
                               ) : null}
                             </td>
                           );
@@ -142,14 +142,14 @@ export default async function Page({
                       </tr>
                     );
                   })}
-                  <tr className="border-t border-slate-200 bg-slate-50">
-                    <td className="px-4 py-3 text-right font-medium text-slate-700">Total</td>
+                  <tr className="border-t border-border bg-muted/50">
+                    <td className="px-4 py-3 text-right font-medium text-foreground">Total</td>
                     {rfq.quotes.map((q) => (
                       <td
                         key={q.id}
                         className={
                           "px-4 py-3 text-center font-semibold tabular-nums " +
-                          (q.id === awardedQuoteId ? "bg-emerald-100 text-emerald-900" : "")
+                          (q.id === awardedQuoteId ? "bg-status-success-muted text-status-success-foreground" : "")
                         }
                       >
                         {q.total.toFixed(3)} {q.currency}
@@ -183,13 +183,13 @@ export default async function Page({
             suggestions={ai}
           />
           {rfq.award?.poId ? (
-            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm">
-              <div className="text-xs font-medium uppercase tracking-wide text-emerald-800">
+            <div className="rounded-lg border border-status-success-border bg-status-success-muted p-3 text-sm">
+              <div className="text-xs font-medium uppercase tracking-wide text-status-success-foreground">
                 Awarded
               </div>
               <Link
                 href={`/${locale}/purchasing/purchase-orders/${rfq.award.poId}`}
-                className="mt-1 inline-block font-medium text-emerald-900 hover:underline"
+                className="mt-1 inline-block font-medium text-status-success-foreground hover:underline"
               >
                 See PO →
               </Link>

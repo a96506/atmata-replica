@@ -87,7 +87,7 @@ export default async function Page({
       currentState={so.state}
       totals={
         <div>
-          <div className="text-xs text-slate-500">Total</div>
+          <div className="text-xs text-muted-foreground">Total</div>
           <div className="text-lg font-semibold tabular-nums">
             {formatMoney(so.total, so.currency)}
           </div>

@@ -55,17 +55,17 @@ export default async function Page({
   const matchPanel = (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <span className="text-sm font-semibold text-slate-900">3-way match</span>
+        <span className="text-sm font-semibold text-foreground">3-way match</span>
         <StateBadge state={bill.threeWayMatch} />
       </div>
       {bill.discrepancyReason ? (
-        <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-900">
+        <div className="rounded-md border border-status-danger-border bg-status-danger-muted p-3 text-sm text-destructive">
           {bill.discrepancyReason}
         </div>
       ) : null}
-      <div className="overflow-x-auto rounded-xl border border-slate-200">
+      <div className="overflow-x-auto rounded-xl border border-border">
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium tracking-wide text-slate-700 uppercase">
+          <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-foreground uppercase">
             <tr>
               <th className="px-4 py-3">Product</th>
               <th className="px-4 py-3 text-right">PO qty</th>
@@ -74,7 +74,7 @@ export default async function Page({
               <th className="px-4 py-3 text-right">Delta</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-border">
             {bill.lines.map((l) => {
               const poLine = po?.lines.find((p) => p.id === l.poLineId);
               const grnLine = grn?.lines.find((g) => g.id === l.grnLineId);
@@ -91,7 +91,7 @@ export default async function Page({
                   <td
                     className={
                       "px-4 py-3 text-right tabular-nums " +
-                      (delta === 0 ? "text-emerald-700" : "text-red-700")
+                      (delta === 0 ? "text-status-success-foreground" : "text-destructive")
                     }
                   >
                     {delta > 0 ? `+${delta}` : delta}
@@ -115,12 +115,12 @@ export default async function Page({
       totals={
         <div className="space-y-1">
           <div>
-            <div className="text-xs text-slate-500">Total</div>
+            <div className="text-xs text-muted-foreground">Total</div>
             <div className="text-lg font-semibold tabular-nums">
               {formatMoney(bill.total, bill.currency)}
             </div>
           </div>
-          <div className="text-xs text-slate-500">
+          <div className="text-xs text-muted-foreground">
             Paid <span className="tabular-nums">{formatMoney(bill.paid, bill.currency)}</span>
             {" · "}Balance{" "}
             <span className="tabular-nums">{formatMoney(balance, bill.currency)}</span>

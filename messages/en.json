@@ -302,6 +302,8 @@
     }
   },
   "settings": {
+    "overviewTitle": "Settings",
+    "overviewSubtitle": "Company setup, finance configuration, master data, and access control.",
     "title": "Settings · AI confidence thresholds",
     "subtitle": "Tune per-automation thresholds. Values below are illustrative.",
     "automation": "Automation",

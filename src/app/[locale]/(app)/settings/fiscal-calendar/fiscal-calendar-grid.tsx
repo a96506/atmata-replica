@@ -113,12 +113,12 @@ export function FiscalCalendarGrid({
         const locked = yearsLocked.includes(year);
         const allHardClosed = months.every((m) => m.status === "hard_closed");
         return (
-          <section key={year} className="rounded-xl border border-slate-200 bg-white p-4">
+          <section key={year} className="rounded-xl border border-border bg-card p-4">
             <header className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-semibold text-slate-900">FY {year}</h2>
+                <h2 className="text-base font-semibold text-foreground">FY {year}</h2>
                 {locked ? (
-                  <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                  <span className="rounded-full bg-status-danger-muted px-2 py-0.5 text-xs font-medium text-destructive">
                     Year locked
                   </span>
                 ) : null}
@@ -127,7 +127,7 @@ export function FiscalCalendarGrid({
                 type="button"
                 onClick={() => closeYear(year)}
                 disabled={locked || !allHardClosed}
-                className="cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                className="cursor-pointer rounded-md border border-input bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                 title={!allHardClosed ? "Hard-close every month first." : ""}
               >
                 Close year {year}
@@ -139,24 +139,24 @@ export function FiscalCalendarGrid({
                 .map((p) => {
                   const tone =
                     p.status === "hard_closed"
-                      ? "border-red-200 bg-red-50"
+                      ? "border-status-danger-border bg-status-danger-muted"
                       : p.status === "soft_closed"
-                        ? "border-amber-200 bg-amber-50"
-                        : "border-emerald-200 bg-emerald-50";
+                        ? "border-status-pending-border bg-status-pending-muted"
+                        : "border-status-success-border bg-status-success-muted";
                   return (
                     <div key={p.id} className={`rounded-md border p-2 text-xs ${tone}`}>
                       <div className="flex items-center justify-between">
-                        <div className="font-mono text-[11px] text-slate-700">
+                        <div className="font-mono text-[11px] text-foreground">
                           {String(p.month).padStart(2, "0")}/{p.year}
                         </div>
                         <span
                           className={
                             "rounded-full px-1.5 py-0.5 text-[10px] font-medium " +
                             (p.status === "hard_closed"
-                              ? "bg-red-100 text-red-800"
+                              ? "bg-status-danger-muted text-destructive"
                               : p.status === "soft_closed"
-                                ? "bg-amber-100 text-amber-900"
-                                : "bg-emerald-100 text-emerald-900")
+                                ? "bg-status-pending-muted text-status-pending-foreground"
+                                : "bg-status-success-muted text-status-success-foreground")
                           }
                         >
                           {p.status === "open"
@@ -172,7 +172,7 @@ export function FiscalCalendarGrid({
                             type="button"
                             onClick={() => setStatus(p, "soft_closed")}
                             disabled={locked}
-                            className="cursor-pointer rounded border border-amber-300 bg-white px-2 py-0.5 text-[10px] text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                            className="cursor-pointer rounded border border-status-pending-border bg-card px-2 py-0.5 text-[10px] text-status-pending-foreground hover:bg-status-pending-muted disabled:opacity-50"
                           >
                             Soft
                           </button>
@@ -182,7 +182,7 @@ export function FiscalCalendarGrid({
                             type="button"
                             onClick={() => setStatus(p, "hard_closed")}
                             disabled={locked}
-                            className="cursor-pointer rounded border border-red-300 bg-white px-2 py-0.5 text-[10px] text-red-800 hover:bg-red-100 disabled:opacity-50"
+                            className="cursor-pointer rounded border border-status-danger-border bg-card px-2 py-0.5 text-[10px] text-destructive hover:bg-status-danger-muted disabled:opacity-50"
                           >
                             Hard
                           </button>
@@ -192,7 +192,7 @@ export function FiscalCalendarGrid({
                             type="button"
                             onClick={() => setStatus(p, "open")}
                             disabled={locked}
-                            className="cursor-pointer rounded border border-emerald-300 bg-white px-2 py-0.5 text-[10px] text-emerald-900 hover:bg-emerald-100 disabled:opacity-50"
+                            className="cursor-pointer rounded border border-status-success-border bg-card px-2 py-0.5 text-[10px] text-status-success-foreground hover:bg-status-success-muted disabled:opacity-50"
                           >
                             Open
                           </button>

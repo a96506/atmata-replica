@@ -1,5 +1,18 @@
 import type { ReactNode } from "react";
+import { Inbox } from "lucide-react";
+import {
+  Empty as EmptyPrimitive,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
+/**
+ * Thin wrapper over the shared Empty primitive, preserving the existing
+ * `title` / `description` / `action` call signature used across pages.
+ */
 export function Empty({
   title,
   description,
@@ -10,12 +23,15 @@ export function Empty({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
-      <div className="text-sm font-medium text-slate-900">{title}</div>
-      {description ? (
-        <div className="mt-1 text-sm text-slate-600">{description}</div>
-      ) : null}
-      {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
-    </div>
+    <EmptyPrimitive className="border border-dashed">
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <Inbox />
+        </EmptyMedia>
+        <EmptyTitle>{title}</EmptyTitle>
+        {description ? <EmptyDescription>{description}</EmptyDescription> : null}
+      </EmptyHeader>
+      {action ? <EmptyContent>{action}</EmptyContent> : null}
+    </EmptyPrimitive>
   );
 }

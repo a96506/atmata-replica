@@ -40,11 +40,11 @@ export default async function Page({
             <Link
               key="n"
               href={`/${locale}/purchasing/rfqs/${r.id}`}
-              className="font-medium text-orange-600 hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               {r.number}
             </Link>,
-            <span key="p" className="font-mono text-xs text-slate-500">
+            <span key="p" className="font-mono text-xs text-muted-foreground">
               {r.prIds.join(", ") || "—"}
             </span>,
             r.invitedVendorIds.length,

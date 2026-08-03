@@ -33,21 +33,21 @@ export default async function Page({
   ]);
 
   const allocations = (
-    <div className="overflow-x-auto rounded-xl border border-slate-200">
+    <div className="overflow-x-auto rounded-xl border border-border">
       <table className="w-full text-left text-sm">
-        <thead className="border-b border-slate-100 bg-slate-50 text-xs font-medium tracking-wide text-slate-700 uppercase">
+        <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-foreground uppercase">
           <tr>
             <th className="px-4 py-3">Invoice</th>
             <th className="px-4 py-3 text-right">Allocated</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-slate-100">
+        <tbody className="divide-y divide-border">
           {rcp.allocations.map((a) => (
             <tr key={a.invoiceId}>
               <td className="px-4 py-3">
                 <Link
                   href={`/${locale}/sales/invoices/${a.invoiceId}`}
-                  className="text-orange-600 hover:underline"
+                  className="text-primary hover:underline"
                 >
                   {a.invoiceId}
                 </Link>
@@ -71,7 +71,7 @@ export default async function Page({
       currentState={rcp.state}
       totals={
         <div>
-          <div className="text-xs text-slate-500">Amount</div>
+          <div className="text-xs text-muted-foreground">Amount</div>
           <div className="text-lg font-semibold tabular-nums">
             {formatMoney(rcp.amount, rcp.currency)}
           </div>

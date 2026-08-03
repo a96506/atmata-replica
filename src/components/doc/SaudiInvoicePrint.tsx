@@ -40,25 +40,25 @@ export function SaudiInvoicePrint({
   const subtotal = invoice.lines.reduce((s, l) => s + l.qty * l.unitPrice, 0);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 print:relative print:inset-auto print:z-auto print:bg-transparent print:p-0">
-      <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-xl border border-slate-200 bg-white shadow-xl print:max-h-none print:rounded-none print:border-0 print:shadow-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 print:relative print:inset-auto print:z-auto print:bg-transparent print:p-0">
+      <div className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-xl border border-border bg-card shadow-xl print:max-h-none print:rounded-none print:border-0 print:shadow-none">
         {/* Toolbar — hidden in print. */}
-        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-3 print:hidden">
-          <h2 className="text-sm font-semibold text-slate-900">
+        <header className="sticky top-0 z-10 flex items-center justify-between border-b border-border bg-card px-5 py-3 print:hidden">
+          <h2 className="text-sm font-semibold text-foreground">
             Print preview · Bilingual SA invoice
           </h2>
           <div className="flex gap-2">
             <button
               type="button"
               onClick={() => window.print()}
-              className="cursor-pointer rounded-md bg-orange-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-orange-700"
+              className="cursor-pointer rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary"
             >
               Print
             </button>
             <button
               type="button"
               onClick={onClose}
-              className="cursor-pointer rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-900 hover:bg-slate-50"
+              className="cursor-pointer rounded-md border border-input bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted"
             >
               Close
             </button>
@@ -67,43 +67,43 @@ export function SaudiInvoicePrint({
 
         {/* Printable area. */}
         <div className="grid gap-6 p-6 print:p-0">
-          <div className="grid grid-cols-2 gap-4 border-b border-slate-200 pb-4">
+          <div className="grid grid-cols-2 gap-4 border-b border-border pb-4">
             <div>
-              <div className="text-xs uppercase text-slate-500">Seller / البائع</div>
-              <div className="font-semibold text-slate-900">{company.name}</div>
-              <div className="text-xs text-slate-600" dir="rtl">
+              <div className="text-xs uppercase text-muted-foreground">Seller / البائع</div>
+              <div className="font-semibold text-foreground">{company.name}</div>
+              <div className="text-xs text-muted-foreground" dir="rtl">
                 الشركة: {company.name}
               </div>
-              <div className="mt-1 text-xs text-slate-600">VAT: {company.vatNumber}</div>
-              <div className="text-xs text-slate-600" dir="rtl">
+              <div className="mt-1 text-xs text-muted-foreground">VAT: {company.vatNumber}</div>
+              <div className="text-xs text-muted-foreground" dir="rtl">
                 الرقم الضريبي: {company.vatNumber}
               </div>
             </div>
             <div className="text-right">
-              <div className="text-xs uppercase text-slate-500">Invoice / فاتورة</div>
+              <div className="text-xs uppercase text-muted-foreground">Invoice / فاتورة</div>
               <div className="font-mono text-sm">{invoice.number}</div>
-              <div className="text-xs text-slate-600">Date: {invoice.date}</div>
-              <div className="text-xs text-slate-600" dir="rtl">
+              <div className="text-xs text-muted-foreground">Date: {invoice.date}</div>
+              <div className="text-xs text-muted-foreground" dir="rtl">
                 التاريخ: {invoice.date}
               </div>
-              <div className="text-xs text-slate-600">Due: {invoice.dueDate}</div>
-              <div className="text-xs text-slate-600" dir="rtl">
+              <div className="text-xs text-muted-foreground">Due: {invoice.dueDate}</div>
+              <div className="text-xs text-muted-foreground" dir="rtl">
                 الاستحقاق: {invoice.dueDate}
               </div>
             </div>
           </div>
 
           <div>
-            <div className="text-xs uppercase text-slate-500">Buyer / المشتري</div>
-            <div className="font-semibold text-slate-900">{customer?.name ?? "—"}</div>
-            <div className="text-xs text-slate-600">VAT: {customer?.vatNumber ?? "—"}</div>
-            <div className="text-xs text-slate-600" dir="rtl">
+            <div className="text-xs uppercase text-muted-foreground">Buyer / المشتري</div>
+            <div className="font-semibold text-foreground">{customer?.name ?? "—"}</div>
+            <div className="text-xs text-muted-foreground">VAT: {customer?.vatNumber ?? "—"}</div>
+            <div className="text-xs text-muted-foreground" dir="rtl">
               الرقم الضريبي: {customer?.vatNumber ?? "—"}
             </div>
           </div>
 
           <table className="w-full text-sm">
-            <thead className="border-b border-slate-300 text-xs uppercase text-slate-500">
+            <thead className="border-b border-input text-xs uppercase text-muted-foreground">
               <tr>
                 <th className="px-2 py-2 text-left">Description / الوصف</th>
                 <th className="px-2 py-2 text-right">Qty / الكمية</th>
@@ -111,7 +111,7 @@ export function SaudiInvoicePrint({
                 <th className="px-2 py-2 text-right">Total / الإجمالي</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-border">
               {invoice.lines.map((l) => (
                 <tr key={l.id}>
                   <td className="px-2 py-2">{l.description}</td>
@@ -123,15 +123,15 @@ export function SaudiInvoicePrint({
                 </tr>
               ))}
             </tbody>
-            <tfoot className="border-t border-slate-200 text-sm">
+            <tfoot className="border-t border-border text-sm">
               <tr>
-                <td colSpan={3} className="px-2 py-2 text-right text-slate-500">
+                <td colSpan={3} className="px-2 py-2 text-right text-muted-foreground">
                   Subtotal / الإجمالي الفرعي
                 </td>
                 <td className="px-2 py-2 text-right tabular-nums">{subtotal.toFixed(3)}</td>
               </tr>
               <tr>
-                <td colSpan={3} className="px-2 py-2 text-right text-slate-500">
+                <td colSpan={3} className="px-2 py-2 text-right text-muted-foreground">
                   VAT / ضريبة القيمة المضافة
                 </td>
                 <td className="px-2 py-2 text-right tabular-nums">
@@ -149,7 +149,7 @@ export function SaudiInvoicePrint({
             </tfoot>
           </table>
 
-          <div className="border-t border-slate-200 pt-4">
+          <div className="border-t border-border pt-4">
             <FatooraQrPlaceholder invoice={invoice} sellerVat={company.vatNumber} />
           </div>
         </div>

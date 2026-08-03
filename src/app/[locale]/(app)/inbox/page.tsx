@@ -1,12 +1,21 @@
 import { getTranslations } from "next-intl/server";
 import { InboxRowActions } from "./inbox-row-actions";
 import { DEMO_INBOX } from "@/lib/demo-data";
+import { PageHeader } from "@/components/app/PageHeader";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { Empty } from "@/components/state/Empty";
 
+/**
+ * Four-step ramp from neutral to destructive so triage order reads at a glance.
+ * Previously `high` reused the primary tint, which made it read as an accent
+ * rather than a step above `medium`.
+ */
 const SEVERITY_BADGE: Record<string, string> = {
-  low: "bg-slate-100 text-slate-800",
-  medium: "bg-amber-100 text-amber-800",
-  high: "bg-orange-100 text-orange-800",
-  critical: "bg-red-100 text-red-800",
+  low: "bg-muted text-muted-foreground",
+  medium: "bg-status-info-muted text-status-info-foreground",
+  high: "bg-status-pending-muted text-status-pending-foreground",
+  critical: "bg-status-danger-muted text-destructive",
 };
 
 const SOURCE_LABEL: Record<string, string> = {
@@ -23,71 +32,79 @@ export default async function InboxPage() {
   const data = DEMO_INBOX;
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900">{t("title")}</h1>
-          <p className="text-sm text-slate-700">{t("subtitle")}</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          {Object.entries(data.by_source).map(([k, v]) => (
-            <span
-              key={k}
-              className="rounded-full bg-orange-50 px-3 py-1 font-medium text-orange-800"
-            >
-              {SOURCE_LABEL[k] ?? k}: {v}
-            </span>
-          ))}
-        </div>
-      </header>
+    <div className="flex flex-col gap-6">
+      <PageHeader
+        title={t("title")}
+        description={t("subtitle")}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            {Object.entries(data.by_source).map(([k, v]) => (
+              <Badge key={k} variant="secondary" className="font-medium">
+                {SOURCE_LABEL[k] ?? k}
+                <span className="text-muted-foreground ms-1 tabular-nums">
+                  {v}
+                </span>
+              </Badge>
+            ))}
+          </div>
+        }
+      />
 
       {data.items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-12 text-center">
-          <p className="text-lg font-medium text-slate-900">{t("empty")}</p>
-          <p className="mt-1 text-sm text-slate-600">{t("emptyHint")}</p>
-        </div>
+        <Empty title={t("empty")} description={t("emptyHint")} />
       ) : (
-        <ul className="space-y-3">
+        <ul className="flex flex-col gap-3">
           {data.items.map((item) => (
-            <li
-              key={`${item.source}-${item.id}`}
-              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow duration-200 hover:shadow-md"
-            >
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-800">
-                      {SOURCE_LABEL[item.source] ?? item.source}
-                    </span>
-                    {item.severity && (
-                      <span
-                        className={`rounded px-2 py-0.5 text-xs font-medium ${SEVERITY_BADGE[item.severity] ?? "bg-slate-100 text-slate-800"}`}
-                      >
-                        {item.severity}
-                      </span>
-                    )}
-                    {item.confidence !== null && item.confidence !== undefined && (
-                      <span className="text-xs text-slate-600">
-                        {t("confidence")} {(item.confidence * 100).toFixed(0)}%
-                      </span>
+            <li key={`${item.source}-${item.id}`}>
+              <Card className="py-0 transition-shadow hover:shadow-md">
+                <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline">
+                        {SOURCE_LABEL[item.source] ?? item.source}
+                      </Badge>
+                      {item.severity && (
+                        <Badge
+                          className={
+                            SEVERITY_BADGE[item.severity] ??
+                            "bg-muted text-muted-foreground"
+                          }
+                        >
+                          {item.severity}
+                        </Badge>
+                      )}
+                      {item.confidence !== null &&
+                        item.confidence !== undefined && (
+                          <span className="text-muted-foreground text-xs tabular-nums">
+                            {t("confidence")}{" "}
+                            {(item.confidence * 100).toFixed(0)}%
+                          </span>
+                        )}
+                    </div>
+                    <h3 className="text-sm font-semibold text-pretty">
+                      {item.title}
+                    </h3>
+                    {item.ai_reasoning && (
+                      <p className="text-muted-foreground line-clamp-2 text-sm">
+                        {item.ai_reasoning}
+                      </p>
                     )}
                   </div>
-                  <h3 className="mt-1 text-sm font-semibold text-slate-900">{item.title}</h3>
-                  {item.ai_reasoning && (
-                    <p className="mt-1 line-clamp-2 text-sm text-slate-700">{item.ai_reasoning}</p>
-                  )}
-                </div>
-                <div className="flex flex-col items-stretch gap-2 sm:items-end">
-                  <InboxRowActions
-                    source={item.source}
-                    id={item.id}
-                    sourceUrl={item.source_url}
-                  />
-                  <time className="text-xs text-slate-500" dateTime={item.created_at}>
-                    {new Date(item.created_at).toLocaleString()}
-                  </time>
-                </div>
-              </div>
+                  <div className="flex flex-col items-stretch gap-2 sm:items-end">
+                    <InboxRowActions
+                      source={item.source}
+                      id={item.id}
+                      sourceUrl={item.source_url}
+                    />
+                    <time
+                      className="text-muted-foreground text-xs"
+                      dateTime={item.created_at}
+                    >
+                      {new Date(item.created_at).toLocaleString()}
+                    </time>
+                  </div>
+                </CardContent>
+              </Card>
             </li>
           ))}
         </ul>

@@ -41,7 +41,7 @@ export default async function Page({
             <Link
               key="n"
               href={`/${locale}/sales/orders/${s.id}`}
-              className="font-medium text-orange-600 hover:underline"
+              className="font-medium text-primary hover:underline"
             >
               {s.number}
             </Link>,
@@ -54,7 +54,7 @@ export default async function Page({
             <span key="s" className="flex items-center gap-2">
               <StateBadge state={s.state} />
               {s.blockedReason ? (
-                <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800">
+                <span className="rounded-full bg-status-danger-muted px-2 py-0.5 text-xs font-medium text-destructive">
                   blocked
                 </span>
               ) : null}

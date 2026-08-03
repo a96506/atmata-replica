@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import type { Action } from "@/lib/state-machines";
 
 export type ActionBarProps = {
@@ -10,6 +10,13 @@ export type ActionBarProps = {
   resolveLabel?: (action: Action) => string;
 };
 
+/**
+ * Renders the legal state-machine transitions for a document.
+ *
+ * The first non-destructive action is the visual primary — in an ERP the
+ * expected next step (submit → approve → post) should be unmistakable, with
+ * secondary and destructive transitions clearly subordinate.
+ */
 export function ActionBar({
   actions,
   onAction,
@@ -18,28 +25,33 @@ export function ActionBar({
 }: ActionBarProps) {
   if (actions.length === 0) {
     return (
-      <div className="text-xs text-slate-500">
+      <p className="text-muted-foreground text-xs">
         No actions available at this state.
-      </div>
+      </p>
     );
   }
+
+  const primaryIndex = actions.findIndex((a) => !a.destructive);
+
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {actions.map((a) => (
-        <button
-          key={a.id}
+      {actions.map((action, index) => (
+        <Button
+          key={action.id}
           type="button"
+          size="sm"
+          variant={
+            action.destructive
+              ? "destructive"
+              : index === primaryIndex
+                ? "default"
+                : "outline"
+          }
           disabled={disabled}
-          onClick={() => onAction(a)}
-          className={cn(
-            "cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 disabled:cursor-not-allowed disabled:opacity-50",
-            a.destructive
-              ? "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500"
-              : "bg-orange-600 text-white hover:bg-orange-700 focus-visible:ring-orange-500",
-          )}
+          onClick={() => onAction(action)}
         >
-          {resolveLabel ? resolveLabel(a) : a.label}
-        </button>
+          {resolveLabel ? resolveLabel(action) : action.label}
+        </Button>
       ))}
     </div>
   );

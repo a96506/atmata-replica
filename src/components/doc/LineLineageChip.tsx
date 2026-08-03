@@ -22,17 +22,17 @@ export function LineLineageChip({ ordered, flowed, label = "received" }: LineLin
   const pct = ordered > 0 ? Math.min(100, (flowed / ordered) * 100) : 0;
   const tone =
     pct >= 100
-      ? "bg-emerald-500"
+      ? "bg-status-success"
       : pct > 0
-        ? "bg-amber-500"
-        : "bg-slate-300";
+        ? "bg-status-pending"
+        : "bg-muted";
 
   return (
     <span
-      className="inline-flex items-center gap-2 align-middle text-xs text-slate-600"
+      className="inline-flex items-center gap-2 align-middle text-xs text-muted-foreground"
       title={`${flowed} of ${ordered} ${label}`}
     >
-      <span className="relative inline-block h-1.5 w-12 overflow-hidden rounded-full bg-slate-200">
+      <span className="relative inline-block h-1.5 w-12 overflow-hidden rounded-full bg-muted">
         <span
           className={`absolute inset-y-0 left-0 ${tone}`}
           style={{ width: `${pct}%` }}

@@ -1,9 +1,12 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Plus_Jakarta_Sans } from "next/font/google";
-import { Toaster } from "@/components/toast";
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { DensityProvider } from "@/components/providers/density-provider";
 import { routing } from "@/i18n/routing";
 
 const plusJakarta = Plus_Jakarta_Sans({
@@ -15,6 +18,15 @@ const plusJakarta = Plus_Jakarta_Sans({
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
+
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fafafa" },
+    { media: "(prefers-color-scheme: dark)", color: "#1c1c1f" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+};
 
 export async function generateMetadata({
   params,
@@ -46,12 +58,22 @@ export default async function LocaleLayout({
   const dir = locale === "ar" ? "rtl" : "ltr";
 
   return (
-    <html lang={locale} dir={dir} className={plusJakarta.variable}>
-      <body className="min-h-screen bg-slate-50 font-sans text-slate-900 antialiased">
-        <NextIntlClientProvider messages={messages}>
-          {children}
-          <Toaster position="top-right" richColors closeButton />
-        </NextIntlClientProvider>
+    <html
+      lang={locale}
+      dir={dir}
+      data-density="compact"
+      className={`${plusJakarta.variable} bg-background`}
+      suppressHydrationWarning
+    >
+      <body className="min-h-screen bg-background font-sans text-foreground antialiased">
+        <ThemeProvider>
+          <DensityProvider>
+            <NextIntlClientProvider messages={messages}>
+              <TooltipProvider delayDuration={300}>{children}</TooltipProvider>
+              <Toaster position={dir === "rtl" ? "top-left" : "top-right"} richColors closeButton />
+            </NextIntlClientProvider>
+          </DensityProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -1,10 +1,20 @@
 "use client";
 
 import * as React from "react";
+import { Bell } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import { DEMO_INBOX } from "@/lib/demo-data";
 import { AUDIT_EVENTS } from "@/mocks/seed/audit";
 import { listQueuedActions, type QueuedActionRecord } from "@/lib/api/ai";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 /**
  * NotificationsBell — top-bar dropdown grouping recent activity.
@@ -82,125 +92,136 @@ export function NotificationsBell() {
   };
 
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="relative cursor-pointer rounded-md px-2 py-1 text-slate-700 hover:bg-slate-100"
-        aria-label="Notifications"
-      >
-        <span aria-hidden className="text-lg">🔔</span>
-        {unread > 0 ? (
-          <span className="absolute -top-0.5 -right-0.5 rounded-full bg-orange-500 px-1.5 text-[10px] font-medium text-white">
-            {unread}
-          </span>
-        ) : null}
-      </button>
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative"
+          aria-label={
+            unread > 0 ? `Notifications, ${unread} unread` : "Notifications"
+          }
+        >
+          <Bell />
+          {unread > 0 ? (
+            <span className="bg-primary text-primary-foreground absolute end-0.5 top-0.5 flex size-4 items-center justify-center rounded-full text-[10px] font-semibold tabular-nums">
+              {unread > 9 ? "9+" : unread}
+            </span>
+          ) : null}
+        </Button>
+      </PopoverTrigger>
 
-      {open ? (
-        <>
-          <div
-            className="fixed inset-0 z-30"
-            onClick={() => setOpen(false)}
-            aria-hidden
-          />
-          <div className="absolute right-0 z-40 mt-2 w-80 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
-            <header className="flex items-center justify-between border-b border-slate-100 px-3 py-2">
-              <div className="text-sm font-semibold text-slate-900">Notifications</div>
-              {unread > 0 ? (
-                <button
-                  type="button"
-                  onClick={markAllRead}
-                  className="cursor-pointer text-xs text-orange-600 hover:underline"
-                >
-                  Mark all read
-                </button>
-              ) : null}
-            </header>
+      <PopoverContent align="end" className="w-[22rem] p-0">
+        <div className="flex items-center justify-between px-3 py-2">
+          <span className="text-sm font-semibold">Notifications</span>
+          {unread > 0 ? (
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0 text-xs"
+              onClick={markAllRead}
+            >
+              Mark all read
+            </Button>
+          ) : null}
+        </div>
+        <Separator />
 
-            <div className="max-h-[60vh] overflow-y-auto">
-              <Section title={`Inbox (${inboxItems.length})`}>
-                {inboxItems.length === 0 ? (
-                  <Empty>All caught up.</Empty>
-                ) : (
-                  inboxItems.map((i) => (
-                    <Row
-                      key={i.id}
-                      title={i.title}
-                      subtitle={`${i.source} · ${new Date(i.created_at).toLocaleString()}`}
-                      tone={i.severity === "high" ? "red" : i.severity === "medium" ? "amber" : "slate"}
-                      onClick={() => go(`/${locale}/inbox`)}
-                    />
-                  ))
-                )}
-              </Section>
+        <ScrollArea className="max-h-[60vh]">
+          <Section title={`Inbox (${inboxItems.length})`}>
+            {inboxItems.length === 0 ? (
+              <EmptyRow>All caught up.</EmptyRow>
+            ) : (
+              inboxItems.map((i) => (
+                <Row
+                  key={i.id}
+                  title={i.title}
+                  subtitle={`${i.source} · ${new Date(i.created_at).toLocaleString()}`}
+                  tone={
+                    i.severity === "high"
+                      ? "danger"
+                      : i.severity === "medium"
+                        ? "warning"
+                        : "muted"
+                  }
+                  onClick={() => go(`/${locale}/inbox`)}
+                />
+              ))
+            )}
+          </Section>
 
-              <Section title={`Bot-proposed (${queued.length})`}>
-                {queued.length === 0 ? (
-                  <Empty>No queued actions yet.</Empty>
-                ) : (
-                  queued.slice(0, 6).map((q) => (
-                    <Row
-                      key={q.id}
-                      title={q.label}
-                      subtitle={`bot-proposed · ${new Date(q.queuedAt).toLocaleString()}`}
-                      tone="amber"
-                      onClick={() => go(`/${locale}/inbox`)}
-                    />
-                  ))
-                )}
-              </Section>
+          <Section title={`Bot-proposed (${queued.length})`}>
+            {queued.length === 0 ? (
+              <EmptyRow>No queued actions yet.</EmptyRow>
+            ) : (
+              queued.slice(0, 6).map((q) => (
+                <Row
+                  key={q.id}
+                  title={q.label}
+                  subtitle={`bot-proposed · ${new Date(q.queuedAt).toLocaleString()}`}
+                  tone="warning"
+                  onClick={() => go(`/${locale}/inbox`)}
+                />
+              ))
+            )}
+          </Section>
 
-              <Section title="Recent audit">
-                {recentAudit.length === 0 ? (
-                  <Empty>No audit events.</Empty>
-                ) : (
-                  recentAudit.map((e) => {
-                    const hrefFn = DOC_HREF[e.docType];
-                    const subtitle = `${e.docType} · ${e.fromState ?? "—"} → ${e.toState} · ${new Date(e.at).toLocaleDateString()}`;
-                    return (
-                      <Row
-                        key={`${e.docId}_${e.at}`}
-                        title={`${e.docType.toUpperCase()} ${e.docId}`}
-                        subtitle={subtitle}
-                        tone="slate"
-                        onClick={() => hrefFn && go(hrefFn(locale, e.docId))}
-                      />
-                    );
-                  })
-                )}
-              </Section>
-            </div>
+          <Section title="Recent audit">
+            {recentAudit.length === 0 ? (
+              <EmptyRow>No audit events.</EmptyRow>
+            ) : (
+              recentAudit.map((e) => {
+                const hrefFn = DOC_HREF[e.docType];
+                const subtitle = `${e.docType} · ${e.fromState ?? "—"} → ${e.toState} · ${new Date(e.at).toLocaleDateString()}`;
+                return (
+                  <Row
+                    key={`${e.docId}_${e.at}`}
+                    title={`${e.docType.toUpperCase()} ${e.docId}`}
+                    subtitle={subtitle}
+                    tone="muted"
+                    onClick={() => hrefFn && go(hrefFn(locale, e.docId))}
+                  />
+                );
+              })
+            )}
+          </Section>
+        </ScrollArea>
 
-            <footer className="border-t border-slate-100 bg-slate-50 px-3 py-2 text-center">
-              <button
-                type="button"
-                onClick={() => go(`/${locale}/inbox`)}
-                className="cursor-pointer text-xs font-medium text-orange-600 hover:underline"
-              >
-                Open full inbox →
-              </button>
-            </footer>
-          </div>
-        </>
-      ) : null}
-    </div>
+        <Separator />
+        <div className="p-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full"
+            onClick={() => go(`/${locale}/inbox`)}
+          >
+            Open full inbox
+          </Button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <section>
-      <div className="border-b border-slate-100 bg-slate-50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+      <div className="bg-muted/50 text-muted-foreground px-3 py-1.5 text-[10px] font-semibold tracking-wide uppercase">
         {title}
       </div>
-      <div className="divide-y divide-slate-100">{children}</div>
+      <div className="divide-border divide-y">{children}</div>
     </section>
   );
 }
 
-function Empty({ children }: { children: React.ReactNode }) {
-  return <div className="px-3 py-3 text-xs text-slate-500">{children}</div>;
+function EmptyRow({ children }: { children: React.ReactNode }) {
+  return <div className="text-muted-foreground px-3 py-3 text-xs">{children}</div>;
 }
 
 function Row({
@@ -211,25 +232,27 @@ function Row({
 }: {
   title: string;
   subtitle: string;
-  tone: "red" | "amber" | "slate";
+  tone: "danger" | "warning" | "muted";
   onClick: () => void;
 }) {
-  const dot =
-    tone === "red"
-      ? "bg-red-500"
-      : tone === "amber"
-        ? "bg-amber-500"
-        : "bg-slate-300";
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex w-full cursor-pointer items-start gap-2 px-3 py-2 text-left hover:bg-slate-50"
+      className="hover:bg-accent focus-visible:ring-ring flex w-full cursor-pointer items-start gap-2 px-3 py-2 text-start transition-colors focus-visible:ring-2 focus-visible:outline-none"
     >
-      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${dot}`} aria-hidden />
+      <span
+        className={cn(
+          "mt-1.5 size-2 shrink-0 rounded-full",
+          tone === "danger" && "bg-status-danger-foreground",
+          tone === "warning" && "bg-status-pending-foreground",
+          tone === "muted" && "bg-muted-foreground/40",
+        )}
+        aria-hidden
+      />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm text-slate-900">{title}</div>
-        <div className="truncate text-xs text-slate-500">{subtitle}</div>
+        <div className="truncate text-sm">{title}</div>
+        <div className="text-muted-foreground truncate text-xs">{subtitle}</div>
       </div>
     </button>
   );

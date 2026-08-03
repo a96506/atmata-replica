@@ -35,14 +35,14 @@ export default async function Page() {
             className={
               "rounded-full px-2 py-0.5 text-xs font-medium " +
               (a.type === "asset"
-                ? "bg-emerald-100 text-emerald-900"
+                ? "bg-status-success-muted text-status-success-foreground"
                 : a.type === "liability"
-                  ? "bg-red-100 text-red-800"
+                  ? "bg-status-danger-muted text-destructive"
                   : a.type === "equity"
-                    ? "bg-purple-100 text-purple-900"
+                    ? "bg-status-info-muted text-status-info-foreground"
                     : a.type === "revenue"
-                      ? "bg-blue-100 text-blue-900"
-                      : "bg-amber-100 text-amber-900")
+                      ? "bg-status-info-muted text-status-info-foreground"
+                      : "bg-status-pending-muted text-status-pending-foreground")
             }
           >
             {a.type}

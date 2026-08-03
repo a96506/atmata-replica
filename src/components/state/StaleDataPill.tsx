@@ -1,6 +1,8 @@
 "use client";
 
+import { RotateCw } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 export function StaleDataPill({
   updatedAt,
@@ -20,16 +22,19 @@ export function StaleDataPill({
         : diffMin < 1440
           ? `${Math.floor(diffMin / 60)} h ago`
           : `${Math.floor(diffMin / 1440)} d ago`;
+
   return (
-    <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600">
+    <span className="text-muted-foreground inline-flex items-center gap-1">
       <span>Updated {text}</span>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => router.refresh()}
-        className="cursor-pointer rounded-full bg-slate-100 px-2 py-0.5 font-medium text-slate-900 hover:bg-slate-200"
+        className="h-5 gap-1 px-1.5 text-xs"
       >
+        <RotateCw className="size-3" />
         {label}
-      </button>
-    </div>
+      </Button>
+    </span>
   );
 }
