@@ -1,6 +1,9 @@
 "use client";
 
 import * as React from "react";
+import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Kbd } from "@/components/ui/kbd";
 import { GlobalSearch } from "./GlobalSearch";
 
 const GlobalSearchContext = React.createContext<{
@@ -38,15 +41,27 @@ export function GlobalSearchTrigger() {
   const ctx = useGlobalSearch();
   if (!ctx) return null;
   return (
-    <button
-      type="button"
-      onClick={ctx.open}
-      className="hidden cursor-pointer items-center gap-2 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 hover:bg-slate-50 md:inline-flex"
-      aria-label="Open global search"
-    >
-      <span aria-hidden>⌕</span>
-      <span>Search</span>
-      <span className="ml-1 rounded bg-slate-100 px-1 font-mono text-[10px] text-slate-500">⌘K</span>
-    </button>
+    <>
+      {/* Wide screens: a search affordance that advertises the shortcut. */}
+      <Button
+        variant="outline"
+        onClick={ctx.open}
+        className="text-muted-foreground hidden h-8 w-56 justify-start gap-2 px-2.5 font-normal lg:flex"
+      >
+        <Search />
+        <span>Search</span>
+        <Kbd className="ms-auto">⌘K</Kbd>
+      </Button>
+      {/* Narrow screens: icon only. */}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={ctx.open}
+        className="lg:hidden"
+        aria-label="Open global search"
+      >
+        <Search />
+      </Button>
+    </>
   );
 }

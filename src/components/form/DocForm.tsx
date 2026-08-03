@@ -3,6 +3,14 @@
 import type { ReactNode } from "react";
 import { UnsavedChangesGuard } from "./UnsavedChangesGuard";
 import { ValidationSummary, type ValidationError } from "./ValidationSummary";
+import { PageHeader } from "@/components/app/PageHeader";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export type DocFormProps = {
   title: string;
@@ -25,6 +33,11 @@ export type DocFormProps = {
   banner?: ReactNode;
 };
 
+/**
+ * Shell for every document creation/edit screen: section cards in a fixed
+ * order, with a sticky footer so the submit action stays reachable on long
+ * forms instead of requiring a scroll to the bottom.
+ */
 export function DocForm({
   title,
   subtitle,
@@ -51,94 +64,64 @@ export function DocForm({
         e.preventDefault();
         onSubmit();
       }}
-      className="space-y-4"
+      className="flex flex-col gap-4"
     >
       <UnsavedChangesGuard dirty={dirty} />
 
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900">{title}</h1>
-          {subtitle ? <p className="mt-0.5 text-sm text-slate-600">{subtitle}</p> : null}
-        </div>
-      </div>
+      <PageHeader title={title} description={subtitle} />
 
       {banner}
 
       <ValidationSummary errors={errors} />
 
-      <section className="rounded-lg border border-slate-200 bg-white p-4 md:p-6">
-        <h2 className="mb-3 text-sm font-semibold tracking-wide text-slate-500 uppercase">
-          Header
-        </h2>
-        {header}
-      </section>
-
-      {lines ? (
-        <section className="rounded-lg border border-slate-200 bg-white p-4 md:p-6">
-          <h2 className="mb-3 text-sm font-semibold tracking-wide text-slate-500 uppercase">
-            Lines
-          </h2>
-          {lines}
-        </section>
-      ) : null}
-
-      {totals ? (
-        <section className="rounded-lg border border-slate-200 bg-white p-4 md:p-6">
-          <h2 className="mb-3 text-sm font-semibold tracking-wide text-slate-500 uppercase">
-            Totals
-          </h2>
-          {totals}
-        </section>
-      ) : null}
-
+      <FormSection title="Header">{header}</FormSection>
+      {lines ? <FormSection title="Lines">{lines}</FormSection> : null}
+      {totals ? <FormSection title="Totals">{totals}</FormSection> : null}
       {attachments ? (
-        <section className="rounded-lg border border-slate-200 bg-white p-4 md:p-6">
-          <h2 className="mb-3 text-sm font-semibold tracking-wide text-slate-500 uppercase">
-            Attachments
-          </h2>
-          {attachments}
-        </section>
+        <FormSection title="Attachments">{attachments}</FormSection>
       ) : null}
+      {notes ? <FormSection title="Notes">{notes}</FormSection> : null}
 
-      {notes ? (
-        <section className="rounded-lg border border-slate-200 bg-white p-4 md:p-6">
-          <h2 className="mb-3 text-sm font-semibold tracking-wide text-slate-500 uppercase">
-            Notes
-          </h2>
-          {notes}
-        </section>
-      ) : null}
+      {approvalPreview}
 
-      {approvalPreview ? <div>{approvalPreview}</div> : null}
-
-      <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 pt-4">
+      <div className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center justify-end gap-2 border-t px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
         {onCancel ? (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="cursor-pointer rounded-md px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100"
-          >
+          <Button type="button" variant="ghost" onClick={onCancel}>
             {cancelLabel}
-          </button>
+          </Button>
         ) : null}
         {onSaveDraft ? (
-          <button
-            type="button"
-            onClick={onSaveDraft}
-            className="cursor-pointer rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-900 hover:bg-slate-50"
-          >
+          <Button type="button" variant="outline" onClick={onSaveDraft}>
             {saveDraftLabel}
-          </button>
+          </Button>
         ) : null}
-        <button
+        <Button
           type="submit"
           disabled={submitDisabled}
           title={submitDisabled ? "Resolve validation errors first" : undefined}
-          className="cursor-pointer rounded-md bg-orange-600 px-4 py-2 text-sm font-medium text-white hover:bg-orange-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 disabled:cursor-not-allowed disabled:bg-slate-300"
         >
           {submitLabel}
-        </button>
+        </Button>
       </div>
     </form>
+  );
+}
+
+function FormSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <Card>
+      <CardHeader className="pb-0">
+        <CardTitle className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>{children}</CardContent>
+    </Card>
   );
 }

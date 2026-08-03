@@ -1,9 +1,14 @@
 import type { ReactNode } from "react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 /**
- * Wraps a disabled-control so the user sees *why* it's disabled. Uses
- * the native `title` attribute for now (good enough for tooltip text);
- * a richer Radix Tooltip can replace this later without changing call sites.
+ * Explains *why* a control is disabled. Backed by a real tooltip so the reason
+ * is reachable by keyboard as well as hover — a disabled ERP action without a
+ * stated reason is a dead end for the user.
  */
 export function DisabledTooltip({
   reason,
@@ -13,12 +18,15 @@ export function DisabledTooltip({
   children: ReactNode;
 }) {
   return (
-    <span
-      title={reason}
-      aria-label={reason}
-      className="inline-flex cursor-not-allowed items-center"
-    >
-      {children}
-    </span>
+    <Tooltip>
+      <TooltipTrigger
+        tabIndex={0}
+        className="inline-flex cursor-not-allowed items-center"
+        aria-label={reason}
+      >
+        {children}
+      </TooltipTrigger>
+      <TooltipContent>{reason}</TooltipContent>
+    </Tooltip>
   );
 }

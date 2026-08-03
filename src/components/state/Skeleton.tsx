@@ -1,9 +1,9 @@
-import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
-export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-md bg-slate-200", className)} />;
-}
+export { Skeleton };
 
+/** Loading placeholder shaped like a document list table. */
 export function SkeletonRows({
   rows = 5,
   cols = 4,
@@ -12,11 +12,11 @@ export function SkeletonRows({
   cols?: number;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-      <div className="border-b border-slate-100 bg-slate-50 px-4 py-3">
+    <div className="bg-card overflow-hidden rounded-lg border">
+      <div className="bg-muted/50 border-b px-4 py-3">
         <Skeleton className="h-3 w-24" />
       </div>
-      <ul className="divide-y divide-slate-100">
+      <ul className="divide-border divide-y">
         {Array.from({ length: rows }).map((_, i) => (
           <li key={i} className="flex items-center gap-4 px-4 py-3">
             {Array.from({ length: cols }).map((_, j) => (
@@ -29,26 +29,31 @@ export function SkeletonRows({
   );
 }
 
+/** Loading placeholder shaped like a document detail screen. */
 export function SkeletonDetail() {
   return (
-    <div className="space-y-4">
-      <div className="rounded-lg border border-slate-200 bg-white p-4 md:p-6">
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="mt-2 h-6 w-64" />
-        <div className="mt-4 flex gap-2">
-          <Skeleton className="h-5 w-20 rounded-full" />
-          <Skeleton className="h-5 w-20 rounded-full" />
-          <Skeleton className="h-5 w-20 rounded-full" />
-        </div>
-      </div>
-      <div className="rounded-lg border border-slate-200 bg-white p-4 md:p-6">
-        <Skeleton className="h-4 w-32" />
-        <div className="mt-4 space-y-2">
+    <div className="flex flex-col gap-4">
+      <Card>
+        <CardHeader className="gap-2">
+          <Skeleton className="h-3 w-24" />
+          <Skeleton className="h-6 w-64" />
+        </CardHeader>
+        <CardContent className="flex flex-wrap gap-2">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-5 w-20 rounded-full" />
+          ))}
+        </CardContent>
+      </Card>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-4 w-32" />
+        </CardHeader>
+        <CardContent className="flex flex-col gap-2">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-3 w-full" />
           ))}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

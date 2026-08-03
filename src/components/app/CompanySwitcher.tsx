@@ -1,25 +1,38 @@
 "use client";
 
+import { Building2 } from "lucide-react";
 import { useSession } from "@/lib/session";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export function CompanySwitcher({ label }: { label: string }) {
   const { companies, companyId, setCompanyId } = useSession();
 
   return (
-    <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-600">
-      <span className="sr-only">{label}</span>
-      <span aria-hidden>{label}</span>
-      <select
-        value={companyId}
-        onChange={(e) => setCompanyId(e.target.value)}
-        className="cursor-pointer rounded-md border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900 focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:outline-none"
+    <Select value={companyId} onValueChange={setCompanyId}>
+      <SelectTrigger
+        size="sm"
+        className="w-[180px] gap-2"
+        aria-label={label}
       >
-        {companies.map((c) => (
-          <option key={c.id} value={c.id}>
-            {c.name}
-          </option>
-        ))}
-      </select>
-    </label>
+        <Building2 className="text-muted-foreground size-4 shrink-0" />
+        <SelectValue placeholder={label} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectGroup>
+          {companies.map((company) => (
+            <SelectItem key={company.id} value={company.id}>
+              {company.name}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      </SelectContent>
+    </Select>
   );
 }

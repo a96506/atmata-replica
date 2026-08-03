@@ -3,6 +3,9 @@
 import { useState, type ReactNode } from "react";
 import { StatusTimeline, type StatusTimelineStep } from "./StatusTimeline";
 import { StaleDataPill } from "../state/StaleDataPill";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export type DocumentTab = {
   id: string;
@@ -24,6 +27,13 @@ export type DocumentLayoutProps = {
   loadedAt?: string;
 };
 
+/**
+ * Shell for every document detail screen.
+ *
+ * Consolidates what used to be several stacked surfaces (header panel, state
+ * banner, timeline, action bar) into one summary card followed by a tabbed
+ * content card, so the eye reaches the actual document sooner.
+ */
 export function DocumentLayout({
   number,
   title,
@@ -37,68 +47,74 @@ export function DocumentLayout({
   loadedAt,
 }: DocumentLayoutProps) {
   const [activeTabId, setActiveTabId] = useState(tabs[0]?.id);
-  const active = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <div className="space-y-4">
-        <div className="rounded-lg border border-slate-200 bg-white p-4 md:p-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="flex flex-wrap items-center gap-2 text-xs font-medium tracking-wide text-slate-500 uppercase">
-                <span>{number}</span>
-                {loadedAt ? <StaleDataPill updatedAt={loadedAt} /> : null}
+    <div className="grid min-w-0 gap-4 lg:gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="flex min-w-0 flex-col gap-4">
+        <Card>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex min-w-0 flex-col gap-1">
+                <div className="text-muted-foreground flex flex-wrap items-center gap-2 font-mono text-xs">
+                  <span>{number}</span>
+                  {loadedAt ? <StaleDataPill updatedAt={loadedAt} /> : null}
+                </div>
+                {title ? (
+                  <h1 className="text-xl font-semibold tracking-tight text-balance">
+                    {title}
+                  </h1>
+                ) : null}
+                {subtitle ? (
+                  <p className="text-muted-foreground text-sm text-pretty">
+                    {subtitle}
+                  </p>
+                ) : null}
               </div>
-              {title ? (
-                <h1 className="mt-0.5 text-xl font-semibold text-slate-900">
-                  {title}
-                </h1>
-              ) : null}
-              {subtitle ? (
-                <p className="mt-0.5 text-sm text-slate-600">{subtitle}</p>
+              {totals ? (
+                <div className="text-end text-sm tabular-nums">{totals}</div>
               ) : null}
             </div>
-            {totals ? (
-              <div className="text-right text-sm text-slate-700">{totals}</div>
-            ) : null}
-          </div>
-          <div className="mt-4">
-            <StatusTimeline states={states} current={currentState} />
-          </div>
-          {actionBar ? <div className="mt-4">{actionBar}</div> : null}
-        </div>
 
-        <div className="rounded-lg border border-slate-200 bg-white">
-          <div
-            className="flex gap-1 overflow-x-auto border-b border-slate-200 px-2"
-            role="tablist"
-          >
-            {tabs.map((t) => {
-              const isActive = active?.id === t.id;
-              return (
-                <button
-                  key={t.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => setActiveTabId(t.id)}
-                  className={
-                    "cursor-pointer px-3 py-2 text-sm whitespace-nowrap " +
-                    (isActive
-                      ? "border-b-2 border-orange-500 font-medium text-orange-700"
-                      : "text-slate-600 hover:text-slate-900")
-                  }
-                >
-                  {t.label}
-                </button>
-              );
-            })}
-          </div>
-          <div className="p-4 md:p-6">{active?.content}</div>
-        </div>
+            <Separator />
+
+            <StatusTimeline states={states} current={currentState} />
+
+            {actionBar ? (
+              <>
+                <Separator />
+                {actionBar}
+              </>
+            ) : null}
+          </CardContent>
+        </Card>
+
+        <Card className="min-w-0 overflow-hidden py-0">
+          <Tabs value={activeTabId} onValueChange={setActiveTabId}>
+            <div className="bg-muted/30 overflow-x-auto border-b px-3 py-2">
+              <TabsList>
+                {tabs.map((tab) => (
+                  <TabsTrigger key={tab.id} value={tab.id}>
+                    {tab.label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+            {tabs.map((tab) => (
+              <TabsContent
+                key={tab.id}
+                value={tab.id}
+                className="min-w-0 p-4 md:p-6"
+              >
+                {tab.content}
+              </TabsContent>
+            ))}
+          </Tabs>
+        </Card>
       </div>
 
-      {rightRail ? <div className="space-y-4">{rightRail}</div> : null}
+      {rightRail ? (
+        <div className="flex min-w-0 flex-col gap-4">{rightRail}</div>
+      ) : null}
     </div>
   );
 }

@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import { AlertCircle } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export function ErrorState({
   title = "Something went wrong",
@@ -10,13 +12,11 @@ export function ErrorState({
   action?: ReactNode;
 }) {
   return (
-    <div
-      role="alert"
-      className="rounded-xl border border-red-200 bg-red-50 p-6 text-sm text-red-900"
-    >
-      <div className="font-medium">{title}</div>
-      {description ? <div className="mt-1">{description}</div> : null}
-      {action ? <div className="mt-3">{action}</div> : null}
-    </div>
+    <Alert variant="destructive">
+      <AlertCircle />
+      <AlertTitle>{title}</AlertTitle>
+      {description ? <AlertDescription>{description}</AlertDescription> : null}
+      {action ? <div className="col-start-2 mt-3">{action}</div> : null}
+    </Alert>
   );
 }
