@@ -1,0 +1,149 @@
+import Link from "next/link";
+import { DEMO_CLOSING } from "@/lib/demo-data";
+import { CloseDemoToolbar, CloseRescanDemo, CloseStepDemo } from "./close-demo-actions";
+
+const STEP_LABELS: Record<string, string> = {
+  reconcile_bank: "Reconcile Bank Transactions",
+  review_stale_drafts: "Review Stale Draft Entries",
+  unbilled_deliveries: "Accrue Unbilled Deliveries",
+  missing_vendor_bills: "Check Missing Vendor Bills",
+  uninvoiced_revenue: "Invoice Unbilled Revenue",
+  depreciation_entries: "Post Depreciation Entries",
+  tax_validation: "Validate Tax Entries",
+  intercompany_balances: "Review Inter-Company Balances",
+  review_adjustments: "Review Manual Adjustments",
+  final_review: "Final P&L / Balance Sheet Review",
+};
+
+const STEP_HREF: Record<string, (locale: string) => string> = {
+  reconcile_bank: (l) => `/${l}/accounting/reconciliation`,
+  review_stale_drafts: (l) => `/${l}/accounting/journal-entries?state=draft`,
+  unbilled_deliveries: (l) => `/${l}/sales/deliveries?missingBill=1`,
+  missing_vendor_bills: (l) => `/${l}/purchasing/goods-receipts?missingBill=1`,
+  uninvoiced_revenue: (l) => `/${l}/sales/deliveries?missingBill=1`,
+  depreciation_entries: (l) => `/${l}/accounting/journal-entries`,
+  tax_validation: (l) => `/${l}/settings/tax-codes`,
+  intercompany_balances: (l) => `/${l}/accounting/journal-entries`,
+  review_adjustments: (l) => `/${l}/inventory/adjustments`,
+  final_review: (l) => `/${l}/accounting/financials`,
+};
+
+const STATUS_BADGE: Record<string, string> = {
+  pending: "bg-muted text-foreground",
+  needs_attention: "bg-status-pending-muted text-status-pending-foreground",
+  complete: "bg-status-success-muted text-status-success-foreground",
+};
+
+function defaultPeriod() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+export default async function ClosePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<{ period?: string }>;
+}) {
+  const { locale } = await params;
+  const { period: periodParam } = await searchParams;
+  const period = periodParam || defaultPeriod();
+  const closing = DEMO_CLOSING.period === period ? DEMO_CLOSING : { ...DEMO_CLOSING, period };
+
+  return (
+    <div className="space-y-6">
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Month-End Close</h1>
+          <p className="text-sm text-foreground">10-step AI-assisted closing checklist.</p>
+        </div>
+        <CloseDemoToolbar period={period} />
+      </header>
+
+      {closing && (
+        <>
+          <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-center">
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">Period</p>
+              <p className="text-lg font-semibold text-foreground">{closing.period}</p>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">Status</p>
+              <p className="text-lg font-semibold capitalize text-foreground">{closing.status}</p>
+            </div>
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground">Progress</p>
+              <div className="mt-1 flex items-center gap-2">
+                <div className="h-2 flex-1 rounded-full bg-muted">
+                  <div
+                    className="h-2 rounded-full bg-primary transition-all duration-300"
+                    style={{ width: `${closing.overall_progress_pct}%` }}
+                  />
+                </div>
+                <span className="text-sm font-medium text-foreground">
+                  {closing.overall_progress_pct.toFixed(0)}%
+                </span>
+              </div>
+            </div>
+            <CloseRescanDemo period={period} />
+          </div>
+
+          {closing.summary && (
+            <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
+              <h2 className="mb-2 font-semibold text-foreground">AI Summary</h2>
+              <p className="text-sm text-foreground">{closing.summary}</p>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            {closing.steps
+              .slice()
+              .sort((a, b) => a.step_order - b.step_order)
+              .map((step) => (
+                <div
+                  key={step.step_name}
+                  className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">
+                      {step.step_order}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {STEP_LABELS[step.step_name] ?? step.step_name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {step.items_found} found · {step.items_resolved} resolved
+                        {step.notes && <> · {step.notes}</>}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`rounded px-2 py-0.5 text-xs font-medium ${
+                        STATUS_BADGE[step.status] ?? "bg-muted text-foreground"
+                      }`}
+                    >
+                      {step.status.replace("_", " ")}
+                    </span>
+                    {STEP_HREF[step.step_name] ? (
+                      <Link
+                        href={STEP_HREF[step.step_name](locale)}
+                        className="cursor-pointer rounded-md border border-input bg-card px-2 py-0.5 text-xs font-medium text-foreground hover:bg-muted"
+                      >
+                        Open list →
+                      </Link>
+                    ) : null}
+                    {step.status !== "complete" && (
+                      <CloseStepDemo period={period} stepName={step.step_name} />
+                    )}
+                  </div>
+                </div>
+              ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

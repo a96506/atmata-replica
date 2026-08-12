@@ -1,0 +1,423 @@
+{
+  "meta": {
+    "title": "أتماتا",
+    "description": "منصة أعمال بالذكاء الاصطناعي لشركات الكويت الصغيرة والمتوسطة (معاينة واجهة)"
+  },
+  "chrome": {
+    "brand": "أتماتا",
+    "demoRibbon": "معاينة واجهة — غير متصل بـ API",
+    "demoUser": "demo@atmata.local",
+    "tenant": "مستأجر",
+    "role": "مسؤول",
+    "signOut": "تسجيل الخروج",
+    "locale": "اللغة"
+  },
+  "nav": {
+    "inbox": "صندوق الذكاء الاصطناعي",
+    "dashboard": "لوحة التحكم",
+    "accounting": "المحاسبة",
+    "sales": "المبيعات",
+    "purchasing": "المشتريات",
+    "inventory": "المخزون",
+    "settings": "الإعدادات"
+  },
+  "login": {
+    "title": "تسجيل الدخول",
+    "subtitle": "قالب واجهة فقط — بلا اتصال خادم",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "submit": "المتابعة إلى التطبيق",
+    "demoHint": "هذا الزر ينقلك إلى الصندوق ببيانات تجريبية فقط."
+  },
+  "dashboard": {
+    "title": "لوحة المدير التنفيذي",
+    "subtitle": "عرض لحظي للسيولة والإيرادات والذمم المدينة/الدائنة ونشاط الذكاء الاصطناعي.",
+    "kpiCash": "الوضع النقدي",
+    "kpiRevenue": "الإيرادات الشهرية",
+    "kpiPending": "موافقات معلّقة",
+    "kpiSuccess": "معدل نجاح الذكاء الاصطناعي",
+    "arAging": "أعمار الذمم المدينة",
+    "alerts": "تنبيهات الذكاء الاصطناعي"
+  },
+  "inbox": {
+    "title": "صندوق الذكاء الاصطناعي",
+    "subtitle": "كل ما يحتاج انتباهك في مكان واحد.",
+    "empty": "لا يوجد جديد.",
+    "emptyHint": "لا توجد عناصر الآن — يمكن تغيير البيانات التجريبية في الكود.",
+    "approve": "موافقة",
+    "reject": "رفض",
+    "openWorkspace": "فتح مساحة العمل",
+    "viewDetails": "عرض التفاصيل",
+    "confidence": "ثقة"
+  },
+  "accounting": {
+    "title": "المحاسبة",
+    "subtitle": "فواتير، بنك، قوائم، إقفال.",
+    "invoices": "الفواتير",
+    "invoicesDesc": "رفع + استخراج بالذكاء الاصطناعي",
+    "reconciliation": "تسوية بنكية",
+    "reconciliationDesc": "كشف ← مطابقة قيود",
+    "financials": "القوائم المالية",
+    "financialsDesc": "الأرباح والخسائر، الميزانية، التدفقات، ميزان المراجعة",
+    "close": "إقفال نهاية الشهر",
+    "closeDesc": "قائمة من 10 خطوات",
+    "manual": {
+      "newInvoice": "فاتورة جديدة",
+      "dialogTitle": "إنشاء فاتورة يدويًا",
+      "dialogDescription": "تجريبي فقط — لا يُحفظ شيء على خادم.",
+      "invoiceNumber": "رقم الفاتورة",
+      "vendorName": "اسم المورّد",
+      "documentDate": "تاريخ المستند",
+      "grandTotal": "الإجمالي (د.ك)",
+      "paymentTerms": "شروط الدفع",
+      "deliveryDate": "تاريخ التسليم",
+      "referencePo": "مرجع أمر الشراء",
+      "taxNote": "ملاحظة ضريبية",
+      "description": "الوصف",
+      "lineItemsSection": "بنود السطور",
+      "submit": "إنشاء",
+      "cancel": "إلغاء",
+      "validationInvoiceNumber": "رقم الفاتورة مطلوب.",
+      "toastCreated": "تم إنشاء الفاتورة {number} (تجريبي) · {vendor} · د.ك {total}",
+      "lineItems": {
+        "itemNo": "#",
+        "description": "الوصف",
+        "qty": "الكمية",
+        "unitPrice": "سعر الوحدة",
+        "total": "الإجمالي",
+        "addRow": "إضافة سطر",
+        "removeRow": "حذف",
+        "actionsHeader": "",
+        "footerGrandTotal": "الإجمالي الكلي"
+      }
+    }
+  },
+  "sales": {
+    "title": "المبيعات",
+    "subtitle": "عروض الأسعار والطلبات وخط الأنابيب والائتمان — معاينة واجهة (قسم المبيعات في PRD).",
+    "kpiQuotes": "عروض بانتظار العميل",
+    "kpiOverdue": "عملاء متأخرون",
+    "kpiCreditHolds": "تجميد ائتماني",
+    "creditBannerTitle": "تجميد ائتماني ساري",
+    "creditBannerBody": "التعرض المفتوح {exposure} — أوامر بيع جديدة موقوفة حتى السداد أو الإعفاء.",
+    "secQuotes": "عروض أسعار نشطة",
+    "secOrders": "أوامر بيع",
+    "secCustomers": "العملاء · الائتمان والمدفوعات",
+    "secPipeline": "خط الأنابيب",
+    "colRef": "المرجع",
+    "colCustomer": "العميل",
+    "colTotal": "الإجمالي",
+    "colStatus": "الحالة",
+    "colValidUntil": "صالح حتى",
+    "colState": "المرحلة",
+    "colDelivery": "التسليم",
+    "colExceptional": "استثنائي / مشروع",
+    "colCreditLimit": "سقف الائتمان",
+    "colExposure": "التعرض",
+    "colScore": "التصنيف",
+    "colPayment": "السداد",
+    "colDeal": "الصفقة",
+    "colStage": "المرحلة",
+    "colValue": "القيمة",
+    "colProbability": "الاحتمالية",
+    "colDaysIdle": "أيام بدون نشاط",
+    "colNextAction": "الخطوة التالية",
+    "exceptionalYes": "موسوم",
+    "quoteStatus": {
+      "sent": "مُرسل",
+      "draft": "مسودة"
+    },
+    "orderState": {
+      "confirmed": "مؤكد",
+      "draft": "مسودة"
+    },
+    "pay": {
+      "current": "ساري",
+      "overdue_14": "متأخر (+14 يومًا)",
+      "on_hold": "موقوف"
+    },
+    "quickQuote": {
+      "title": "عرض سعر سريع",
+      "hint": "تسعير وشروط مقترحة بالذكاء الاصطناعي — الإرسال تجريبي فقط.",
+      "customer": "العميل",
+      "custRetail": "Kuwait Retail Co.",
+      "custFoods": "Gulf Foods WLL",
+      "custPharma": "City Pharmacy",
+      "exceptionalTag": "وضع علامة استثنائي/مشروع (يُستبعد من معدل الطلب في التنبؤ)",
+      "colSku": "الرمز",
+      "colProduct": "المنتج",
+      "colSugPrice": "سعر مقترح",
+      "colQty": "الكمية",
+      "colLine": "السطر",
+      "subtotal": "المجموع الفرعي",
+      "previewPdf": "معاينة PDF",
+      "sendQuote": "إرسال العرض",
+      "toastPdf": "معاينة PDF للعرض فقط في القالب.",
+      "toastSend": "تمت جدولة عرض لـ {customer} · استثنائي: {exceptional} (تجريبي)",
+      "yes": "نعم",
+      "no": "لا"
+    }
+  },
+  "purchasing": {
+    "title": "المشتريات",
+    "subtitle": "اقتراحات أمر شراء ومطابقة فواتير المورّدين — معاينة واجهة (قسم المشتريات في PRD).",
+    "kpiPoSuggestions": "اقتراحات أمر شراء مفتوحة",
+    "kpiBillQueue": "فواتير في قائمة المطابقة",
+    "kpiPriceAlerts": "تنبيهات أسعار",
+    "secPoSuggestions": "اقتراحات أمر الشراء",
+    "secBillMatch": "مطابقة فاتورة المورّد",
+    "secPriceAlerts": "تنبيهات أسعار المورّدين",
+    "secVendorScores": "درجات المورّدين",
+    "secPurchaseHistory": "سجل المشتريات",
+    "secReceiving": "الاستلام مقابل أمر الشراء",
+    "colId": "المعرف",
+    "colProduct": "المنتج",
+    "colVendor": "المورّد",
+    "colQty": "الكمية",
+    "colEstUnit": "تقدير الوحدة",
+    "colPriority": "الأولوية",
+    "colActions": "إجراءات",
+    "colBill": "الفاتورة",
+    "colPo": "أمر الشراء",
+    "colMatchStatus": "المطابقة",
+    "colDiscrepancy": "الفرق",
+    "colScore": "الدرجة",
+    "colLeadDays": "زمن التوريد (يوم)",
+    "colQuality": "الجودة",
+    "colPriceRank": "ترتيب السعر",
+    "colDate": "التاريخ",
+    "colAmount": "المبلغ",
+    "colTransfer": "التحويل",
+    "colRecvStatus": "حالة الاستلام",
+    "colExpected": "المتوقع",
+    "colReceived": "المستلم",
+    "colFlag": "علامة",
+    "severity": {
+      "high": "مرتفع",
+      "medium": "متوسط",
+      "low": "منخفض"
+    },
+    "matchStatus": {
+      "matched": "مطابقة",
+      "discrepancy": "تعارض",
+      "review": "مراجعة"
+    },
+    "quality": {
+      "high": "مرتفع",
+      "medium": "متوسط"
+    },
+    "recvState": {
+      "partial": "جزئي",
+      "ready": "جاهز للاستلام"
+    },
+    "recvFlag": {
+      "short": "نقص في الاستلام"
+    },
+    "manual": {
+      "newPo": "أمر شراء جديد",
+      "dialogTitle": "إنشاء أمر شراء يدويًا",
+      "dialogDescription": "تجريبي فقط — لا يُحفظ شيء على خادم.",
+      "poNumber": "رقم أمر الشراء",
+      "vendorName": "اسم المورّد",
+      "documentDate": "تاريخ المستند",
+      "grandTotal": "الإجمالي (د.ك)",
+      "paymentTerms": "شروط الدفع",
+      "deliveryDate": "تاريخ التسليم",
+      "description": "الوصف",
+      "lineItemsSection": "بنود السطور",
+      "submit": "إنشاء",
+      "cancel": "إلغاء",
+      "validationPoNumber": "رقم أمر الشراء مطلوب.",
+      "toastCreated": "تم إنشاء أمر الشراء {number} (تجريبي) · {vendor} · د.ك {total}",
+      "lineItems": {
+        "itemNo": "#",
+        "description": "الوصف",
+        "qty": "الكمية",
+        "unitPrice": "سعر الوحدة",
+        "total": "الإجمالي",
+        "addRow": "إضافة سطر",
+        "removeRow": "حذف",
+        "actionsHeader": "",
+        "footerGrandTotal": "الإجمالي الكلي"
+      }
+    },
+    "actions": {
+      "approve": "موافقة",
+      "adjust": "تعديل",
+      "reject": "رفض",
+      "approvePo": "تمت الموافقة على {id} (تجريبي)",
+      "adjustPo": "تعديل {id} — المحرر للعرض فقط.",
+      "rejectPo": "تم رفض الاقتراح {id} (تجريبي)",
+      "approveMatch": "موافقة",
+      "approveBill": "تمت الموافقة على مطابقة {id} (تجريبي)",
+      "flag": "إبلاغ مشكلة",
+      "flagBill": "تم الإبلاغ عن {id} ({status}) للمتابعة (تجريبي)",
+      "confirmReceiptBtn": "تأكيد",
+      "confirmReceipt": "تم تأكيد الاستلام {ref} (تجريبي)"
+    }
+  },
+  "inventory": {
+    "title": "المخزون",
+    "subtitle": "المستويات وتنبيهات إعادة الطلب وتنبؤ الطلب — معاينة واجهة (PRD).",
+    "secReorder": "تنبيهات إعادة الطلب",
+    "reorderShort": "أقل من المخزون الأمني بمقدار {n} وحدة",
+    "secStock": "مستويات المخزون",
+    "secForecast": "تنبؤ الطلب",
+    "forecastHint": "وحدات 30 / 90 يومًا (توضيحي؛ تُستبعد أوامر البيع الاستثنائية من المعدل في المنتج).",
+    "secInbound": "شحنات واردة",
+    "secOutbound": "تسليمات صادرة",
+    "colSku": "الرمز",
+    "colProduct": "المنتج",
+    "colOnHand": "المتاح",
+    "colMin": "الحد الأدنى",
+    "colMax": "الحد الأعلى",
+    "colAbc": "أ ب ج",
+    "colDemand30": "طلب 30 يومًا",
+    "colDemand90": "طلب 90 يومًا",
+    "colTransfer": "التحويل",
+    "colPo": "أمر الشراء",
+    "colSo": "أمر البيع",
+    "colPartner": "الطرف",
+    "colEta": "الوصول المتوقع",
+    "colShipDate": "تاريخ الشحن",
+    "colShipState": "الحالة",
+    "colNote": "ملاحظة",
+    "severity": {
+      "critical": "حرج",
+      "medium": "متوسط"
+    },
+    "inboundState": {
+      "late": "متأخر",
+      "on_track": "ضمن الجدول"
+    },
+    "outboundState": {
+      "delayed": "متأخر",
+      "ready": "جاهز للشحن"
+    },
+    "actions": {
+      "refresh": "تحديث",
+      "refreshDemo": "التحديث للعرض فقط في القالب.",
+      "viewDelay": "لماذا التأخير؟",
+      "delayNote": "سبب التأخير لـ {ref} — سرد تجريبي فقط."
+    }
+  },
+  "settings": {
+    "overviewTitle": "الإعدادات",
+    "overviewSubtitle": "إعداد الشركة، التهيئة المالية، البيانات الرئيسية، والتحكم في الوصول.",
+    "title": "الإعدادات · عتبات ثقة الذكاء الاصطناعي",
+    "subtitle": "ضبط العتبات لكل أتمتة. القيم أدناه للتوضيح.",
+    "automation": "الأتمتة",
+    "defaultThreshold": "العتبة الافتراضية",
+    "autoThreshold": "عتبة التنفيذ التلقائي",
+    "source": "المصدر",
+    "actions": "إجراءات",
+    "save": "حفظ",
+    "reset": "إعادة ضبط",
+    "platform": "منصة",
+    "tenantOverride": "تجاوز المستأجر"
+  },
+  "common": {
+    "back": "رجوع",
+    "actions": {
+      "submit": "إرسال",
+      "approve": "اعتماد",
+      "reject": "رفض",
+      "post": "ترحيل",
+      "cancel": "إلغاء",
+      "reverse": "عكس",
+      "close": "إغلاق",
+      "edit": "تعديل",
+      "save": "حفظ",
+      "create": "إنشاء",
+      "send": "إرسال"
+    },
+    "states": {
+      "draft": "مسودة",
+      "pending": "قيد المراجعة",
+      "confirmed": "مؤكد",
+      "posted": "مُرحَّل",
+      "locked": "مقفل",
+      "archived": "مؤرشف",
+      "cancelled": "ملغى"
+    },
+    "period": {
+      "open": "مفتوحة",
+      "soft_closed": "إغلاق مؤقت",
+      "hard_closed": "إغلاق نهائي",
+      "no_period": "لا توجد فترة"
+    },
+    "empty": "لا توجد عناصر حتى الآن.",
+    "loading": "جارٍ التحميل…",
+    "error": {
+      "title": "حدث خطأ",
+      "retry": "إعادة المحاولة"
+    }
+  },
+  "adoption": {
+    "title": "تبنّي إلى",
+    "bulkTitle": "تبنّي المختار إلى",
+    "continue": "متابعة إلى ال��موذج",
+    "cancel": "إلغاء",
+    "previewHeading": "سيتم إنشاء",
+    "noSelection": "لم يتم اختيار أسطر.",
+    "fullyConsumed": "تم استهلاكه بالكامل",
+    "mergedFrom": "مدمج من {count} مستندات",
+    "tabLabel": "التبنّي",
+    "trailEmpty": "لا يوجد سجل تبنّي لهذا المستند بعد.",
+    "target": {
+      "rfq": "طلب عرض سعر",
+      "po": "أمر شراء",
+      "grn": "إذن استلام",
+      "vendor_bill": "فاتورة مورد",
+      "vendor_payment": "دفعة لمورد",
+      "vendor_return": "مرتجع مورد",
+      "debit_note": "إشعار مدين",
+      "so": "أمر بيع",
+      "dn": "إذن تسليم",
+      "customer_invoice": "فاتورة عميل",
+      "customer_receipt": "إيصال قبض",
+      "customer_return": "مرتجع عميل",
+      "credit_note": "إشعار دائن"
+    }
+  },
+  "rfq": {
+    "title": "طلبات عروض الأسعار",
+    "newTitle": "طلب عرض سعر جديد",
+    "compareTab": "مقارنة العروض",
+    "awardedTo": "تم الترسية على",
+    "lowest": "الأدنى",
+    "actions": {
+      "send": "إرسال",
+      "record_quotes": "تسجيل العروض",
+      "award": "ترسية"
+    }
+  },
+  "returns": {
+    "vendorTitle": "مرتجعات الموردين",
+    "customerTitle": "مرتجعات العملاء",
+    "newVendorReturn": "مرتجع مورد جديد",
+    "newCustomerReturn": "مرتجع عميل جديد",
+    "reasonCode": "السبب"
+  },
+  "debit_note": {
+    "title": "إشعارات مدينة",
+    "balance": "الرصيد"
+  },
+  "credit_note": {
+    "title": "إشعارات دائنة",
+    "balance": "الرصيد"
+  },
+  "ai": {
+    "copilotTitle": "المساعد",
+    "asAgent": "بدور وكيل الذكاء الاصطناعي",
+    "mode": {
+      "observe": "مراقبة",
+      "suggest": "اقتراح",
+      "auto": "تلقائي"
+    },
+    "doIt": "تنفيذ",
+    "queue": "إضافة للقائمة",
+    "dismiss": "تجاهل",
+    "empty": "لا يوجد ما يستحق التنبيه الآن."
+  }
+}
