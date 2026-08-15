@@ -4,7 +4,6 @@ import { AppBreadcrumbs } from "@/components/app/AppBreadcrumbs";
 import { ThemeToggle } from "@/components/app/ThemeToggle";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import { UserMenu } from "@/components/app/UserMenu";
-import { CompanySwitcher } from "@/components/app/CompanySwitcher";
 import { GlobalSearchTrigger } from "@/components/app/GlobalSearchProvider";
 import { NotificationsBell } from "@/components/app/NotificationsBell";
 
@@ -14,11 +13,9 @@ import { NotificationsBell } from "@/components/app/NotificationsBell";
  */
 export function AppTopBar({
   signOutLabel,
-  tenantLabel,
   localeLabel,
 }: {
   signOutLabel: string;
-  tenantLabel: string;
   localeLabel: string;
 }) {
   return (
@@ -33,9 +30,6 @@ export function AppTopBar({
 
         <div className="ms-auto flex items-center gap-1 md:gap-2">
           <GlobalSearchTrigger />
-          <div className="hidden lg:block">
-            <CompanySwitcher label={tenantLabel} />
-          </div>
           <div className="hidden md:block">
             <LocaleSwitcher label={localeLabel} />
           </div>

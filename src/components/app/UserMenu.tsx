@@ -1,30 +1,26 @@
 "use client";
 
+import * as React from "react";
 import { LogOut } from "lucide-react";
-import { ROLE_OPTIONS, useSession } from "@/lib/session";
+import { useSession } from "@/lib/session";
+import { signOutAction } from "@/lib/actions/auth";
 import { useRouter } from "@/i18n/navigation";
-import type { Role } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 export function UserMenu({ signOutLabel }: { signOutLabel: string }) {
-  const { user, role, setRole, signOut } = useSession();
+  const { user, roles } = useSession();
   const router = useRouter();
+  const [pending, startTransition] = React.useTransition();
 
   const initials = user.name
     .split(" ")
@@ -57,52 +53,35 @@ export function UserMenu({ signOutLabel }: { signOutLabel: string }) {
           <div className="flex flex-col gap-1">
             <span className="text-sm font-medium">{user.name}</span>
             <span className="text-muted-foreground text-xs">{user.email}</span>
-            <Badge variant="secondary" className="mt-1 w-fit font-mono text-[10px]">
-              {role}
-            </Badge>
+            <div className="mt-1 flex flex-wrap gap-1">
+              {roles.map((role) => (
+                <Badge
+                  key={role}
+                  variant="secondary"
+                  className="font-mono text-[10px]"
+                >
+                  {role}
+                </Badge>
+              ))}
+            </div>
           </div>
         </DropdownMenuLabel>
 
         <DropdownMenuSeparator />
 
-        {/* Role impersonation is a demo affordance; it previously floated over
-            page content as a fixed pill. Nested here it stays discoverable
-            without covering table cells. */}
-        <DropdownMenuGroup>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>Switch role</DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="max-h-72 overflow-y-auto">
-              <DropdownMenuRadioGroup
-                value={role}
-                onValueChange={(value) => setRole(value as Role)}
-              >
-                {ROLE_OPTIONS.map((option) => (
-                  <DropdownMenuRadioItem
-                    key={option}
-                    value={option}
-                    className="font-mono text-xs"
-                  >
-                    {option}
-                  </DropdownMenuRadioItem>
-                ))}
-              </DropdownMenuRadioGroup>
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
-        </DropdownMenuGroup>
-
-        <DropdownMenuSeparator />
-
-        <DropdownMenuGroup>
-          <DropdownMenuItem
-            onSelect={() => {
-              signOut();
-              router.push("/login");
-            }}
-          >
-            <LogOut data-icon="inline-start" />
-            {signOutLabel}
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
+        <DropdownMenuItem
+          disabled={pending}
+          onSelect={() => {
+            startTransition(async () => {
+              await signOutAction();
+              router.replace("/login");
+              router.refresh();
+            });
+          }}
+        >
+          <LogOut data-icon="inline-start" />
+          {signOutLabel}
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
 import { Info } from "lucide-react";
 import { ConfirmDialogProvider } from "@/components/confirm-dialog";
@@ -9,16 +10,26 @@ import { AppSidebar } from "@/components/app/AppSidebar";
 import { AppTopBar } from "@/components/app/AppTopBar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getAppSession } from "@/lib/insforge/session";
 
 export default async function AppLayout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
+  const { session, reason } = await getAppSession();
+  if (!session) {
+    const suffix = reason && reason !== "unauthenticated" ? `?error=${reason}` : "";
+    redirect(`/${locale}/login${suffix}`);
+  }
+
   const tc = await getTranslations("chrome");
 
   return (
-    <SessionProvider>
+    <SessionProvider session={session}>
       <ConfirmDialogProvider>
         <GlobalSearchProvider>
           <SidebarProvider>
@@ -26,7 +37,6 @@ export default async function AppLayout({
             <SidebarInset className="min-w-0">
               <AppTopBar
                 signOutLabel={tc("signOut")}
-                tenantLabel={tc("tenant")}
                 localeLabel={tc("locale")}
               />
 
