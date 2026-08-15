@@ -1,5 +1,8 @@
 .vercel
 
+# Vercel CLI token (paste yours here, used by agent for vercel login --token)
+.vercel-token
+
 # code-review-graph (derived, local only)
 .code-review-graph/
 
