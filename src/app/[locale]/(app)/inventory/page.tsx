@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DEMO_INVENTORY } from "@/lib/demo-data";
+import { getInventoryOverview } from "@/lib/api/inventory-overview";
 import {
   InventoryDemoToolbar,
   ShipmentNoteDemo,
@@ -43,7 +43,7 @@ function AbcBadge({ abc }: { abc: "A" | "B" | "C" }) {
 
 export default async function InventoryPage() {
   const t = await getTranslations("inventory");
-  const d = DEMO_INVENTORY;
+  const d = await getInventoryOverview();
 
   const critical = d.reorder_alerts.filter((a) => a.severity === "critical");
 
@@ -117,9 +117,10 @@ export default async function InventoryPage() {
               s.name,
               s.on_hand,
               s.min,
-              s.max,
+              s.max ?? "—",
               <AbcBadge key={s.sku} abc={s.abc} />,
             ])}
+            emptyMessage="No products yet."
           />
         </TabsContent>
 
@@ -141,6 +142,7 @@ export default async function InventoryPage() {
               },
             ]}
             rows={d.forecasts.map((f) => [f.sku, f.name, f.d30, f.d90])}
+            emptyMessage="No demand forecast available."
           />
         </TabsContent>
 
@@ -160,6 +162,7 @@ export default async function InventoryPage() {
               r.eta,
               t(`inboundState.${r.state}`),
             ])}
+            emptyMessage="No open inbound receipts."
           />
         </TabsContent>
 
@@ -185,6 +188,7 @@ export default async function InventoryPage() {
                 "—"
               ),
             ])}
+            emptyMessage="No open outbound deliveries."
           />
         </TabsContent>
       </Tabs>

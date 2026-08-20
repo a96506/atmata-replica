@@ -1,7 +1,11 @@
+import { notFound } from "next/navigation";
 import { Link } from "@/i18n/navigation";
-import { getTranslations } from "next-intl/server";
-import { DEMO_INVOICE_DETAIL } from "@/lib/demo-data";
-import { InvoiceDemoActions } from "./invoice-demo-actions";
+import {
+  getOcrApproveReadiness,
+  getOcrJob,
+} from "@/lib/actions/invoices";
+import { parseOcrExtraction } from "@/lib/ocr/vendor-bill-extraction";
+import { InvoiceActions } from "./invoice-actions";
 
 function confidenceColor(v: number) {
   if (v >= 0.9) return "text-status-success-foreground bg-status-success-muted";
@@ -15,20 +19,17 @@ export default async function InvoiceDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const t = await getTranslations("common");
-  const doc = DEMO_INVOICE_DETAIL[id];
-  if (!doc) {
-    return (
-      <div className="rounded-md bg-status-danger-muted p-6 text-destructive">
-        <h1 className="text-lg font-semibold">Invoice not found</h1>
-        <Link href="/accounting/invoices" className="mt-2 inline-block text-sm underline">
-          {t("back")}
-        </Link>
-      </div>
-    );
-  }
+  const jobId = Number(id);
+  if (!Number.isSafeInteger(jobId) || jobId <= 0) notFound();
 
-  const ext = doc.extraction_full;
+  const job = await getOcrJob(jobId);
+  if (!job) notFound();
+
+  const ext = parseOcrExtraction(job.extraction);
+  const readiness = await getOcrApproveReadiness(job);
+  const canReject =
+    !job.matchedDocId &&
+    (job.status === "completed" || job.status === "review_needed");
 
   return (
     <div className="space-y-6">
@@ -37,33 +38,49 @@ export default async function InvoiceDetailPage({
           <Link href="/accounting/invoices" className="text-sm text-foreground hover:underline">
             &larr; Invoices
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold text-foreground">{doc.file_name}</h1>
+          <h1 className="mt-1 text-2xl font-semibold text-foreground">{job.fileName}</h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-sm">
             <span
               className={`rounded px-2 py-0.5 text-xs font-medium ${
-                doc.status === "completed" ? "bg-status-success-muted text-status-success-foreground" : "bg-muted text-foreground"
+                job.status === "completed"
+                  ? "bg-status-success-muted text-status-success-foreground"
+                  : job.status === "review_needed"
+                    ? "bg-status-pending-muted text-status-pending-foreground"
+                    : job.status === "failed"
+                      ? "bg-status-danger-muted text-destructive"
+                      : "bg-muted text-foreground"
               }`}
             >
-              {doc.status}
+              {job.status}
             </span>
-            {doc.confidence > 0 && (
+            {job.confidence != null && job.confidence > 0 && (
               <span
-                className={`rounded px-2 py-0.5 text-xs font-medium ${confidenceColor(doc.confidence)}`}
+                className={`rounded px-2 py-0.5 text-xs font-medium ${confidenceColor(job.confidence)}`}
               >
-                Overall {(doc.confidence * 100).toFixed(0)}%
+                Overall {(job.confidence * 100).toFixed(0)}%
               </span>
             )}
-            {doc.processing_time_ms && (
-              <span className="text-xs text-muted-foreground">{doc.processing_time_ms}ms</span>
-            )}
+            {readiness.supplierName ? (
+              <span className="text-xs text-muted-foreground">
+                Supplier: {readiness.supplierName}
+              </span>
+            ) : null}
           </div>
         </div>
 
-        <InvoiceDemoActions jobId={doc.job_id} />
+        <InvoiceActions
+          jobId={job.id}
+          canApprove={readiness.canApprove}
+          canReject={canReject}
+          blockedReason={readiness.blockedReason}
+          alreadyLinkedBillId={job.matchedDocId}
+        />
       </header>
 
-      {doc.error_message && (
-        <div className="rounded-md bg-status-danger-muted p-4 text-sm text-destructive">{doc.error_message}</div>
+      {job.error && (
+        <div className="rounded-md bg-status-danger-muted p-4 text-sm text-destructive">
+          {job.error}
+        </div>
       )}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -73,16 +90,16 @@ export default async function InvoiceDetailPage({
             {(
               [
                 ["Vendor", ext.vendor],
-                ["VAT", ext.vendor_vat],
-                ["Invoice #", ext.invoice_number],
-                ["Date", ext.invoice_date],
-                ["Due date", ext.due_date],
+                ["VAT", ext.vendorVat],
+                ["Invoice #", ext.invoiceNumber],
+                ["Date", ext.invoiceDate],
+                ["Due date", ext.dueDate],
                 ["Currency", ext.currency],
-                ["Subtotal", ext.subtotal.toFixed(3)],
-                ["Tax", ext.tax_amount.toFixed(3)],
-                ["Total", ext.total.toFixed(3)],
-                ["PO ref", ext.po_reference],
-                ["Payment terms", ext.payment_terms],
+                ["Subtotal", ext.subtotal ? ext.subtotal.toFixed(3) : "—"],
+                ["Tax", ext.taxAmount ? ext.taxAmount.toFixed(3) : "—"],
+                ["Total", ext.total ? ext.total.toFixed(3) : "—"],
+                ["PO ref", ext.poReference],
+                ["Payment terms", ext.paymentTerms],
               ] as [string, string][]
             ).map(([label, value]) => (
               <div key={label} className="flex justify-between gap-4">
@@ -95,20 +112,24 @@ export default async function InvoiceDetailPage({
 
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <h2 className="mb-3 font-semibold text-foreground">Field confidence</h2>
-          <dl className="space-y-2 text-sm">
-            {Object.entries(doc.field_confidences).map(([field, conf]) => (
-              <div key={field} className="flex items-center justify-between">
-                <dt className="text-foreground">{field}</dt>
-                <dd className={`rounded px-2 py-0.5 text-xs font-medium ${confidenceColor(conf)}`}>
-                  {(conf * 100).toFixed(0)}%
-                </dd>
-              </div>
-            ))}
-          </dl>
+          {Object.keys(ext.fieldConfidences).length === 0 ? (
+            <p className="text-sm text-muted-foreground">No confidence scores.</p>
+          ) : (
+            <dl className="space-y-2 text-sm">
+              {Object.entries(ext.fieldConfidences).map(([field, conf]) => (
+                <div key={field} className="flex items-center justify-between">
+                  <dt className="text-foreground">{field}</dt>
+                  <dd className={`rounded px-2 py-0.5 text-xs font-medium ${confidenceColor(conf)}`}>
+                    {(conf * 100).toFixed(0)}%
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
       </div>
 
-      {ext.line_items.length > 0 && (
+      {ext.lineItems.length > 0 && (
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <h2 className="mb-3 font-semibold text-foreground">Line items</h2>
           <div className="overflow-x-auto">
@@ -123,14 +144,14 @@ export default async function InvoiceDetailPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {ext.line_items.map((li, i) => (
+                {ext.lineItems.map((li, i) => (
                   <tr key={i}>
                     <td className="px-3 py-2">{li.description}</td>
-                    <td className="px-3 py-2 text-foreground">{li.product_code || "—"}</td>
+                    <td className="px-3 py-2 text-foreground">{li.productCode || "—"}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{li.quantity}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{li.unit_price.toFixed(3)}</td>
+                    <td className="px-3 py-2 text-right tabular-nums">{li.unitPrice.toFixed(3)}</td>
                     <td className="px-3 py-2 text-right font-medium tabular-nums">
-                      {li.amount.toFixed(3)}
+                      {li.total.toFixed(3)}
                     </td>
                   </tr>
                 ))}
@@ -140,14 +161,25 @@ export default async function InvoiceDetailPage({
         </div>
       )}
 
-      {doc.matched_vendor_name && (
+      {ext.vendor ? (
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
           <h2 className="mb-2 font-semibold text-foreground">Matching</h2>
           <p className="text-sm text-foreground">
-            Matched vendor: <span className="font-medium">{doc.matched_vendor_name}</span>
+            Extracted vendor: <span className="font-medium">{ext.vendor}</span>
+            {readiness.supplierName ? (
+              <>
+                {" "}
+                → matched <span className="font-medium">{readiness.supplierName}</span>
+              </>
+            ) : null}
           </p>
+          {job.matchedDocId ? (
+            <p className="mt-1 text-sm text-muted-foreground">
+              Linked bill id: {job.matchedDocId}
+            </p>
+          ) : null}
         </div>
-      )}
+      ) : null}
     </div>
   );
 }

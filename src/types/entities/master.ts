@@ -51,6 +51,8 @@ export type Product = {
   sellable: boolean;
   defaultPurchasePrice: number;
   defaultSalePrice: number;
+  reorderPoint?: number;
+  abcClass?: "A" | "B" | "C" | null;
 };
 
 export type Warehouse = {

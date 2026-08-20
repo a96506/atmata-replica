@@ -148,3 +148,13 @@ export async function rpcRows<T>(
   const result = await client.database.rpc(name, args);
   return normalizeEmbeds(mapRows<T>(requireData(result, name)));
 }
+
+/** Scalar / jsonb RPC result (e.g. report_pnl). Camelizes keys. */
+export async function rpcData<T>(
+  name: string,
+  args: Record<string, unknown> = {},
+): Promise<T> {
+  const client = await getReadClient();
+  const result = await client.database.rpc(name, args);
+  return normalizeEmbeds(camelize<T>(requireData(result, name)));
+}

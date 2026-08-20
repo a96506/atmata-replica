@@ -8,6 +8,7 @@ import {
   type DatabaseSearchResult,
 } from "@/lib/api/search";
 import { fuzzy, type ScoredResult } from "@/lib/search/match";
+import { browserGet, browserSet } from "@/lib/browser-store";
 import type { SearchKind, SearchResult } from "@/types/search";
 
 const RECENT_KEY = "atmata.search.recent";
@@ -47,7 +48,7 @@ export function GlobalSearch({
     if (!open) return;
     buildSearchIndex().then(setIndex);
     try {
-      const raw = window.sessionStorage.getItem(RECENT_KEY);
+      const raw = browserGet(RECENT_KEY);
       if (raw) {
         const saved = (JSON.parse(raw) as DatabaseSearchResult[]).filter(
           (entry) => typeof entry.path === "string",
@@ -108,7 +109,7 @@ export function GlobalSearch({
         path: entry.href("").replace(/^\/\//, "/"),
         keywords: entry.keywords,
       }));
-      window.sessionStorage.setItem(RECENT_KEY, JSON.stringify(serializable));
+      browserSet(RECENT_KEY, JSON.stringify(serializable));
       setRecent(dedup);
     } catch {
       /* ignore */

@@ -93,3 +93,71 @@ export async function listFiscalPeriods(): Promise<FiscalPeriod[]> {
     { column: "id" },
   ]);
 }
+
+export type FxRateRow = {
+  id: string;
+  baseCurrency: string;
+  quoteCurrency: string;
+  rate: number;
+  rateDate: string;
+  source: string;
+};
+
+export async function listFxRates(): Promise<FxRateRow[]> {
+  return listTable("fx_rates", MASTER_SELECTS.fx_rates, [
+    { column: "rate_date", ascending: false },
+    { column: "id" },
+  ]);
+}
+
+export async function getFxRate(
+  from: string,
+  to: string,
+  date?: string,
+): Promise<number> {
+  if (from === to) return 1;
+  const rows = await listFxRates();
+  const candidates = rows
+    .filter(
+      (r) =>
+        r.baseCurrency === from &&
+        r.quoteCurrency === to &&
+        (!date || r.rateDate <= date),
+    )
+    .sort((a, b) => b.rateDate.localeCompare(a.rateDate));
+  return candidates[0]?.rate ?? 1;
+}
+
+export type ApprovalRuleRow = {
+  id: string;
+  docType: string;
+  minAmount: number;
+  maxAmount: number | null;
+  approverRoles: string[];
+  sequence: number;
+  active: boolean;
+};
+
+export async function listApprovalRules(): Promise<ApprovalRuleRow[]> {
+  return listTable("approval_rules", MASTER_SELECTS.approval_rules, [
+    { column: "doc_type" },
+    { column: "sequence" },
+    { column: "id" },
+  ]);
+}
+
+export function resolveApprovalChain(
+  rules: ApprovalRuleRow[],
+  docType: string,
+  amount: number,
+): ApprovalRuleRow[] {
+  return rules
+    .filter(
+      (r) =>
+        r.active &&
+        r.docType === docType &&
+        amount >= r.minAmount &&
+        (r.maxAmount == null || amount <= r.maxAmount),
+    )
+    .sort((a, b) => a.sequence - b.sequence || a.minAmount - b.minAmount);
+}

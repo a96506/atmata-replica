@@ -73,3 +73,28 @@
 - App: domain Zod + Server Actions + `write-rpc.ts`; 13 `/new` forms off demo toasts; FATOORA branches removed from invoice form.
 - Vitest 56/56; live `writes-create.insforge.test.ts` 2/2 (PO idempotency + JE draft).
 - Stop before Phase 8 (DocEditShell / DocActionBar / AdoptionNewShell / M17).
+
+## 2026-08-20 Phase 8
+- Hermit load; Phase 7 done → Phase 8 Doc shells + M17.
+- Applied `20260815163000_operational-write-rpcs.sql` on `erp-backend-v1` (14 ops RPCs + DML revoke).
+- DocEditShell / DocActionBar: real update/transition/post/reverse/approval dispatch; 24 pages plumbed with docId+rowVersion.
+- AdoptionNewShell → create_rfq / create_vendor_return / create_customer_return.
+- Ops: reconciliation + period-close + fiscal + inbox actions; live reads for inbox/recon/close.
+- Vitest 58+; tsc clean. OCR invoice demo + full fake teardown deferred (functions/AI).
+- Stop before Phase 9 schedules.
+
+## 2026-08-20 Phase 9
+- Hermit load; Phase 8 done → Phase 9 schedules.
+- Applied `20260815164000_scheduled-operations.sql` on `erp-backend-v1`.
+- Deployed `erp-scheduler`; added `SCHEDULE_CRON_TOKEN`; seven GMT crons created inactive, verified, then activated.
+- Manual jobs: aging idempotent skip; stale/month_end/inventory/depreciation succeeded; fx_ingest failed (no `FX_RATES_API_KEY`).
+- Vitest schedule unit 7 + live RPC 3; tsc clean.
+- Stop before Phase 10.
+
+## 2026-08-20 Phase 10
+- Hermit load; Phase 9 done → Phase 10 verify.
+- Built `scripts/verify/*` + `tests/verification/*` + `verification/{README,waivers,.gitignore}`.
+- Cleared no-mocks: deleted fakeService; settings/COA/FX/approvals + NotificationsBell on InsForge; browser scratch via `src/lib/browser-store.ts`.
+- Applied `20260820210445_doc-state-transitions-rls.sql`; advisor suppress DEFINER + shared-ref permissive; rescan critical=0.
+- Fetch-based Playwright fixture (SDK import breaks Node via shared-schemas).
+- Clean run `vf_20260820_ac530f` — all gates pass. Isolation/P2P skip without VERIFY_A/B_*.

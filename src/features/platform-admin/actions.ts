@@ -21,12 +21,10 @@ import type {
   PlatformRowCounts,
   ProvisioningResult,
 } from "./domain/company";
+import { resolveAppOrigin } from "@/lib/app-url";
 
 function invitationLink(token: string, locale: "en" | "ar"): string {
-  const origin = (process.env.APP_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "").replace(
-    /\/$/,
-    "",
-  );
+  const origin = resolveAppOrigin() ?? "";
   const path = `/${locale}/invitation?token=${encodeURIComponent(token)}`;
   return origin ? `${origin}${path}` : path;
 }

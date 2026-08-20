@@ -14,6 +14,10 @@ export default async function Page({
   const accounts = await listAccounts();
   return (
     <DocEditShell
+      locale={locale === "ar" ? "ar" : "en"}
+      docType="journal_entry"
+      docId={je.id}
+      expectedRowVersion={je.rowVersion}
       docNumber={je.number}
       docTitle={je.description}
       state={je.state}

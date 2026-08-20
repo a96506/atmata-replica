@@ -5,6 +5,7 @@ import type {
   AdoptionTreeNode,
   DocType,
 } from "@/types";
+import { browserGet, browserRemove, browserSet } from "@/lib/browser-store";
 
 /** Client-safe authenticated facade. Server Components use adoption.server.ts. */
 export async function getAdoptableLines(
@@ -41,10 +42,8 @@ const ADOPTION_LOG_KEY = "atmata.adoption.log";
 export async function recordAdoptions(edges: AdoptionEdge[]): Promise<void> {
   if (typeof window === "undefined") return;
   try {
-    const prev: AdoptionEdge[] = JSON.parse(
-      window.sessionStorage.getItem(ADOPTION_LOG_KEY) ?? "[]",
-    );
-    window.sessionStorage.setItem(ADOPTION_LOG_KEY, JSON.stringify([...prev, ...edges]));
+    const prev: AdoptionEdge[] = JSON.parse(browserGet(ADOPTION_LOG_KEY) ?? "[]");
+    browserSet(ADOPTION_LOG_KEY, JSON.stringify([...prev, ...edges]));
   } catch {
     // Local draft compatibility only; writes owns persistence.
   }
@@ -53,7 +52,7 @@ export async function recordAdoptions(edges: AdoptionEdge[]): Promise<void> {
 export function readAdoptionLog(): AdoptionEdge[] {
   if (typeof window === "undefined") return [];
   try {
-    return JSON.parse(window.sessionStorage.getItem(ADOPTION_LOG_KEY) ?? "[]");
+    return JSON.parse(browserGet(ADOPTION_LOG_KEY) ?? "[]");
   } catch {
     return [];
   }
@@ -66,16 +65,16 @@ export function adoptionStorageKey(targetType: DocType): string {
 export function stashAdoptionContext(ctx: AdoptionContext): void {
   if (typeof window === "undefined") return;
   try {
-    window.sessionStorage.setItem(adoptionStorageKey(ctx.targetType), JSON.stringify(ctx));
+    browserSet(adoptionStorageKey(ctx.targetType), JSON.stringify(ctx));
   } catch {
-    // Ignore unavailable session storage.
+    // Ignore unavailable browser scratch.
   }
 }
 
 export function readAdoptionContext(targetType: DocType): AdoptionContext | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.sessionStorage.getItem(adoptionStorageKey(targetType));
+    const raw = browserGet(adoptionStorageKey(targetType));
     return raw ? (JSON.parse(raw) as AdoptionContext) : null;
   } catch {
     return null;
@@ -85,8 +84,8 @@ export function readAdoptionContext(targetType: DocType): AdoptionContext | null
 export function clearAdoptionContext(targetType: DocType): void {
   if (typeof window === "undefined") return;
   try {
-    window.sessionStorage.removeItem(adoptionStorageKey(targetType));
+    browserRemove(adoptionStorageKey(targetType));
   } catch {
-    // Ignore unavailable session storage.
+    // Ignore unavailable browser scratch.
   }
 }

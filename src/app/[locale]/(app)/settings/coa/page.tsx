@@ -1,6 +1,6 @@
 import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
-import { ACCOUNTS } from "@/mocks/seed/gl";
+import { listAccounts } from "@/lib/api/gl";
 
 const TYPE_ORDER: Record<string, number> = {
   asset: 1,
@@ -11,7 +11,8 @@ const TYPE_ORDER: Record<string, number> = {
 };
 
 export default async function Page() {
-  const rows = ACCOUNTS.slice().sort((a, b) => {
+  const accounts = await listAccounts();
+  const rows = accounts.slice().sort((a, b) => {
     const t = (TYPE_ORDER[a.type] ?? 99) - (TYPE_ORDER[b.type] ?? 99);
     if (t !== 0) return t;
     return a.code.localeCompare(b.code);

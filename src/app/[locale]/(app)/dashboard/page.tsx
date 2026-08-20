@@ -18,8 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatKwd } from "@/lib/utils";
-import { DEMO_CFO, DEMO_STATS } from "@/lib/demo-data";
-import { listFiscalPeriods } from "@/lib/api/master";
+import { getDashboardOverview } from "@/lib/api/reports";
 import { requestCfoNarrative } from "@/lib/actions/ai";
 
 function KpiCard({
@@ -72,10 +71,7 @@ export default async function DashboardPage() {
   const t = await getTranslations("dashboard");
   const locale = await getLocale();
   const lk = locale === "ar" ? "ar" : "en";
-  const stats = DEMO_STATS;
-  const cfo = DEMO_CFO;
-  const periods = await listFiscalPeriods();
-  const periodId = periods.at(-1)?.id;
+  const { cfo, stats, periodId } = await getDashboardOverview();
   const narrativeResult = periodId
     ? await requestCfoNarrative({ periodId, locale: lk })
     : null;

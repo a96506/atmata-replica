@@ -1,0 +1,20 @@
+{
+  "notes": "Security advisor flags intentional SECURITY DEFINER RPCs as dangerous-function. Those RPCs are the ERP write/read surface: PUBLIC EXECUTE revoked, authenticated grants explicit, search_path pinned in CREATE FUNCTION SET. Do not revoke authenticated EXECUTE. Non-security missing-fk-index warnings are tracked separately and do not block verify.",
+  "waivers": [
+    {
+      "ruleId": "dangerous-function",
+      "owner": "alfailakawi1000@gmail.com",
+      "reason": "Intentional SECURITY DEFINER ERP RPCs (tenancy helpers, posting, reports, provisioning). PUBLIC EXECUTE revoked; authenticated EXECUTE required; search_path pinned. Also suppressed via `insforge advisor suppress dangerous-function --reason accepted_risk`.",
+      "expiresAt": "2027-02-20",
+      "category": "security"
+    },
+    {
+      "ruleId": "rls-permissive",
+      "affectedObject": "public.doc_state_transitions (doc_state_transitions_select)",
+      "owner": "alfailakawi1000@gmail.com",
+      "reason": "Shared reference state machine; SELECT USING (true) for authenticated is intentional. Writes revoked. Suppressed via InsForge advisor suppress accepted_risk.",
+      "expiresAt": "2027-02-20",
+      "category": "security"
+    }
+  ]
+}

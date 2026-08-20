@@ -1,7 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { MoneyInput } from "./MoneyInput";
-import { getFxRate } from "@/mocks/seed/fx";
 import { formatMoney } from "@/lib/money";
 import type { Currency } from "@/types";
 
@@ -22,9 +22,31 @@ export function FxRateInput({
   amount,
   date,
 }: FxRateInputProps) {
+  const [suggested, setSuggested] = useState(1);
+
+  useEffect(() => {
+    if (docCurrency === baseCurrency) return;
+    let cancelled = false;
+    const params = new URLSearchParams({
+      from: docCurrency,
+      to: baseCurrency,
+    });
+    if (date) params.set("date", date);
+    fetch(`/api/fx-rate?${params}`, { credentials: "same-origin", cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((body: { rate?: number }) => {
+        if (!cancelled) setSuggested(Number(body.rate) || 1);
+      })
+      .catch(() => {
+        if (!cancelled) setSuggested(1);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [docCurrency, baseCurrency, date]);
+
   if (docCurrency === baseCurrency) return null;
 
-  const suggested = getFxRate(docCurrency, baseCurrency, date);
   const converted = amount * (rate || suggested);
 
   return (

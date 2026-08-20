@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { test } from "@playwright/test";
 
-function loadLocalEnv() {
+export function loadLocalEnv() {
   const envPath = resolve(process.cwd(), ".env.local");
   if (!existsSync(envPath)) return;
   for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {

@@ -67,7 +67,11 @@ export default async function Page({
       }
       actionBar={
         <DocActionBar
+          locale={locale === "ar" ? "ar" : "en"}
           docType="quote"
+          docId={q.id}
+          expectedRowVersion={q.rowVersion}
+          docDate={q.date}
           docNumber={q.number}
           currentState={stateAlias === "expired" ? "cancelled" : (stateAlias as "draft" | "pending" | "confirmed" | "posted" | "cancelled")}
           totalLabel={formatMoney(q.total, q.currency)}

@@ -13,6 +13,10 @@ export default async function Page({
   if (!rcp) notFound();
   return (
     <DocEditShell
+      locale={locale === "ar" ? "ar" : "en"}
+      docType="customer_receipt"
+      docId={rcp.id}
+      expectedRowVersion={rcp.rowVersion}
       docNumber={rcp.number}
       docTitle={`Receipt ${rcp.date} · ${rcp.method}`}
       state={rcp.state}

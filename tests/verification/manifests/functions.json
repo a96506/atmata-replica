@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "functions": [
+    { "slug": "pdf-gen", "required": true },
+    { "slug": "email-send", "required": true },
+    { "slug": "ocr-vendor-bill", "required": true },
+    { "slug": "reconciliation-suggest", "required": true },
+    { "slug": "ai-assistant", "required": true },
+    { "slug": "erp-scheduler", "required": true }
+  ]
+}

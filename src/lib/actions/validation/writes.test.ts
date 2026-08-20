@@ -10,6 +10,14 @@ import {
   updateDocumentHeaderSchema,
 } from "./p2p";
 import { createQuoteSchema, createSalesOrderSchema } from "./q2c";
+import {
+  acceptReconciliationMatchSchema,
+  importBankStatementSchema,
+} from "./reconciliation";
+import {
+  markInboxNotificationReadSchema,
+  startPeriodCloseSchema,
+} from "./period-close";
 
 const KEY = "11111111-1111-4111-8111-111111111111";
 
@@ -232,5 +240,45 @@ describe("write domain schemas", () => {
       patch: { notes: "updated" },
     });
     expect(patch.ok).toBe(true);
+  });
+});
+
+describe("M17 operational schemas", () => {
+  it("accepts accept match + import statement + period close payloads", () => {
+    const accept = validateActionInput(acceptReconciliationMatchSchema, {
+      locale: "en",
+      idempotencyKey: KEY,
+      matchId: "match_1",
+    });
+    expect(accept.ok).toBe(true);
+
+    const importStmt = validateActionInput(importBankStatementSchema, {
+      locale: "en",
+      idempotencyKey: KEY,
+      header: { bankAccountId: "ba_1", number: "STMT-1" },
+      lines: [
+        {
+          lineNumber: 1,
+          date: "2026-08-01",
+          description: "Deposit",
+          amount: 100,
+        },
+      ],
+    });
+    expect(importStmt.ok).toBe(true);
+
+    const close = validateActionInput(startPeriodCloseSchema, {
+      locale: "en",
+      idempotencyKey: KEY,
+      fiscalPeriodId: "fp_2026_08",
+    });
+    expect(close.ok).toBe(true);
+
+    const inbox = validateActionInput(markInboxNotificationReadSchema, {
+      locale: "en",
+      idempotencyKey: KEY,
+      notificationId: "n_1",
+    });
+    expect(inbox.ok).toBe(true);
   });
 });

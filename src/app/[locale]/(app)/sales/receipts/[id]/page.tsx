@@ -79,7 +79,11 @@ export default async function Page({
       }
       actionBar={
         <DocActionBar
+          locale={locale === "ar" ? "ar" : "en"}
           docType="customer_receipt"
+          docId={rcp.id}
+          expectedRowVersion={rcp.rowVersion}
+          docDate={rcp.date}
           docNumber={rcp.number}
           currentState={rcp.state}
           totalLabel={formatMoney(rcp.amount, rcp.currency)}

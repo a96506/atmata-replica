@@ -80,7 +80,11 @@ export default async function Page({
       currentState={adj.state}
       actionBar={
         <DocActionBar
+          locale={locale === "ar" ? "ar" : "en"}
           docType="stock_adjustment"
+          docId={adj.id}
+          expectedRowVersion={adj.rowVersion}
+          docDate={adj.date}
           docNumber={adj.number}
           currentState={adj.state}
         />

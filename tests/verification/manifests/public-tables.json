@@ -1,0 +1,467 @@
+{
+  "version": 1,
+  "expectedCompanyOwnedCount": 87,
+  "notes": "company-owned entries mirror company_table_manifest (platform-admin seed + write_commands + scheduled-operations adds). Special tables classified per verify.md \u00a711.",
+  "tables": [
+    {
+      "name": "company_members",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "invitations",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "currencies",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "branches",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "warehouses",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "locations",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "tax_codes",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "payment_terms",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "bank_accounts",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "fiscal_periods",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "accounts",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "products",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "customers",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "suppliers",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "fx_rates",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "price_lists",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "price_list_items",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "document_sequences",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "account_mappings",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "approval_rules",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "purchase_requisitions",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "purchase_requisition_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "rfqs",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "rfq_sources",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "rfq_invited_suppliers",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "rfq_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "rfq_quotes",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "rfq_quote_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "purchase_orders",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "purchase_order_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "goods_receipts",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "goods_receipt_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "vendor_bills",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "vendor_bill_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "vendor_payments",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "vendor_payment_allocations",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "vendor_returns",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "vendor_return_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "debit_notes",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "opportunities",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "quotes",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "quote_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "sales_orders",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "sales_order_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "delivery_notes",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "delivery_note_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "customer_invoices",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "customer_invoice_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "customer_receipts",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "customer_receipt_allocations",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "customer_returns",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "customer_return_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "credit_notes",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "journal_entries",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "journal_entry_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "stock_moves",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "internal_transfers",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "internal_transfer_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "stock_adjustments",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "stock_adjustment_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "document_links",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "audit_events",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "inventory_lots",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "fixed_assets",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "bank_statements",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "bank_statement_lines",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "reconciliation_sessions",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "reconciliation_rules",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "reconciliation_matches",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "period_close_runs",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "period_close_tasks",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "approval_requests",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "approval_steps",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "approval_decisions",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "notifications",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "attachments",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "document_processing_jobs",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "email_log",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "ai_suggestions",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "ai_queued_actions",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "ai_thresholds",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "rfq_line_sources",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "platform_provisioning_operations",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "write_commands",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "scheduled_job_runs",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "operational_alerts",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "asset_depreciation_entries",
+      "classification": "company-owned",
+      "source": "company_table_manifest"
+    },
+    {
+      "name": "companies",
+      "classification": "tenant-root",
+      "source": "tenancy-foundation"
+    },
+    {
+      "name": "user_profiles",
+      "classification": "self-only",
+      "source": "tenancy-foundation"
+    },
+    {
+      "name": "platform_admins",
+      "classification": "platform-only",
+      "source": "tenancy-foundation"
+    },
+    {
+      "name": "company_table_manifest",
+      "classification": "platform-only",
+      "source": "platform-admin"
+    },
+    {
+      "name": "doc_state_transitions",
+      "classification": "shared-reference",
+      "source": "document-rules"
+    }
+  ]
+}

@@ -8,13 +8,17 @@ export const MASTER_SELECTS = {
   suppliers:
     "id,name,email,vat_number,bank_account,payment_term_id,wht_applicable,wht_rate",
   products:
-    "id,sku,name,uom,tax_code_id,costing_method,lot_tracked,purchasable,sellable,default_purchase_price,default_sale_price",
+    "id,sku,name,uom,tax_code_id,costing_method,lot_tracked,purchasable,sellable,default_purchase_price,default_sale_price,reorder_point,abc_class",
   warehouses: "id,company_id,code,name",
   locations: "id,warehouse_id,code,name",
   tax_codes: "id,jurisdiction,code,name_en,name_ar,rate,is_input,is_output",
   payment_terms: "id,code,name_en,name_ar,net_days",
   bank_accounts: "id,company_id,name,iban,currency",
   fiscal_periods: "id,company_id,year,month,start,end,status",
+  fx_rates:
+    "id,base_currency,quote_currency,rate,rate_date,source",
+  approval_rules:
+    "id,doc_type,min_amount,max_amount,approver_roles,sequence,active",
 } as const;
 
 export const P2P_SELECTS = {
@@ -72,4 +76,22 @@ export const GL_SELECTS = {
   accounts: "id,code,name,type,parent",
   journalEntries:
     "id,row_version,number,company_id,date,currency,state,source_type,source_id,description,lines:journal_entry_lines(id,account_id,description,debit,credit,line_order)",
+} as const;
+
+export const INBOX_SELECTS = {
+  notifications:
+    "id,kind,title,body,doc_type,doc_id,read_at,created_at",
+} as const;
+
+export const RECON_SELECTS = {
+  bankStatements:
+    "id,number,bank_account_id,period_start,period_end,opening_balance,closing_balance,status,created_at,updated_at",
+  suggestedMatches:
+    "id,confidence,status,proposed_by,source_doc_type,source_doc_id,journal_entry_id,bank_statement_line_id,bank_statement_lines(id,reference,amount,description,line_number,bank_statement_id,status),journal_entries(id,number)",
+} as const;
+
+export const PERIOD_CLOSE_SELECTS = {
+  runs: "id,fiscal_period_id,status,started_at,completed_at,created_at",
+  tasks:
+    "id,period_close_run_id,code,name,sequence,status,detail,completed_at,created_at",
 } as const;

@@ -1,25 +1,51 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+import {
+  createRequestId,
+  KnownActionError,
+  normalizeActionError,
+} from "@/lib/actions/errors";
+import type { ActionResult } from "@/lib/actions/result";
+import { validateActionInput } from "@/lib/actions/validation";
+import { actionSchema } from "@/lib/actions/validation";
+import {
+  localeSchema,
+  idempotencyKeySchema,
+} from "@/lib/actions/validation/common";
+import {
+  callWriteRpc,
+  revalidateDocumentPaths,
+  type DocumentWriteResult,
+} from "@/lib/actions/write-rpc";
 import { camelize } from "@/lib/db/case";
 import { createInsForgeServerClient } from "@/lib/insforge/server";
+import {
+  parseOcrExtraction,
+  type OcrExtractionLine,
+} from "@/lib/ocr/vendor-bill-extraction";
 import type { DocumentProcessingJob } from "@/types/entities";
 
 /**
  * AP invoice upload — two-step flow so the browser owns the file bytes and
  * the server owns the DB rows:
  *
- *   1. createOcrJob({ fileName, mime, size }) → inserts a `document_processing_jobs`
- *      row with status='queued' and no source yet. Returns { jobId, companyId }.
- *   2. Browser uploads the PDF to the `imports` bucket with key
- *      `${companyId}/vendor_bills/${jobId}/${filename}` via createBrowserClient().
- *   3. linkOcrJobSource({ jobId, key, url }) → updates the job row with
- *      source_url/source_key and inserts a sibling `attachments` row
- *      (doc_type='vendor_bill', doc_id=null until the OCR function creates
- *      the vendor_bill and sets matched_doc_id).
+ *   1. createOcrJob → queued document_processing_jobs row
+ *   2. Browser uploads PDF to imports bucket
+ *   3. linkOcrJobSource → source_url/key + attachments row
  *
- * The OCR extraction edge function ships in the `functions` todo — storage
- * only stands up the queue.
+ * OCR extract is functions-owned (`ocr-vendor-bill`). Approve/reject is this
+ * write-path Server Action: single guarded transition (ILLEGAL_TRANSITION on
+ * bad status), then create_vendor_bill (with source_ocr_job_id) + matched_doc_id
+ * (or failed/REJECTED).
+ *
+ * @see https://dev.to/iurii_rogulia/b2b-quote-to-order-flow-in-nextjs-a-state-machine-that-doesnt-drift-1ijp
+ * @see https://github.com/andermanasalb/invoicescan — transitions validate current state
  */
+
+const APPROVABLE_STATUSES = new Set(["completed", "review_needed"]);
 
 export async function createOcrJob(input: {
   fileName: string;
@@ -28,7 +54,8 @@ export async function createOcrJob(input: {
 }): Promise<{ jobId: number; companyId: string }> {
   const insforge = await createInsForgeServerClient();
 
-  const { data: cidRow, error: cidErr } = await insforge.database.rpc("my_company_id");
+  const { data: cidRow, error: cidErr } =
+    await insforge.database.rpc("my_company_id");
   if (cidErr) throw new Error(cidErr.message);
   const companyId = cidRow as unknown as string;
   if (!companyId) throw new Error("no active company membership");
@@ -59,7 +86,6 @@ export async function linkOcrJobSource(input: {
 }): Promise<{ job: DocumentProcessingJob; attachmentId: string }> {
   const insforge = await createInsForgeServerClient();
 
-  // Insert attachment first — RLS + CHECK enforce the company prefix on key.
   const { data: attRow, error: attErr } = await insforge.database
     .from("attachments")
     .insert([
@@ -106,4 +132,338 @@ export async function listOcrJobs(): Promise<DocumentProcessingJob[]> {
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return camelize<DocumentProcessingJob[]>(data ?? []);
+}
+
+export async function getOcrJob(
+  jobId: number,
+): Promise<DocumentProcessingJob | null> {
+  if (!Number.isSafeInteger(jobId) || jobId <= 0) return null;
+  const insforge = await createInsForgeServerClient();
+  const { data, error } = await insforge.database
+    .from("document_processing_jobs")
+    .select("*")
+    .eq("id", jobId)
+    .eq("kind", "ocr_vendor_bill")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return camelize<DocumentProcessingJob>(data);
+}
+
+function normalizeName(value: string): string {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+async function resolveSupplierId(
+  vendorName: string,
+): Promise<{ id: string; name: string } | null> {
+  const needle = normalizeName(vendorName);
+  if (!needle) return null;
+  const insforge = await createInsForgeServerClient();
+  const { data, error } = await insforge.database
+    .from("suppliers")
+    .select("id, name")
+    .eq("active", true);
+  if (error) throw error;
+  const rows = (data ?? []) as Array<{ id: string; name: string }>;
+  const exact = rows.find((row) => normalizeName(row.name) === needle);
+  if (exact) return exact;
+  const partial = rows.filter(
+    (row) =>
+      normalizeName(row.name).includes(needle) ||
+      needle.includes(normalizeName(row.name)),
+  );
+  return partial.length === 1 ? partial[0]! : null;
+}
+
+async function resolveProductId(
+  line: OcrExtractionLine,
+): Promise<string | null> {
+  const insforge = await createInsForgeServerClient();
+  const { data, error } = await insforge.database
+    .from("products")
+    .select("id, sku, name, purchasable")
+    .eq("purchasable", true);
+  if (error) throw error;
+  const products = (data ?? []) as Array<{
+    id: string;
+    sku: string;
+    name: string;
+    purchasable: boolean;
+  }>;
+  if (products.length === 0) return null;
+
+  const code = line.productCode?.trim().toLowerCase();
+  if (code) {
+    const bySku = products.find((p) => p.sku.toLowerCase() === code);
+    if (bySku) return bySku.id;
+  }
+
+  const desc = normalizeName(line.description);
+  const exactName = products.find((p) => normalizeName(p.name) === desc);
+  if (exactName) return exactName.id;
+
+  const skuInDesc = products.find((p) => desc.includes(p.sku.toLowerCase()));
+  if (skuInDesc) return skuInDesc.id;
+
+  const nameHit = products.filter(
+    (p) =>
+      desc.includes(normalizeName(p.name)) ||
+      normalizeName(p.name).includes(desc),
+  );
+  return nameHit.length === 1 ? nameHit[0]!.id : null;
+}
+
+export type OcrApproveReadiness = {
+  canApprove: boolean;
+  blockedReason: string | null;
+  supplierId: string | null;
+  supplierName: string | null;
+};
+
+export async function getOcrApproveReadiness(
+  job: DocumentProcessingJob,
+): Promise<OcrApproveReadiness> {
+  if (job.matchedDocId) {
+    return {
+      canApprove: false,
+      blockedReason: "Already approved — vendor bill already linked.",
+      supplierId: null,
+      supplierName: null,
+    };
+  }
+  if (!APPROVABLE_STATUSES.has(job.status)) {
+    return {
+      canApprove: false,
+      blockedReason: `Cannot approve while status is "${job.status}".`,
+      supplierId: null,
+      supplierName: null,
+    };
+  }
+
+  const parsed = parseOcrExtraction(job.extraction);
+  if (!parsed.vendor || !parsed.invoiceNumber || !parsed.invoiceDate) {
+    return {
+      canApprove: false,
+      blockedReason:
+        "Extraction missing vendor, invoice number, or invoice date.",
+      supplierId: null,
+      supplierName: null,
+    };
+  }
+  if (parsed.lineItems.length === 0) {
+    return {
+      canApprove: false,
+      blockedReason: "Extraction has no line items.",
+      supplierId: null,
+      supplierName: null,
+    };
+  }
+
+  const supplier = await resolveSupplierId(parsed.vendor);
+  if (!supplier) {
+    return {
+      canApprove: false,
+      blockedReason: `No unique active supplier match for "${parsed.vendor}".`,
+      supplierId: null,
+      supplierName: null,
+    };
+  }
+
+  for (const [i, line] of parsed.lineItems.entries()) {
+    const productId = await resolveProductId(line);
+    if (!productId) {
+      return {
+        canApprove: false,
+        blockedReason: `No unique purchasable product match for line ${i + 1}: "${line.description}".`,
+        supplierId: supplier.id,
+        supplierName: supplier.name,
+      };
+    }
+  }
+
+  return {
+    canApprove: true,
+    blockedReason: null,
+    supplierId: supplier.id,
+    supplierName: supplier.name,
+  };
+}
+
+const ocrDecisionSchema = actionSchema({
+  locale: localeSchema,
+  jobId: z.number().int().positive(),
+  idempotencyKey: idempotencyKeySchema,
+  reason: z.string().trim().min(1).max(500).optional(),
+});
+
+function revalidateOcrPaths(
+  locale: "en" | "ar",
+  jobId: number,
+  billId?: string,
+) {
+  revalidatePath(`/${locale}/accounting/invoices`);
+  revalidatePath(`/accounting/invoices`);
+  revalidatePath(`/${locale}/accounting/invoices/${jobId}`);
+  revalidatePath(`/accounting/invoices/${jobId}`);
+  if (billId) {
+    revalidateDocumentPaths(locale, "vendor_bill", billId);
+  }
+}
+
+/**
+ * Approve OCR extraction → create draft vendor_bill via write RPC (sets
+ * source_ocr_job_id), then matched_doc_id. Illegal job status →
+ * ILLEGAL_TRANSITION (409-class).
+ */
+export async function approveOcrJobAction(
+  input: unknown,
+): Promise<ActionResult<DocumentWriteResult & { jobId: number }>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(ocrDecisionSchema, input, requestId);
+    if (!parsed.ok) return parsed;
+
+    const job = await getOcrJob(parsed.data.jobId);
+    if (!job) {
+      throw new KnownActionError("NOT_FOUND");
+    }
+    if (job.matchedDocId) {
+      throw new KnownActionError("ILLEGAL_TRANSITION");
+    }
+    if (!APPROVABLE_STATUSES.has(job.status)) {
+      throw new KnownActionError("ILLEGAL_TRANSITION");
+    }
+
+    const readiness = await getOcrApproveReadiness(job);
+    if (!readiness.canApprove || !readiness.supplierId) {
+      return {
+        ok: false,
+        error: {
+          code: "VALIDATION",
+          messageKey: "errors.validation",
+          requestId,
+          retryable: false,
+          fieldErrors: {
+            approve: [readiness.blockedReason ?? "Cannot approve this job."],
+          },
+        },
+      };
+    }
+
+    const extraction = parseOcrExtraction(job.extraction);
+    const lines = [];
+    for (const line of extraction.lineItems) {
+      const productId = await resolveProductId(line);
+      if (!productId) {
+        throw new KnownActionError("VALIDATION", {
+          fieldErrors: {
+            lines: [`No product match for "${line.description}"`],
+          },
+        });
+      }
+      lines.push({
+        productId,
+        description: line.description,
+        qty: line.quantity,
+        unitPrice: line.unitPrice,
+      });
+    }
+
+    const dueDate =
+      /^\d{4}-\d{2}-\d{2}$/.test(extraction.dueDate) &&
+      extraction.dueDate >= extraction.invoiceDate
+        ? extraction.dueDate
+        : extraction.invoiceDate;
+
+    const data = await callWriteRpc("create_vendor_bill", {
+      p_idempotency_key: parsed.data.idempotencyKey,
+      p_intent: "save_draft",
+      p_header: {
+        supplierId: readiness.supplierId,
+        invoiceNumber: extraction.invoiceNumber,
+        date: extraction.invoiceDate,
+        dueDate,
+        currency: extraction.currency || "KWD",
+      },
+      p_lines: lines,
+      p_source: null,
+      p_source_ocr_job_id: job.id,
+    });
+
+    const insforge = await createInsForgeServerClient();
+    const { data: linked, error: linkErr } = await insforge.database
+      .from("document_processing_jobs")
+      .update({ matched_doc_id: data.id })
+      .eq("id", job.id)
+      .in("status", ["completed", "review_needed"])
+      .is("matched_doc_id", null)
+      .select("id")
+      .maybeSingle();
+    if (linkErr) throw linkErr;
+    if (!linked) {
+      const fresh = await getOcrJob(job.id);
+      if (fresh?.matchedDocId && fresh.matchedDocId !== data.id) {
+        throw new KnownActionError("CONFLICT");
+      }
+    }
+
+    if (job.sourceAttachmentId) {
+      await insforge.database
+        .from("attachments")
+        .update({ doc_id: data.id })
+        .eq("id", job.sourceAttachmentId)
+        .is("doc_id", null);
+    }
+
+    revalidateOcrPaths(parsed.data.locale, job.id, data.id);
+    return { ok: true, data: { ...data, jobId: job.id } };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+/** Reject OCR extraction → terminal failed status with REJECTED reason. */
+export async function rejectOcrJobAction(
+  input: unknown,
+): Promise<ActionResult<{ jobId: number; status: string }>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(ocrDecisionSchema, input, requestId);
+    if (!parsed.ok) return parsed;
+
+    const job = await getOcrJob(parsed.data.jobId);
+    if (!job) {
+      throw new KnownActionError("NOT_FOUND");
+    }
+    if (job.matchedDocId) {
+      throw new KnownActionError("ILLEGAL_TRANSITION");
+    }
+    if (!APPROVABLE_STATUSES.has(job.status)) {
+      throw new KnownActionError("ILLEGAL_TRANSITION");
+    }
+
+    const reason = (parsed.data.reason ?? "REJECTED").slice(0, 80);
+    const insforge = await createInsForgeServerClient();
+    const { data: updated, error } = await insforge.database
+      .from("document_processing_jobs")
+      .update({ status: "failed", error: reason })
+      .eq("id", job.id)
+      .in("status", ["completed", "review_needed"])
+      .is("matched_doc_id", null)
+      .select("id, status")
+      .maybeSingle();
+    if (error) throw error;
+    if (!updated) {
+      throw new KnownActionError("ILLEGAL_TRANSITION");
+    }
+
+    revalidateOcrPaths(parsed.data.locale, job.id);
+    return {
+      ok: true,
+      data: { jobId: job.id, status: (updated as { status: string }).status },
+    };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
 }

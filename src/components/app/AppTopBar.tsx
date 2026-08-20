@@ -6,18 +6,25 @@ import { LocaleSwitcher } from "@/components/locale-switcher";
 import { UserMenu } from "@/components/app/UserMenu";
 import { GlobalSearchTrigger } from "@/components/app/GlobalSearchProvider";
 import { NotificationsBell } from "@/components/app/NotificationsBell";
+import { listInboxNotifications } from "@/lib/api/inbox";
+import { listRecentAuditEvents } from "@/lib/api/audit";
 
 /**
  * Slim sticky app bar. Navigation now lives in the sidebar, so this row only
  * carries context (sidebar toggle + breadcrumbs) and global controls.
  */
-export function AppTopBar({
+export async function AppTopBar({
   signOutLabel,
   localeLabel,
 }: {
   signOutLabel: string;
   localeLabel: string;
 }) {
+  const [notifications, audit] = await Promise.all([
+    listInboxNotifications().catch(() => []),
+    listRecentAuditEvents(6).catch(() => []),
+  ]);
+
   return (
     <header className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b backdrop-blur">
       <div className="flex w-full items-center gap-2 px-3 md:px-4">
@@ -34,7 +41,10 @@ export function AppTopBar({
             <LocaleSwitcher label={localeLabel} />
           </div>
           <ThemeToggle />
-          <NotificationsBell />
+          <NotificationsBell
+            initialNotifications={notifications}
+            initialAudit={audit}
+          />
           <UserMenu signOutLabel={signOutLabel} />
         </div>
       </div>

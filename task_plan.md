@@ -1,11 +1,12 @@
 # ERP phase tracker
 
 ## Goal
-Keep the locked InsForge ERP execution plan honest: Phases 0–6 marked
-done, Phases 7–10 left not-started.
+Keep the locked InsForge ERP execution plan honest: Phases 0–10 marked
+done. Canonical Cursor plans synced Aug20.
 
 ## Current Phase
-Phase 7 transactional ERP writes — **complete**. Next = Phase 8 (not started).
+Phase 10 release verification — **complete** (`vf_20260820_ac530f`).
+Hygiene: VERIFY_A/B tenants provisioned (`scripts/bootstrap-verify-tenants.mjs`); curated master data seeded (`scripts/seed-verify-master-data.mjs`); isolation + role-denial + idempotency + optimistic-lock + storage-isolation + curated P2P create chain unlocked.
 
 ## Phases
 
@@ -15,7 +16,7 @@ Phase 7 transactional ERP writes — **complete**. Next = Phase 8 (not started).
 
 ### Phase 1: Demo identity
 - [x] `scripts/bootstrap-demo-owner.mjs` bound `co_1` owner `361eb872-…`
-- **Status:** complete on backend (script still uncommitted)
+- **Status:** complete on backend
 
 ### Phase 2: Shared foundations
 - [x] ActionResult / Zod / vitest
@@ -65,31 +66,49 @@ Phase 7 transactional ERP writes — **complete**. Next = Phase 8 (not started).
 - [x] M16 inv/GL (`20260815162000`)
 - [x] Zod + Server Actions (`p2p`/`q2c`/`inventory`/`gl`/`documents`)
 - [x] 13 dedicated `/new` forms wired; live create smoke 2/2
-- **Status:** complete 2026-08-20 — DocEditShell/DocActionBar/Adoption = Phase 8
+- **Status:** complete 2026-08-20
 
 ### Phase 8: Write UI and operational writes
-- [ ] Doc shells + M17 recon/close/inbox; drop fake mutations
-- **Status:** pending
+- [x] `20260815163000_operational-write-rpcs.sql` (M17) applied on `erp-backend-v1`
+- [x] DocEditShell / DocActionBar wired (12 edit + 12 detail); no demoConflict / ephemeral state
+- [x] AdoptionNewShell → create_rfq / vendor_return / customer_return
+- [x] Recon import/rules/accept/skip/complete; fiscal close; period-close; inbox mark-read
+- [x] Live inbox/recon/close reads (off DEMO_* for those surfaces)
+- [x] Vitest 58+ (incl. M17 schema checks); tsc clean
+- [x] OCR invoice detail live read + approve/reject Server Actions (off DEMO_INVOICE_DETAIL)
+- **Status:** complete 2026-08-20 — full `_client`/DemoModeBanner teardown waits AI
 
 ### Phase 9: Scheduled operations
-- [ ] `20260815164000` + `erp-scheduler` + seven crons
-- **Status:** pending
+- [x] `20260815164000` + `erp-scheduler` + seven crons
+- **Status:** complete 2026-08-20 on `erp-backend-v1`
 
 ### Phase 10: Release verification
-- [ ] `scripts/verify/` isolation / no-mocks / P2P+Q2C gate
-- **Status:** pending
+- [x] `scripts/verify/` harness + `tests/verification/` manifests/fixtures/setup/static/api/browser
+- [x] Clean gate run `vf_20260820_ac530f` — all ordered gates pass
+- [x] no-mocks cleared; advisor criticals suppressed (DEFINER accepted_risk + shared-ref RLS)
+- [x] Migration `20260820210445_doc-state-transitions-rls.sql` applied
+- **Status:** complete 2026-08-20 — VERIFY_A/B tenants provisioned; isolation/role-denial unlocked
 
 ## Hygiene leftover (not a phase reopen)
-- Phase 1–3 tree still uncommitted
-- Advisor stored scan dated 2026-08-09
-- `APP_URL` still localhost
-- Vercel preview `l9ejvc4lb` (SSO), not production
-- dashboard/inbox/recon/settings still `DEMO_*` page mocks
-- `alfailakawi1000@gmail.com` dual-hat — not isolation tenant B
+- ~~Phase 1–8 tree still uncommitted~~ → committed with Phase 8–10 + Aug21 hygiene (this commit)
+- ~~`APP_URL` still localhost~~ → `resolveAppOrigin()` (`src/lib/app-url.ts`) ignores localhost on Vercel and uses `VERCEL_URL` / `VERCEL_PROJECT_PRODUCTION_URL` ([Vercel system env](https://vercel.com/docs/environment-variables/system-environment-variables)); local `.env.local` stays localhost
+- `FX_RATES_API_KEY` set Aug20 — fx_ingest verified (CBK `value` field parser fix)
+- Vercel preview `l9ejvc4lb` (SSO), not production — prod promote still manual (`vercel --prod` / merge to production branch)
+- ~~dashboard / financials / module overview pages still `DEMO_*` page mocks~~ — Hygiene 4: live InsForge reads (reports + list aggregates)
+- Overview metric gap audit (Hygiene leftover fill):
+  - **Wired:** dashboard AI `success_rate` ← `ai_queued_actions` (executed/(executed+failed)); omit when no terminal rows
+  - **No backend — deferred:** inventory demand forecast (no forecast table/RPC)
+  - **No backend — deferred:** purchasing price alerts (no price_alerts table/RPC; `price_list_items` is static)
+  - **No backend — deferred:** purchasing vendor scores (suppliers have no score/rating columns)
+  - **No backend — deferred:** inventory max stock (`products.reorder_point` only; no `max_stock` column)
+- ~~OCR invoice detail live: approve → `create_vendor_bill` + `matched_doc_id`; reject → job `failed`/`REJECTED`. Gap: `vendor_bills.source_ocr_job_id` not set by create RPC yet~~ → `20260820213307_vendor-bill-source-ocr-job` adds `p_source_ocr_job_id`; `approveOcrJobAction` passes job id
+- ~~`alfailakawi1000@gmail.com` dual-hat — not isolation tenant B~~ → Tenant B is `verify.b.owner@atmata.example` on `85511332-…` (never dual-hat); platform dual-hat remains co_1-only
+- ~~Full tenant A/B isolation + P2P/Q2C posting gate awaits `VERIFY_A_*` / `VERIFY_B_*`~~ → `bootstrap-verify-tenants.mjs` + `seed:verify-master-data` (supplier/product/PO; accounts/warehouse/terms from `seed_company_defaults`); `table-isolation` / `role-denial` / `search-isolation` / `idempotency` / `optimistic-lock` / `storage-isolation` / curated P2P PR→PO→GRN pass. Full bill/post matrix still manual. Migrations `20260820213919` (EXECUTE FOUND) + `20260820214243` (STALE over HTTP uses P0001) on erp-backend-v1.
+- Performance advisor FK indexes: cleared (`missing-fk-index` 139→0) via `20260820212431_fk-covering-indexes.sql` + `20260820212705_email-log-requested-by-fk-index.sql` on erp-backend-v1 (139 covering indexes; plain CREATE INDEX — migrations wrap in a transaction so CONCURRENTLY is ops-only; force refresh with `npx @insforge/cli advisor scan`)
 
 ## Errors Encountered
 - Authenticated Playwright initially skipped: `DEMO_OWNER_PASSWORD` missing; workers also inherited a stale shell email. Fixed with `.env.local` override + e2e admin on `co_1`.
 - Quote/RFQ send 409: shared identity trigger read `suggestion_id` on `email_log`. Invitation rotate blocked by immutable `token_hash`. Fixed in `20260815152300`.
 - Playwright `next=/en/platform-admin` 404: next-intl doubled the locale. Strip `/en|/ar` in `safeNextPath`.
-- `next build` interrupted by session-stop; not re-run.
+- ~~`next build` interrupted by session-stop; not re-run.~~ → `npm run build` OK 2026-08-21
 - Phase 5 invite e2e: Turbopack CSS parse on `*:[svg:not([class*='size-'])]:size-*` (alert/alert-dialog) → `[&>svg:…]`. Also Next 16 blocks `127.0.0.1` vs `localhost` → `allowedDevOrigins`; login form `method="post"` so unhydrated fallback never GETs password.

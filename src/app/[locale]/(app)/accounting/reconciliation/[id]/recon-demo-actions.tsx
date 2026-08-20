@@ -1,34 +1,96 @@
 "use client";
 
+import * as React from "react";
+import { useLocale } from "next-intl";
+import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
+import {
+  acceptReconciliationMatchAction,
+  skipBankStatementLineAction,
+} from "@/lib/actions/reconciliation";
 
-export function ReconDemoActions({
-  sessionId,
-  bankLineId,
-  hasMatch,
+export function ReconLineActions({
+  matchId,
+  lineId,
 }: {
-  sessionId: string;
-  bankLineId: number;
-  hasMatch: boolean;
+  matchId?: string | null;
+  lineId?: string | null;
 }) {
+  const locale = useLocale();
+  const writeLocale = locale === "ar" ? "ar" : "en";
+  const router = useRouter();
+  const [pending, setPending] = React.useState(false);
+
+  const onAccept = async () => {
+    if (!matchId) {
+      toast.error("No match id available for this suggestion.");
+      return;
+    }
+    setPending(true);
+    try {
+      const result = await acceptReconciliationMatchAction({
+        locale: writeLocale,
+        idempotencyKey: crypto.randomUUID(),
+        matchId,
+      });
+      if (!result.ok) {
+        toast.error(result.error.messageKey || result.error.code);
+        return;
+      }
+      toast.success("Match accepted.");
+      router.refresh();
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const onSkip = async () => {
+    if (!lineId) {
+      toast.error("No line id available to skip.");
+      return;
+    }
+    setPending(true);
+    try {
+      const result = await skipBankStatementLineAction({
+        locale: writeLocale,
+        idempotencyKey: crypto.randomUUID(),
+        lineId,
+      });
+      if (!result.ok) {
+        toast.error(result.error.messageKey || result.error.code);
+        return;
+      }
+      toast.success("Line skipped.");
+      router.refresh();
+    } finally {
+      setPending(false);
+    }
+  };
+
   return (
     <div className="flex justify-end gap-1">
-      {hasMatch && (
+      {matchId ? (
         <button
           type="button"
-          className="cursor-pointer rounded bg-status-success-muted text-status-success-foreground ring-1 ring-status-success-border px-3 py-1 text-xs font-medium hover:bg-status-success/20"
-          onClick={() => toast.success(`Match line ${bankLineId} (demo) · session ${sessionId}`)}
+          disabled={pending}
+          className="cursor-pointer rounded bg-status-success-muted text-status-success-foreground ring-1 ring-status-success-border px-3 py-1 text-xs font-medium hover:bg-status-success/20 disabled:opacity-50"
+          onClick={() => void onAccept()}
         >
           Match
         </button>
-      )}
+      ) : null}
       <button
         type="button"
-        className="cursor-pointer rounded bg-muted px-3 py-1 text-xs font-medium text-foreground hover:bg-muted"
-        onClick={() => toast.message(`Skip line ${bankLineId} (demo)`)}
+        disabled={pending || !lineId}
+        title={!lineId ? "Line id required" : undefined}
+        className="cursor-pointer rounded bg-muted px-3 py-1 text-xs font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+        onClick={() => void onSkip()}
       >
         Skip
       </button>
     </div>
   );
 }
+
+/** @deprecated Use ReconLineActions */
+export const ReconDemoActions = ReconLineActions;

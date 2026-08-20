@@ -3,9 +3,10 @@
 import * as React from "react";
 import { Bell } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
-import { DEMO_INBOX } from "@/lib/demo-data";
-import { AUDIT_EVENTS } from "@/mocks/seed/audit";
 import { listQueuedActions, type QueuedActionRecord } from "@/lib/api/ai";
+import type { InboxNotification } from "@/lib/api/inbox";
+import type { AuditEvent } from "@/types";
+import { markInboxNotificationReadAction } from "@/lib/actions/period-close";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -19,15 +20,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 /**
  * NotificationsBell — top-bar dropdown grouping recent activity.
  * Sections:
- *   1. Inbox       — unresolved alerts from DEMO_INBOX
+ *   1. Inbox       — live notifications (passed from AppTopBar)
  *   2. Bot-proposed — actions queued by the AI co-pilot Auto mode
  *   3. Recent audit — last 6 audit events across all docs
- *
- * Unread count = inbox + bot-proposed (audit isn't unread per se).
- * "Mark all read" stamps the current ISO timestamp in sessionStorage.
  */
-
-const LAST_SEEN_KEY = "atmata.notifications.lastSeen";
 
 const DOC_HREF: Record<string, (locale: string, id: string) => string> = {
   pr: (l, id) => `/${l}/purchasing/purchase-requisitions/${id}`,
@@ -48,20 +44,25 @@ const DOC_HREF: Record<string, (locale: string, id: string) => string> = {
   journal_entry: (l, id) => `/${l}/accounting/journal-entries/${id}`,
 };
 
-export function NotificationsBell() {
+export function NotificationsBell({
+  initialNotifications = [],
+  initialAudit = [],
+}: {
+  initialNotifications?: InboxNotification[];
+  initialAudit?: AuditEvent[];
+}) {
   const router = useRouter();
   const params = useParams<{ locale?: string }>();
   const locale = params?.locale ?? "en";
+  const writeLocale = locale === "ar" ? "ar" : "en";
   const [open, setOpen] = React.useState(false);
-  const [lastSeen, setLastSeen] = React.useState<string>("");
   const [queued, setQueued] = React.useState<QueuedActionRecord[]>([]);
+  const [marking, setMarking] = React.useState(false);
+  const [localReadIds, setLocalReadIds] = React.useState<Set<string>>(
+    () => new Set(),
+  );
 
   React.useEffect(() => {
-    try {
-      setLastSeen(window.sessionStorage.getItem(LAST_SEEN_KEY) ?? "");
-    } catch {
-      /* ignore */
-    }
     listQueuedActions()
       .then(setQueued)
       .catch(() => {
@@ -69,25 +70,41 @@ export function NotificationsBell() {
       });
   }, [open]);
 
-  const inboxItems = DEMO_INBOX.items.slice(0, 6);
-  const recentAudit = [...AUDIT_EVENTS]
+  const inboxItems = initialNotifications.slice(0, 6);
+  const recentAudit = [...initialAudit]
     .sort((a, b) => b.at.localeCompare(a.at))
     .slice(0, 6);
 
-  const unreadInbox = inboxItems.filter((i) => !lastSeen || i.created_at > lastSeen).length;
-  const unreadQueued = queued.filter((q) => !lastSeen || q.queuedAt > lastSeen).length;
+  const unreadInbox = inboxItems.filter(
+    (i) => !i.readAt && !localReadIds.has(i.id),
+  ).length;
+  const unreadQueued = queued.length;
   const unread = unreadInbox + unreadQueued;
 
   const markAllRead = () => {
-    const now = new Date().toISOString();
-    try {
-      window.sessionStorage.setItem(LAST_SEEN_KEY, now);
-    } catch {
-      /* ignore */
-    }
-    setLastSeen(now);
-    // eslint-disable-next-line no-console
-    console.info("atmata:event", "notifications.markAllRead");
+    const unreadIds = inboxItems
+      .filter((i) => !i.readAt && !localReadIds.has(i.id))
+      .map((i) => i.id);
+    if (unreadIds.length === 0) return;
+
+    setMarking(true);
+    setLocalReadIds((prev) => new Set([...prev, ...unreadIds]));
+    void (async () => {
+      try {
+        await Promise.all(
+          unreadIds.map((notificationId) =>
+            markInboxNotificationReadAction({
+              locale: writeLocale,
+              idempotencyKey: crypto.randomUUID(),
+              notificationId,
+            }),
+          ),
+        );
+        router.refresh();
+      } finally {
+        setMarking(false);
+      }
+    })();
   };
 
   const go = (href: string) => {
@@ -118,11 +135,12 @@ export function NotificationsBell() {
       <PopoverContent align="end" className="w-[22rem] p-0">
         <div className="flex items-center justify-between px-3 py-2">
           <span className="text-sm font-semibold">Notifications</span>
-          {unread > 0 ? (
+          {unreadInbox > 0 ? (
             <Button
               variant="link"
               size="sm"
               className="h-auto p-0 text-xs"
+              disabled={marking}
               onClick={markAllRead}
             >
               Mark all read
@@ -140,13 +158,9 @@ export function NotificationsBell() {
                 <Row
                   key={i.id}
                   title={i.title}
-                  subtitle={`${i.source} · ${new Date(i.created_at).toLocaleString()}`}
+                  subtitle={`${i.kind} · ${new Date(i.createdAt).toLocaleString()}`}
                   tone={
-                    i.severity === "high"
-                      ? "danger"
-                      : i.severity === "medium"
-                        ? "warning"
-                        : "muted"
+                    !i.readAt && !localReadIds.has(i.id) ? "warning" : "muted"
                   }
                   onClick={() => go(`/${locale}/inbox`)}
                 />

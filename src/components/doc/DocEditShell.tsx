@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/toast";
@@ -15,9 +15,17 @@ import {
   PostedWatermarkBanner,
 } from "@/components/banners";
 import { StateBadge } from "@/components/doc/StateBadge";
-import type { DocState } from "@/types";
+import {
+  reverseDocumentAction,
+  updateDocumentHeaderAction,
+} from "@/lib/actions/documents";
+import type { DocState, DocType } from "@/types";
 
 export type DocEditShellProps = {
+  locale: "en" | "ar";
+  docType: DocType;
+  docId: string;
+  expectedRowVersion: number;
   docNumber: string;
   docTitle: string;
   state: DocState;
@@ -31,7 +39,18 @@ export type DocEditShellProps = {
 
 const POSTED: DocState[] = ["posted", "locked", "archived"];
 
+function actionErrorMessage(error: {
+  messageKey?: string;
+  code: string;
+}): string {
+  return error.messageKey ?? error.code;
+}
+
 export function DocEditShell({
+  locale,
+  docType,
+  docId,
+  expectedRowVersion,
   docNumber,
   docTitle,
   state,
@@ -42,13 +61,23 @@ export function DocEditShell({
 }: DocEditShellProps) {
   const router = useRouter();
   const confirm = useConfirm();
-  const searchParams = useSearchParams();
   const isPosted = POSTED.includes(state);
-  const showConflict = searchParams?.get("demoConflict") === "1";
+  const idempotencyKeyRef = React.useRef(crypto.randomUUID());
+  const [pending, setPending] = React.useState(false);
+  const [rowVersion, setRowVersion] = React.useState(expectedRowVersion);
+  const [staleConflict, setStaleConflict] = React.useState(false);
 
   const [editedDate, setEditedDate] = React.useState(date);
   const [editedNotes, setEditedNotes] = React.useState(notes ?? "");
   const [dirty, setDirty] = React.useState(false);
+
+  React.useEffect(() => {
+    setRowVersion(expectedRowVersion);
+    setEditedDate(date);
+    setEditedNotes(notes ?? "");
+    setDirty(false);
+    setStaleConflict(false);
+  }, [expectedRowVersion, date, notes]);
 
   const wrap =
     <T,>(setter: (v: T) => void) =>
@@ -58,15 +87,49 @@ export function DocEditShell({
     };
 
   const onSubmit = async () => {
+    if (pending) return;
     const ok = await confirm({
       title: `Save changes to ${docNumber}?`,
-      description: "Header edits will be written; lines are unchanged. Demo · this action will not persist.",
+      description: "Header edits will be written; lines are unchanged.",
       confirmLabel: "Save",
     });
     if (!ok) return;
-    toast.success(`Saved (demo): ${docNumber}`);
-    setDirty(false);
-    router.push(backHref);
+
+    setPending(true);
+    try {
+      const result = await updateDocumentHeaderAction({
+        locale,
+        docType,
+        docId,
+        expectedRowVersion: rowVersion,
+        idempotencyKey: idempotencyKeyRef.current,
+        patch: {
+          date: editedDate !== date ? editedDate : undefined,
+          notes: editedNotes !== (notes ?? "") ? editedNotes : undefined,
+        },
+      });
+      if (!result.ok) {
+        if (
+          result.error.code === "STALE_VERSION" ||
+          result.error.code === "CONFLICT"
+        ) {
+          setStaleConflict(true);
+          if (result.error.currentRowVersion != null) {
+            setRowVersion(result.error.currentRowVersion);
+          }
+        }
+        toast.error(actionErrorMessage(result.error));
+        return;
+      }
+      idempotencyKeyRef.current = crypto.randomUUID();
+      setDirty(false);
+      setStaleConflict(false);
+      toast.success(`Saved · ${docNumber}`);
+      router.push(backHref);
+      router.refresh();
+    } finally {
+      setPending(false);
+    }
   };
 
   const onCancel = async () => {
@@ -85,6 +148,45 @@ export function DocEditShell({
     }
   };
 
+  const onReverse = async () => {
+    if (pending) return;
+    const ok = await confirm({
+      title: `Reverse ${docNumber}?`,
+      description:
+        "Generates a reversing journal entry in the next open period. The original posted doc remains for audit.",
+      confirmLabel: "Reverse",
+      tone: "destructive",
+    });
+    if (!ok) return;
+
+    setPending(true);
+    try {
+      const result = await reverseDocumentAction({
+        locale,
+        docType,
+        docId,
+        expectedRowVersion: rowVersion,
+        idempotencyKey: idempotencyKeyRef.current,
+      });
+      if (!result.ok) {
+        if (
+          result.error.code === "STALE_VERSION" ||
+          result.error.code === "CONFLICT"
+        ) {
+          setStaleConflict(true);
+        }
+        toast.error(actionErrorMessage(result.error));
+        return;
+      }
+      idempotencyKeyRef.current = crypto.randomUUID();
+      toast.success(`Reversed · ${docNumber}`);
+      router.push(backHref);
+      router.refresh();
+    } finally {
+      setPending(false);
+    }
+  };
+
   if (isPosted) {
     return (
       <div className="space-y-4">
@@ -100,6 +202,22 @@ export function DocEditShell({
           </div>
           <StateBadge state={state} />
         </div>
+        {staleConflict ? (
+          <ConcurrentEditBanner
+            by="another user"
+            at="just now"
+            onReload={
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => router.refresh()}
+              >
+                Reload
+              </Button>
+            }
+          />
+        ) : null}
         <PostedWatermarkBanner />
         <div className="rounded-lg border border-border bg-card p-4 md:p-6">
           <h2 className="mb-3 text-sm font-semibold tracking-wide text-muted-foreground uppercase">
@@ -114,16 +232,8 @@ export function DocEditShell({
           <Button
             type="button"
             variant="destructive"
-            onClick={async () => {
-              const ok = await confirm({
-                title: `Reverse ${docNumber}?`,
-                description:
-                  "Generates a reversing journal entry in the next open period. The original posted doc remains for audit. Demo · this action will not persist.",
-                confirmLabel: "Reverse",
-                tone: "destructive",
-              });
-              if (ok) toast.success(`Reverse queued (demo) · ${docNumber}`);
-            }}
+            disabled={pending}
+            onClick={onReverse}
           >
             Reverse
           </Button>
@@ -138,10 +248,10 @@ export function DocEditShell({
       subtitle={docTitle}
       header={
         <div className="space-y-3">
-          {showConflict ? (
+          {staleConflict ? (
             <ConcurrentEditBanner
-              by="Khalid (warehouse)"
-              at="2 min ago"
+              by="another user"
+              at="just now"
               onReload={
                 <Button
                   type="button"
@@ -155,10 +265,16 @@ export function DocEditShell({
             />
           ) : null}
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-            <DatePicker label="Date" value={editedDate} onChange={wrap(setEditedDate)} />
+            <DatePicker
+              label="Date"
+              value={editedDate}
+              onChange={wrap(setEditedDate)}
+            />
             <div className="flex items-end">
               <div className="flex items-center gap-2 text-sm">
-                <span className="text-xs text-muted-foreground">Current state:</span>
+                <span className="text-xs text-muted-foreground">
+                  Current state:
+                </span>
                 <StateBadge state={state} />
               </div>
             </div>
@@ -168,8 +284,8 @@ export function DocEditShell({
       lines={
         <div>
           <div className="mb-2 text-xs text-muted-foreground">
-            Line edits are out of scope on the edit page — to change lines, cancel
-            this draft and create a new document via the +New flow.
+            Line edits are out of scope on the edit page — to change lines,
+            cancel this draft and create a new document via the +New flow.
           </div>
           {linesPreview}
         </div>
@@ -184,9 +300,10 @@ export function DocEditShell({
       }
       errors={[]}
       dirty={dirty}
+      pending={pending}
       onSubmit={onSubmit}
       onCancel={onCancel}
-      submitLabel="Save"
+      submitLabel={pending ? "Saving…" : "Save"}
     />
   );
 }

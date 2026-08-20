@@ -62,6 +62,20 @@ export async function callWriteRpc(
   return camelize<DocumentWriteResult>(data);
 }
 
+/** Same as callWriteRpc but for operational RPCs that return arbitrary JSON shapes. */
+export async function callWriteRpcJson(
+  name: string,
+  args: Record<string, unknown>,
+): Promise<unknown> {
+  const client = await createInsForgeServerClient();
+  const { data, error } = await client.database.rpc(name, args);
+  if (error) throwWriteRpc(error);
+  if (data == null) {
+    throw new KnownActionError("INTERNAL");
+  }
+  return camelize(data);
+}
+
 export function revalidateDocumentPaths(
   locale: "en" | "ar",
   docType: string,

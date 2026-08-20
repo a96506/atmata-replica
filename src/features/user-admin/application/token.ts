@@ -1,5 +1,6 @@
 import { createHash, createHmac } from "node:crypto";
 import { KnownActionError } from "@/lib/actions/errors";
+import { resolveAppOrigin } from "@/lib/app-url";
 
 export function invitationTokenSecret(): string {
   const secret = process.env.INVITATION_TOKEN_SECRET?.trim() ?? "";
@@ -26,8 +27,8 @@ export function hashInvitationToken(rawToken: string): string {
 }
 
 export function appOrigin(): string {
-  const origin = (process.env.NEXT_PUBLIC_APP_URL ?? "").trim().replace(/\/$/, "");
-  if (!origin || !/^https?:\/\//i.test(origin)) {
+  const origin = resolveAppOrigin();
+  if (!origin) {
     throw new KnownActionError("INTERNAL");
   }
   return origin;

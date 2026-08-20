@@ -6,6 +6,7 @@ const slugs = [
   "ocr-vendor-bill",
   "reconciliation-suggest",
   "ai-assistant",
+  "erp-scheduler",
 ] as const;
 
 for (const slug of slugs) {

@@ -18,6 +18,10 @@ export default async function Page({
     q.state === "accepted" ? "confirmed" : q.state === "expired" ? "cancelled" : q.state;
   return (
     <DocEditShell
+      locale={locale === "ar" ? "ar" : "en"}
+      docType="quote"
+      docId={q.id}
+      expectedRowVersion={q.rowVersion}
       docNumber={q.number}
       docTitle={`Quote ${q.date} · valid until ${q.validUntil}`}
       state={shellState}

@@ -1,142 +1,36 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
+import { createRequestId, normalizeActionError } from "@/lib/actions/errors";
+import type { ActionResult } from "@/lib/actions/result";
+import { validateActionInput } from "@/lib/actions/validation";
+import {
+  acceptReconciliationMatchSchema,
+  completeReconciliationSessionSchema,
+  deleteReconciliationRuleSchema,
+  importBankStatementSchema,
+  manualReconciliationMatchSchema,
+  rejectReconciliationMatchSchema,
+  skipBankStatementLineSchema,
+  upsertReconciliationRuleSchema,
+} from "@/lib/actions/validation/reconciliation";
+import { callWriteRpcJson } from "@/lib/actions/write-rpc";
 import { camelize } from "@/lib/db/case";
 import { createInsForgeServerClient } from "@/lib/insforge/server";
 
-/**
- * Bank statement CSV ingest — three-step flow:
- *
- *   1. createBankStatement({ bankAccountId, number, periodStart, periodEnd })
- *      → inserts a `bank_statements` row (status='imported', no source yet).
- *      Returns { statementId, companyId }.
- *   2. Browser uploads the CSV to the `imports` bucket with key
- *      `${companyId}/bank_statements/${statementId}/${filename}`.
- *   3. linkBankStatementSource({ statementId, key, url, csvText })
- *      → updates source_url/source_key, parses the CSV server-side, and
- *      inserts `bank_statement_lines` rows. Returns the lines for preview.
- *
- * AI match suggestions ship in the `functions` todo.
- */
+function revalidateReconciliationPaths(locale: "en" | "ar") {
+  revalidatePath(`/${locale}/accounting/reconciliation`);
+  revalidatePath(`/accounting/reconciliation`);
+}
 
-export async function createBankStatement(input: {
-  bankAccountId: string;
-  number: string;
-  periodStart?: string;
-  periodEnd?: string;
-}): Promise<{ statementId: string; companyId: string }> {
+export async function getMyCompanyId(): Promise<string> {
   const insforge = await createInsForgeServerClient();
-
-  const { data: cidRow, error: cidErr } = await insforge.database.rpc("my_company_id");
-  if (cidErr) throw new Error(cidErr.message);
-  const companyId = cidRow as unknown as string;
-  if (!companyId) throw new Error("no active company membership");
-
-  const { data, error } = await insforge.database
-    .from("bank_statements")
-    .insert([
-      {
-        bank_account_id: input.bankAccountId,
-        number: input.number,
-        period_start: input.periodStart ?? null,
-        period_end: input.periodEnd ?? null,
-        status: "imported",
-      },
-    ])
-    .select("id")
-    .single();
+  const { data, error } = await insforge.database.rpc("my_company_id");
   if (error) throw new Error(error.message);
-  const statementId = (data as { id: string }).id;
-  return { statementId, companyId };
-}
-
-type ParsedLine = {
-  lineNumber: number;
-  date: string;
-  description: string;
-  reference: string | null;
-  amount: number;
-};
-
-function parseCsv(text: string): ParsedLine[] {
-  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
-  if (lines.length === 0) return [];
-  const header = lines[0].toLowerCase().split(",").map((h) => h.trim());
-  const idx = (k: string) => header.indexOf(k);
-  const di = idx("date");
-  const desci = idx("description");
-  const refi = idx("reference");
-  const ami = idx("amount");
-  if (di < 0 || desci < 0 || ami < 0) {
-    throw new Error(
-      "CSV header must include: date, description, [reference], amount",
-    );
-  }
-  return lines.slice(1).map((line, i) => {
-    const cells = line.split(",").map((c) => c.trim());
-    return {
-      lineNumber: i + 1,
-      date: cells[di] ?? "",
-      description: cells[desci] ?? "",
-      reference: refi >= 0 ? cells[refi] || null : null,
-      amount: Number(cells[ami] ?? "0") || 0,
-    };
-  });
-}
-
-export async function linkBankStatementSource(input: {
-  statementId: string;
-  key: string;
-  url: string;
-  csvText: string;
-}): Promise<{ lines: number }> {
-  const insforge = await createInsForgeServerClient();
-
-  const parsed = parseCsv(input.csvText);
-  if (parsed.length === 0) {
-    throw new Error("CSV contained no statement lines");
-  }
-
-  // Insert attachment referencing the statement.
-  const { error: attErr } = await insforge.database
-    .from("attachments")
-    .insert([
-      {
-        doc_type: "bank_statement",
-        doc_id: input.statementId,
-        bucket: "imports",
-        key: input.key,
-        url: input.url,
-        mime: "text/csv",
-        size: new Blob([input.csvText]).size,
-        filename: input.key.split("/").pop() ?? "statement.csv",
-      },
-    ]);
-  if (attErr) throw new Error(attErr.message);
-
-  // Insert lines — bank_statement_lines has a composite FK on
-  // (company_id, bank_statement_id), so we include company_id explicitly.
-  const rows = parsed.map((p) => ({
-    bank_statement_id: input.statementId,
-    line_number: p.lineNumber,
-    date: p.date,
-    description: p.description,
-    reference: p.reference,
-    amount: p.amount,
-    status: "unmatched",
-  }));
-  const { error: linesErr } = await insforge.database
-    .from("bank_statement_lines")
-    .insert(rows);
-  if (linesErr) throw new Error(linesErr.message);
-
-  // Update the statement with the source pointer.
-  const { error: stmtErr } = await insforge.database
-    .from("bank_statements")
-    .update({ source_url: input.url, source_key: input.key })
-    .eq("id", input.statementId);
-  if (stmtErr) throw new Error(stmtErr.message);
-
-  return { lines: parsed.length };
+  const companyId = data as unknown as string;
+  if (!companyId) throw new Error("no active company membership");
+  return companyId;
 }
 
 export async function listBankStatementLines(input: {
@@ -174,4 +68,221 @@ export async function listBankAccounts(): Promise<
   return camelize<
     Array<{ id: string; name: string; currency: string }>
   >(data ?? []);
+}
+
+export async function listReconciliationRules(): Promise<
+  Array<{
+    id: string;
+    name: string;
+    priority: number;
+    matchType: string;
+    conditions: Record<string, unknown>;
+    action: Record<string, unknown>;
+    active: boolean;
+  }>
+> {
+  const insforge = await createInsForgeServerClient();
+  const { data, error } = await insforge.database
+    .from("reconciliation_rules")
+    .select("id, name, priority, match_type, conditions, action, active")
+    .order("priority", { ascending: true });
+  if (error) throw new Error(error.message);
+  return camelize(data ?? []);
+}
+
+export async function importBankStatementAction(
+  input: unknown,
+): Promise<ActionResult<unknown>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(
+      importBankStatementSchema,
+      input,
+      requestId,
+    );
+    if (!parsed.ok) return parsed;
+
+    const data = await callWriteRpcJson("import_bank_statement", {
+      p_idempotency_key: parsed.data.idempotencyKey,
+      p_header: parsed.data.header,
+      p_lines: parsed.data.lines,
+      p_attachment: parsed.data.attachment ?? null,
+    });
+
+    revalidateReconciliationPaths(parsed.data.locale);
+    return { ok: true, data };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function upsertReconciliationRuleAction(
+  input: unknown,
+): Promise<ActionResult<unknown>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(
+      upsertReconciliationRuleSchema,
+      input,
+      requestId,
+    );
+    if (!parsed.ok) return parsed;
+
+    const data = await callWriteRpcJson("upsert_reconciliation_rule", {
+      p_idempotency_key: parsed.data.idempotencyKey,
+      p_rule: parsed.data.rule,
+    });
+
+    revalidateReconciliationPaths(parsed.data.locale);
+    return { ok: true, data };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function deleteReconciliationRuleAction(
+  input: unknown,
+): Promise<ActionResult<unknown>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(
+      deleteReconciliationRuleSchema,
+      input,
+      requestId,
+    );
+    if (!parsed.ok) return parsed;
+
+    const data = await callWriteRpcJson("delete_reconciliation_rule", {
+      p_idempotency_key: parsed.data.idempotencyKey,
+      p_rule_id: parsed.data.ruleId,
+    });
+
+    revalidateReconciliationPaths(parsed.data.locale);
+    return { ok: true, data };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function skipBankStatementLineAction(
+  input: unknown,
+): Promise<ActionResult<unknown>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(
+      skipBankStatementLineSchema,
+      input,
+      requestId,
+    );
+    if (!parsed.ok) return parsed;
+
+    const data = await callWriteRpcJson("skip_bank_statement_line", {
+      p_idempotency_key: parsed.data.idempotencyKey,
+      p_line_id: parsed.data.lineId,
+    });
+
+    revalidateReconciliationPaths(parsed.data.locale);
+    return { ok: true, data };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function manualReconciliationMatchAction(
+  input: unknown,
+): Promise<ActionResult<unknown>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(
+      manualReconciliationMatchSchema,
+      input,
+      requestId,
+    );
+    if (!parsed.ok) return parsed;
+
+    const data = await callWriteRpcJson("manual_reconciliation_match", {
+      p_idempotency_key: parsed.data.idempotencyKey,
+      p_line_id: parsed.data.lineId,
+      p_journal_entry_id: parsed.data.journalEntryId ?? null,
+      p_source_doc_type: parsed.data.sourceDocType ?? null,
+      p_source_doc_id: parsed.data.sourceDocId ?? null,
+    });
+
+    revalidateReconciliationPaths(parsed.data.locale);
+    return { ok: true, data };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function acceptReconciliationMatchAction(
+  input: unknown,
+): Promise<ActionResult<unknown>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(
+      acceptReconciliationMatchSchema,
+      input,
+      requestId,
+    );
+    if (!parsed.ok) return parsed;
+
+    const data = await callWriteRpcJson("accept_reconciliation_match", {
+      p_idempotency_key: parsed.data.idempotencyKey,
+      p_match_id: parsed.data.matchId,
+    });
+
+    revalidateReconciliationPaths(parsed.data.locale);
+    return { ok: true, data };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function rejectReconciliationMatchAction(
+  input: unknown,
+): Promise<ActionResult<unknown>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(
+      rejectReconciliationMatchSchema,
+      input,
+      requestId,
+    );
+    if (!parsed.ok) return parsed;
+
+    const data = await callWriteRpcJson("reject_reconciliation_match", {
+      p_idempotency_key: parsed.data.idempotencyKey,
+      p_match_id: parsed.data.matchId,
+    });
+
+    revalidateReconciliationPaths(parsed.data.locale);
+    return { ok: true, data };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function completeReconciliationSessionAction(
+  input: unknown,
+): Promise<ActionResult<unknown>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(
+      completeReconciliationSessionSchema,
+      input,
+      requestId,
+    );
+    if (!parsed.ok) return parsed;
+
+    const data = await callWriteRpcJson("complete_reconciliation_session", {
+      p_idempotency_key: parsed.data.idempotencyKey,
+      p_statement_id: parsed.data.statementId,
+    });
+
+    revalidateReconciliationPaths(parsed.data.locale);
+    return { ok: true, data };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
 }

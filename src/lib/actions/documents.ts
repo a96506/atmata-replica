@@ -57,6 +57,38 @@ export async function updateDocumentHeaderAction(
   }
 }
 
+const APPROVAL_DOC_TYPES = new Set([
+  "po",
+  "vendor_bill",
+  "vendor_payment",
+  "debit_note",
+  "quote",
+  "so",
+  "customer_invoice",
+  "customer_receipt",
+  "credit_note",
+]);
+
+async function findPendingApprovalRequestId(
+  docType: string,
+  docId: string,
+): Promise<string | null> {
+  const { createInsForgeServerClient } = await import(
+    "@/lib/insforge/server"
+  );
+  const client = await createInsForgeServerClient();
+  const { data, error } = await client.database
+    .from("approval_requests")
+    .select("id")
+    .eq("doc_type", docType)
+    .eq("doc_id", docId)
+    .eq("status", "pending")
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as { id: string } | null)?.id ?? null;
+}
+
 export async function transitionDocumentAction(
   input: unknown,
 ): Promise<ActionResult<DocumentWriteResult>> {
@@ -69,20 +101,53 @@ export async function transitionDocumentAction(
     );
     if (!parsed.ok) return parsed;
 
-    const data = await callWriteRpc("transition_document", {
-      p_doc_type: parsed.data.docType,
-      p_doc_id: parsed.data.docId,
-      p_action: parsed.data.action,
-      p_expected_row_version: parsed.data.expectedRowVersion,
-      p_idempotency_key: parsed.data.idempotencyKey,
-      p_reason: parsed.data.reason ?? null,
-    });
+    const { action, docType, docId, expectedRowVersion, idempotencyKey, reason } =
+      parsed.data;
 
-    revalidateDocumentPaths(
-      parsed.data.locale,
-      parsed.data.docType,
-      parsed.data.docId,
-    );
+    let data: DocumentWriteResult;
+
+    if (action === "submit" && APPROVAL_DOC_TYPES.has(docType)) {
+      data = await callWriteRpc("create_approval_request", {
+        p_doc_type: docType,
+        p_doc_id: docId,
+        p_expected_row_version: expectedRowVersion,
+        p_idempotency_key: idempotencyKey,
+      });
+    } else if (action === "approve" || action === "reject") {
+      const approvalRequestId = await findPendingApprovalRequestId(
+        docType,
+        docId,
+      );
+      if (!approvalRequestId) {
+        return {
+          ok: false,
+          error: {
+            code: "NOT_FOUND",
+            messageKey: "errors.notFound",
+            requestId,
+            retryable: false,
+          },
+        };
+      }
+      data = await callWriteRpc("resolve_approval_request", {
+        p_approval_request_id: approvalRequestId,
+        p_decision: action === "approve" ? "approved" : "rejected",
+        p_expected_row_version: expectedRowVersion,
+        p_idempotency_key: idempotencyKey,
+        p_reason: reason ?? null,
+      });
+    } else {
+      data = await callWriteRpc("transition_document", {
+        p_doc_type: docType,
+        p_doc_id: docId,
+        p_action: action,
+        p_expected_row_version: expectedRowVersion,
+        p_idempotency_key: idempotencyKey,
+        p_reason: reason ?? null,
+      });
+    }
+
+    revalidateDocumentPaths(parsed.data.locale, docType, docId);
     return { ok: true, data };
   } catch (error) {
     return normalizeActionError(error, { requestId });

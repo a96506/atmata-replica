@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DEMO_PURCHASING } from "@/lib/demo-data";
+import { getPurchasingOverview } from "@/lib/api/purchasing-overview";
 import { formatKwd } from "@/lib/utils";
 import {
   BillMatchActions,
@@ -32,7 +32,7 @@ export default async function PurchasingPage() {
   const t = await getTranslations("purchasing");
   const locale = await getLocale();
   const lk = locale === "ar" ? "ar" : "en";
-  const d = DEMO_PURCHASING;
+  const d = await getPurchasingOverview();
 
   const severityBadge = (s: string) => {
     const tone =
@@ -114,6 +114,7 @@ export default async function PurchasingPage() {
               severityBadge(r.severity),
               <PoSuggestionActions key={`a-${r.id}`} id={r.id} />,
             ])}
+            emptyMessage="No open purchase requisitions."
           />
         </TabsContent>
 
@@ -135,6 +136,7 @@ export default async function PurchasingPage() {
               b.discrepancy ?? "—",
               <BillMatchActions key={b.id} id={b.id} status={b.status} />,
             ])}
+            emptyMessage="No vendor bills yet."
           />
         </TabsContent>
 
@@ -166,6 +168,7 @@ export default async function PurchasingPage() {
               t(`quality.${v.quality}`),
               v.price_rank,
             ])}
+            emptyMessage="Vendor scores not available yet."
           />
         </TabsContent>
 
@@ -197,6 +200,7 @@ export default async function PurchasingPage() {
               r.flag ? t(`recvFlag.${r.flag}`) : "—",
               <ReceivingDemoActions key={r.ref} refCode={r.ref} />,
             ])}
+            emptyMessage="No goods receipts yet."
           />
         </TabsContent>
       </Tabs>

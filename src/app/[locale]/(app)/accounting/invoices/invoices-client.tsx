@@ -9,11 +9,7 @@ import { DemoUpload } from "./demo-upload";
 import type { DocumentJob } from "@/lib/demo-data";
 import { ManualInvoiceModal } from "./manual-invoice-modal";
 
-/** Mapping from OCR job_id → seeded Vendor Bill id (F7 deep-link). */
-const OCR_JOB_TO_BILL_ID: Record<number, string | null> = {
-  9001: "bill_2",
-  9002: "bill_1",
-};const STATUS_BADGE: Record<string, string> = {
+const STATUS_BADGE: Record<string, string> = {
   queued: "bg-muted text-foreground",
   processing: "bg-status-info-muted text-status-info-foreground",
   completed: "bg-status-success-muted text-status-success-foreground",
@@ -40,7 +36,7 @@ export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJ
 
   const rows = docs.map((doc) => {
     const isManual = doc.file_name.startsWith("Manual ·");
-    const linkedBillId = doc.matched_doc_id ?? OCR_JOB_TO_BILL_ID[doc.job_id] ?? null;
+    const linkedBillId = doc.matched_doc_id ?? null;
     return [
       <span key="f" className="font-medium text-foreground">
         {doc.file_name}

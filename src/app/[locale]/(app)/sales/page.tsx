@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DEMO_SALES } from "@/lib/demo-data";
+import { getSalesOverview } from "@/lib/api/sales-overview";
 import { formatKwd } from "@/lib/utils";
 import { SalesQuickQuoteDemo } from "./sales-quick-quote-demo";
 
@@ -27,7 +27,7 @@ export default async function SalesPage() {
   const t = await getTranslations("sales");
   const locale = await getLocale();
   const lk = locale === "ar" ? "ar" : "en";
-  const d = DEMO_SALES;
+  const d = await getSalesOverview();
 
   const payBadge = (status: string) => {
     const tone =
@@ -46,6 +46,16 @@ export default async function SalesPage() {
   const scoreBadge = (score: string) => (
     <Badge variant="secondary">{score}</Badge>
   );
+
+  const quoteStatusLabel = (status: string) =>
+    status === "sent" || status === "draft"
+      ? t(`quoteStatus.${status}`)
+      : status;
+
+  const orderStateLabel = (state: string) =>
+    state === "confirmed" || state === "draft"
+      ? t(`orderState.${state}`)
+      : state;
 
   const holds = d.customers.filter((c) => c.payment_status === "on_hold");
 
@@ -105,9 +115,10 @@ export default async function SalesPage() {
               q.id,
               q.customer,
               formatKwd(q.total, lk),
-              t(`quoteStatus.${q.status}`),
+              quoteStatusLabel(q.status),
               q.valid_until,
             ])}
+            emptyMessage="No quotes yet."
           />
         </TabsContent>
 
@@ -129,7 +140,7 @@ export default async function SalesPage() {
               o.id,
               o.customer,
               formatKwd(o.total, lk),
-              t(`orderState.${o.state}`),
+              orderStateLabel(o.state),
               o.delivery_eta ?? "—",
               o.exceptional ? (
                 <Badge
@@ -142,6 +153,7 @@ export default async function SalesPage() {
                 <span className="text-muted-foreground">—</span>
               ),
             ])}
+            emptyMessage="No sales orders yet."
           />
         </TabsContent>
 
@@ -169,6 +181,7 @@ export default async function SalesPage() {
               scoreBadge(c.score),
               payBadge(c.payment_status),
             ])}
+            emptyMessage="No customers yet."
           />
         </TabsContent>
 
@@ -202,6 +215,7 @@ export default async function SalesPage() {
               p.days_idle,
               p.next_action,
             ])}
+            emptyMessage="No open opportunities."
           />
         </TabsContent>
       </Tabs>

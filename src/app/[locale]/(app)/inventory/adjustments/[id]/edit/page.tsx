@@ -14,6 +14,10 @@ export default async function Page({
   const [products, warehouses] = await Promise.all([listProducts(), listWarehouses()]);
   return (
     <DocEditShell
+      locale={locale === "ar" ? "ar" : "en"}
+      docType="stock_adjustment"
+      docId={adj.id}
+      expectedRowVersion={adj.rowVersion}
       docNumber={adj.number}
       docTitle={`Adjustment ${adj.date}`}
       state={adj.state}

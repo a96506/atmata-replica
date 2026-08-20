@@ -1,6 +1,12 @@
 import Link from "next/link";
-import { DEMO_CLOSING } from "@/lib/demo-data";
-import { CloseDemoToolbar, CloseRescanDemo, CloseStepDemo } from "./close-demo-actions";
+import { listFiscalPeriods } from "@/lib/api/master";
+import { getPeriodCloseForFiscalPeriod } from "@/lib/api/period-close";
+import { Empty } from "@/components/state/Empty";
+import {
+  CloseDemoToolbar,
+  CloseRescanDemo,
+  CloseStepDemo,
+} from "./close-demo-actions";
 
 const STEP_LABELS: Record<string, string> = {
   reconcile_bank: "Reconcile Bank Transactions",
@@ -30,13 +36,25 @@ const STEP_HREF: Record<string, (locale: string) => string> = {
 
 const STATUS_BADGE: Record<string, string> = {
   pending: "bg-muted text-foreground",
+  running: "bg-status-info-muted text-status-info-foreground",
+  blocked: "bg-status-pending-muted text-status-pending-foreground",
   needs_attention: "bg-status-pending-muted text-status-pending-foreground",
+  completed: "bg-status-success-muted text-status-success-foreground",
   complete: "bg-status-success-muted text-status-success-foreground",
+  skipped: "bg-muted text-muted-foreground",
 };
 
 function defaultPeriod() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+function detailCount(
+  detail: Record<string, unknown>,
+  key: string,
+): number {
+  const value = detail[key];
+  return typeof value === "number" ? value : 0;
 }
 
 export default async function ClosePage({
@@ -49,28 +67,60 @@ export default async function ClosePage({
   const { locale } = await params;
   const { period: periodParam } = await searchParams;
   const period = periodParam || defaultPeriod();
-  const closing = DEMO_CLOSING.period === period ? DEMO_CLOSING : { ...DEMO_CLOSING, period };
+
+  const [yearStr, monthStr] = period.split("-");
+  const year = Number(yearStr);
+  const month = Number(monthStr);
+  const fiscalPeriods = await listFiscalPeriods().catch(() => []);
+  const fiscalPeriod =
+    fiscalPeriods.find((p) => p.year === year && p.month === month) ?? null;
+  const fiscalPeriodId = fiscalPeriod?.id ?? null;
+
+  const workspace =
+    fiscalPeriodId != null
+      ? await getPeriodCloseForFiscalPeriod(fiscalPeriodId).catch(() => null)
+      : null;
 
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Month-End Close</h1>
-          <p className="text-sm text-foreground">10-step AI-assisted closing checklist.</p>
+          <h1 className="text-2xl font-semibold text-foreground">
+            Month-End Close
+          </h1>
+          <p className="text-sm text-foreground">
+            10-step AI-assisted closing checklist.
+            {!fiscalPeriodId ? (
+              <span className="ms-1 text-muted-foreground">
+                (No fiscal period row for {period} — start/rescan disabled.)
+              </span>
+            ) : null}
+          </p>
         </div>
-        <CloseDemoToolbar period={period} />
+        <CloseDemoToolbar period={period} fiscalPeriodId={fiscalPeriodId} />
       </header>
 
-      {closing && (
+      {!workspace ? (
+        <Empty
+          title="No close run for this period"
+          description={
+            fiscalPeriodId
+              ? "Click Run close to create the period close run and tasks."
+              : `Create a fiscal period for ${period} first.`
+          }
+        />
+      ) : (
         <>
           <div className="flex flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-sm sm:flex-row sm:items-center">
             <div className="flex-1">
               <p className="text-sm text-muted-foreground">Period</p>
-              <p className="text-lg font-semibold text-foreground">{closing.period}</p>
+              <p className="text-lg font-semibold text-foreground">{period}</p>
             </div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground">Status</p>
-              <p className="text-lg font-semibold capitalize text-foreground">{closing.status}</p>
+              <p className="text-lg font-semibold capitalize text-foreground">
+                {workspace.run.status.replace("_", " ")}
+              </p>
             </div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground">Progress</p>
@@ -78,70 +128,85 @@ export default async function ClosePage({
                 <div className="h-2 flex-1 rounded-full bg-muted">
                   <div
                     className="h-2 rounded-full bg-primary transition-all duration-300"
-                    style={{ width: `${closing.overall_progress_pct}%` }}
+                    style={{ width: `${workspace.overallProgressPct}%` }}
                   />
                 </div>
                 <span className="text-sm font-medium text-foreground">
-                  {closing.overall_progress_pct.toFixed(0)}%
+                  {workspace.overallProgressPct.toFixed(0)}%
                 </span>
               </div>
             </div>
-            <CloseRescanDemo period={period} />
+            <CloseRescanDemo period={period} fiscalPeriodId={fiscalPeriodId} />
           </div>
 
-          {closing.summary && (
-            <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
-              <h2 className="mb-2 font-semibold text-foreground">AI Summary</h2>
-              <p className="text-sm text-foreground">{closing.summary}</p>
-            </div>
-          )}
+          {workspace.tasks.length === 0 ? (
+            <Empty
+              title="No close tasks"
+              description="Re-scan to ensure canonical period_close_tasks exist for this run."
+            />
+          ) : (
+            <div className="space-y-2">
+              {workspace.tasks.map((task) => {
+                const itemsFound = detailCount(task.detail, "itemsFound");
+                const itemsResolved = detailCount(task.detail, "itemsResolved");
+                const notes =
+                  typeof task.detail.reason === "string"
+                    ? task.detail.reason
+                    : typeof task.detail.notes === "string"
+                      ? task.detail.notes
+                      : null;
+                const canComplete =
+                  task.status !== "completed" && task.status !== "skipped";
 
-          <div className="space-y-2">
-            {closing.steps
-              .slice()
-              .sort((a, b) => a.step_order - b.step_order)
-              .map((step) => (
-                <div
-                  key={step.step_name}
-                  className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">
-                      {step.step_order}
-                    </span>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">
-                        {STEP_LABELS[step.step_name] ?? step.step_name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {step.items_found} found · {step.items_resolved} resolved
-                        {step.notes && <> · {step.notes}</>}
-                      </p>
+                return (
+                  <div
+                    key={task.id}
+                    className="flex flex-col gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-semibold text-foreground">
+                        {task.sequence}
+                      </span>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          {STEP_LABELS[task.code] ?? task.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {itemsFound} found · {itemsResolved} resolved
+                          {notes ? <> · {notes}</> : null}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`rounded px-2 py-0.5 text-xs font-medium ${
+                          STATUS_BADGE[task.status] ??
+                          "bg-muted text-foreground"
+                        }`}
+                      >
+                        {task.status.replace("_", " ")}
+                      </span>
+                      {STEP_HREF[task.code] ? (
+                        <Link
+                          href={STEP_HREF[task.code](locale)}
+                          className="cursor-pointer rounded-md border border-input bg-card px-2 py-0.5 text-xs font-medium text-foreground hover:bg-muted"
+                        >
+                          Open list →
+                        </Link>
+                      ) : null}
+                      {canComplete ? (
+                        <CloseStepDemo
+                          period={period}
+                          stepName={task.code}
+                          taskId={task.id}
+                        />
+                      ) : null}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span
-                      className={`rounded px-2 py-0.5 text-xs font-medium ${
-                        STATUS_BADGE[step.status] ?? "bg-muted text-foreground"
-                      }`}
-                    >
-                      {step.status.replace("_", " ")}
-                    </span>
-                    {STEP_HREF[step.step_name] ? (
-                      <Link
-                        href={STEP_HREF[step.step_name](locale)}
-                        className="cursor-pointer rounded-md border border-input bg-card px-2 py-0.5 text-xs font-medium text-foreground hover:bg-muted"
-                      >
-                        Open list →
-                      </Link>
-                    ) : null}
-                    {step.status !== "complete" && (
-                      <CloseStepDemo period={period} stepName={step.step_name} />
-                    )}
-                  </div>
-                </div>
-              ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </>
       )}
     </div>

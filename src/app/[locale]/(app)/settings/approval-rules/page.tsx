@@ -1,8 +1,9 @@
 import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
-import { APPROVAL_RULES } from "@/mocks/seed/approvals";
+import { listApprovalRules } from "@/lib/api/master";
 
 export default async function Page() {
+  const rules = await listApprovalRules();
   return (
     <DocumentList
       title="Approval rules"
@@ -12,14 +13,14 @@ export default async function Page() {
         columns={[
           { key: "doc", label: "Doc type" },
           { key: "min", label: "Min amount" },
-          { key: "approver", label: "Approver" },
-          { key: "role", label: "Role" },
+          { key: "roles", label: "Approver roles" },
+          { key: "seq", label: "Sequence" },
         ]}
-        rows={APPROVAL_RULES.map((r) => [
+        rows={rules.map((r) => [
           r.docType,
-          r.minAmount.toLocaleString(),
-          r.approverName,
-          r.approverRole,
+          Number(r.minAmount).toLocaleString(),
+          (r.approverRoles ?? []).join(", "),
+          String(r.sequence),
         ])}
       />
     </DocumentList>

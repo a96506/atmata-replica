@@ -1,22 +1,16 @@
-# ERP phase audit findings (2026-08-20 Phase 7)
+# ERP phase audit findings (2026-08-21 hygiene refresh)
 
 ## Current truth
 - Linked backend: `erp-backend-v1` (`yfmw4i43-9rc`).
-- Phase 0–7 complete on that branch. Phase 8–10 not started.
-- Applied through `20260815162200_fix-execute-found-checks.sql`.
-- Create RPCs live for P2P + Q2C + JE/transfer/adjustment; `update_document_header` + `award_rfq`.
-- 13 dedicated `/new` forms call Server Actions (stable idempotency keys).
-- Pitfall: plpgsql `EXECUTE … INTO` does **not** set `FOUND` — never use `IF NOT FOUND` after EXECUTE; check assigned columns / `GET DIAGNOSTICS`.
-- Live smoke: PO draft idempotent + JE balanced draft (DEMO_OWNER).
-- DocEditShell / DocActionBar / AdoptionNewShell / RFQ+returns pages / M17 still Phase 8.
+- Phase 0–10 complete on branch.
+- Release run `vf_20260820_ac530f`: ordered gates passed.
+- Hygiene Aug21: VERIFY_A/B tenants; DEMO overviews live; OCR approve/reject + `source_ocr_job_id`; FK indexes 139→0; verify seed + idempotency/optimistic-lock/storage pass; `resolveAppOrigin()` for Vercel; `npm run build` OK.
 
-## Leftover, not a phase reopen
-- Uncommitted Phase 1–7 working tree
-- Advisor stored scan may lag; use `advisor scan` when checking
-- `APP_URL` still localhost
-- Vercel preview only
-- Page mocks: dashboard / financials / inbox / recon / close / settings overviews
-- Dual-hat `alfailakawi1000@gmail.com` — not isolation tenant B
+## Residual (not phase reopen)
+- Large Phase 1–10 tree commit (in progress / pending Ahmad if commit deferred).
+- Vercel **production** promote still manual (preview `l9ejvc4lb` SSO); local `NEXT_PUBLIC_APP_URL` stays localhost by design.
+- Overview metrics deferred (no backend): demand forecast, vendor scores, price alerts, max stock.
+- `.vercel-token` in repo folder is invalid/placeholder — refresh for CLI env ops.
 
 ## Locked next
-Phase 8: DocEditShell + DocActionBar + AdoptionNewShell + M17 ops. Wait for Ahmad / next session.
+Prod promote when Ahmad asks; optional forecast/score product work is new scope.

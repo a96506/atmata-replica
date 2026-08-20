@@ -1,0 +1,1 @@
+verify storage object A — contents are non-secret fixtures only

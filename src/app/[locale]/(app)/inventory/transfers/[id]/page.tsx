@@ -67,7 +67,11 @@ export default async function Page({
       currentState={trx.state}
       actionBar={
         <DocActionBar
+          locale={locale === "ar" ? "ar" : "en"}
           docType="internal_transfer"
+          docId={trx.id}
+          expectedRowVersion={trx.rowVersion}
+          docDate={trx.date}
           docNumber={trx.number}
           currentState={trx.state}
         />

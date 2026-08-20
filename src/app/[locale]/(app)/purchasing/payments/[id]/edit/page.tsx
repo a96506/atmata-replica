@@ -13,6 +13,10 @@ export default async function Page({
   if (!vpay) notFound();
   return (
     <DocEditShell
+      locale={locale === "ar" ? "ar" : "en"}
+      docType="vendor_payment"
+      docId={vpay.id}
+      expectedRowVersion={vpay.rowVersion}
       docNumber={vpay.number}
       docTitle={`Payment ${vpay.date}`}
       state={vpay.state}

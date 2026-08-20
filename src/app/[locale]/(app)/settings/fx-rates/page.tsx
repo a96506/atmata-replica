@@ -1,8 +1,9 @@
 import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
-import { FX_RATES } from "@/mocks/seed/fx";
+import { listFxRates } from "@/lib/api/master";
 
 export default async function Page() {
+  const rates = await listFxRates();
   return (
     <DocumentList
       title="FX rates"
@@ -15,9 +16,15 @@ export default async function Page() {
           { key: "to", label: "To" },
           { key: "rate", label: "Rate" },
         ]}
-        rows={FX_RATES.slice()
-          .sort((a, b) => b.date.localeCompare(a.date))
-          .map((r) => [r.date, r.from, r.to, r.rate.toFixed(5)])}
+        rows={rates
+          .slice()
+          .sort((a, b) => b.rateDate.localeCompare(a.rateDate))
+          .map((r) => [
+            r.rateDate,
+            r.baseCurrency,
+            r.quoteCurrency,
+            Number(r.rate).toFixed(5),
+          ])}
       />
     </DocumentList>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
 import { useConfirm } from "@/components/confirm-dialog";
 import { AlertCircle } from "lucide-react";
@@ -14,6 +15,11 @@ import { StateBadge } from "@/components/doc/StateBadge";
 import { useSession } from "@/lib/session";
 import { legalActions, type Action } from "@/lib/state-machines";
 import { periodStatusFor } from "@/lib/period";
+import {
+  postDocumentAction,
+  reverseDocumentAction,
+  transitionDocumentAction,
+} from "@/lib/actions/documents";
 import type { DocState, DocType } from "@/types";
 
 const ACTION_LABEL: Record<string, string> = {
@@ -77,7 +83,10 @@ const ACTION_PREVIEW: Record<
 };
 
 export type DocActionBarProps = {
+  locale: "en" | "ar";
   docType: DocType;
+  docId: string;
+  expectedRowVersion: number;
   docNumber: string;
   currentState: DocState;
   totalLabel?: string;
@@ -86,30 +95,46 @@ export type DocActionBarProps = {
   docDate?: string;
 };
 
+function actionErrorMessage(error: {
+  messageKey?: string;
+  code: string;
+}): string {
+  return error.messageKey ?? error.code;
+}
+
 export function DocActionBar({
+  locale,
   docType,
+  docId,
+  expectedRowVersion,
   docNumber,
   currentState,
   totalLabel,
   blockedReason,
   docDate,
 }: DocActionBarProps) {
+  const router = useRouter();
   const { role } = useSession();
   const confirm = useConfirm();
-  const [ephemeralState, setEphemeralState] = React.useState<DocState | null>(null);
-  const [ephemeralHistory, setEphemeralHistory] = React.useState<
-    { from: DocState; to: DocState; at: string }[]
-  >([]);
+  const idempotencyKeyRef = React.useRef(crypto.randomUUID());
+  const [pending, setPending] = React.useState(false);
+  const [rowVersion, setRowVersion] = React.useState(expectedRowVersion);
 
-  const effectiveState = ephemeralState ?? currentState;
-  const actions = legalActions(docType, effectiveState, role);
+  React.useEffect(() => {
+    setRowVersion(expectedRowVersion);
+  }, [expectedRowVersion]);
+
+  const actions = legalActions(docType, currentState, role);
   const periodStatus = periodStatusFor(docDate);
   const periodBlocked =
     periodStatus === "hard_closed" ||
-    (periodStatus === "soft_closed" && role !== "admin" && role !== "period_adjust");
+    (periodStatus === "soft_closed" &&
+      role !== "admin" &&
+      role !== "period_adjust");
 
   const handle = React.useCallback(
     async (a: Action) => {
+      if (pending) return;
       if (blockedReason) {
         toast.error(`Blocked: ${blockedReason}`);
         return;
@@ -120,56 +145,118 @@ export function DocActionBar({
         nextState: a.toState,
       });
       if (!preview) {
-        toast.message(`${a.id} (demo) · would move to ${a.toState}`);
+        toast.message(`${a.id} · would move to ${a.toState}`);
         return;
       }
       const ok = await confirm({
         title: preview.title,
-        description: preview.description + "\n\nDemo · this action will not persist.",
+        description: preview.description,
         confirmLabel: preview.confirmLabel,
         cancelLabel: "Keep as-is",
         tone: preview.tone,
       });
       if (!ok) return;
-      toast.success(
-        `${ACTION_LABEL[a.id] ?? a.id} · ${docNumber} → ${a.toState} (demo)`,
-      );
-      setEphemeralHistory((prev) => [
-        ...prev,
-        { from: effectiveState, to: a.toState, at: new Date().toISOString() },
-      ]);
-      setEphemeralState(a.toState);
+
+      setPending(true);
+      try {
+        const base = {
+          locale,
+          docType,
+          docId,
+          expectedRowVersion: rowVersion,
+          idempotencyKey: idempotencyKeyRef.current,
+        };
+
+        let result;
+        if (a.id === "post") {
+          result = await postDocumentAction(base);
+        } else if (a.id === "reverse") {
+          result = await reverseDocumentAction(base);
+        } else {
+          result = await transitionDocumentAction({
+            ...base,
+            action: a.id as
+              | "submit"
+              | "approve"
+              | "reject"
+              | "cancel"
+              | "send"
+              | "record_quotes"
+              | "award"
+              | "close",
+          });
+        }
+
+        if (!result.ok) {
+          if (result.error.currentRowVersion != null) {
+            setRowVersion(result.error.currentRowVersion);
+          }
+          if (result.error.code === "ILLEGAL_TRANSITION") {
+            router.refresh();
+          }
+          toast.error(actionErrorMessage(result.error));
+          return;
+        }
+
+        idempotencyKeyRef.current = crypto.randomUUID();
+        if (result.data.rowVersion != null) {
+          setRowVersion(result.data.rowVersion);
+        }
+
+        const label = ACTION_LABEL[a.id] ?? a.id;
+        if (result.data.state === "pending" && a.id === "submit") {
+          toast.success(`Submitted for approval · ${docNumber}`);
+        } else if (a.id === "post" && result.data.state !== "posted") {
+          toast.success(
+            `${label} · ${docNumber} → ${result.data.state}`,
+          );
+        } else {
+          toast.success(
+            `${label} · ${docNumber} → ${result.data.state}`,
+          );
+        }
+        router.refresh();
+      } finally {
+        setPending(false);
+      }
     },
-    [confirm, docNumber, totalLabel, blockedReason, effectiveState],
+    [
+      pending,
+      blockedReason,
+      confirm,
+      docNumber,
+      totalLabel,
+      locale,
+      docType,
+      docId,
+      rowVersion,
+      router,
+    ],
   );
 
   const posted =
-    effectiveState === "posted" ||
-    effectiveState === "locked" ||
-    effectiveState === "archived";
+    currentState === "posted" ||
+    currentState === "locked" ||
+    currentState === "archived";
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Row 1: current state + the available transitions, side by side. The
-          demo notice moved to the app shell, so this bar leads with substance
-          instead of three stacked informational banners. */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-xs">Current state</span>
-          <StateBadge state={effectiveState} />
+          <StateBadge state={currentState} />
         </div>
 
         <div className="ms-auto">
           <ActionBar
             actions={actions}
             onAction={handle}
-            disabled={!!blockedReason || periodBlocked}
+            disabled={!!blockedReason || periodBlocked || pending}
             resolveLabel={(a) => ACTION_LABEL[a.id] ?? a.id}
           />
         </div>
       </div>
 
-      {/* Row 2: only genuinely blocking conditions get a banner. */}
       {blockedReason ? (
         <Alert variant="destructive">
           <AlertCircle />
@@ -184,20 +271,6 @@ export function DocActionBar({
       docDate &&
       (periodStatus === "hard_closed" || periodStatus === "soft_closed") ? (
         <PeriodLockBanner status={periodStatus} date={docDate} />
-      ) : null}
-
-      {ephemeralState ? (
-        <p className="text-muted-foreground text-xs">
-          <span className="font-medium">Demo state advance:</span>{" "}
-          {ephemeralHistory.map((h, i) => (
-            <span key={i}>
-              {i > 0 ? " → " : ""}
-              <span className="font-mono">{h.from}</span> →{" "}
-              <span className="font-mono">{h.to}</span>
-            </span>
-          ))}
-          {" · "}refresh resets.
-        </p>
       ) : null}
     </div>
   );

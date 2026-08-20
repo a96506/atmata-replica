@@ -1,0 +1,46 @@
+{
+  "functionSlug": "erp-scheduler",
+  "url": "https://yfmw4i43-9rc.function2.insforge.app/erp-scheduler",
+  "method": "POST",
+  "headers": {
+    "Authorization": "Bearer ${{secrets.SCHEDULE_CRON_TOKEN}}",
+    "Content-Type": "application/json"
+  },
+  "schedules": [
+    {
+      "name": "erp-fx-daily",
+      "cron": "15 21 * * *",
+      "body": { "job": "fx_ingest" }
+    },
+    {
+      "name": "erp-fx-daily-retry",
+      "cron": "45 21 * * *",
+      "body": { "job": "fx_ingest" }
+    },
+    {
+      "name": "erp-aging-daily",
+      "cron": "0 22 * * *",
+      "body": { "job": "aging_refresh" }
+    },
+    {
+      "name": "erp-stale-drafts-daily",
+      "cron": "20 22 * * *",
+      "body": { "job": "stale_drafts" }
+    },
+    {
+      "name": "erp-month-end-daily",
+      "cron": "0 23 * * *",
+      "body": { "job": "month_end" }
+    },
+    {
+      "name": "erp-depreciation-daily",
+      "cron": "30 23 * * *",
+      "body": { "job": "depreciation" }
+    },
+    {
+      "name": "erp-inventory-alerts-daily",
+      "cron": "0 3 * * *",
+      "body": { "job": "inventory_alerts" }
+    }
+  ]
+}

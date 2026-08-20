@@ -84,3 +84,4 @@ export const reverseDocumentSchema = actionSchema({
 export type TransitionDocumentInput = z.infer<typeof transitionDocumentSchema>;
 export type PostDocumentInput = z.infer<typeof postDocumentSchema>;
 export type ReverseDocumentInput = z.infer<typeof reverseDocumentSchema>;
+export type TransitionAction = z.infer<typeof transitionActionSchema>;

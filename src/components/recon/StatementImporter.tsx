@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { useLocale } from "next-intl";
+import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
 import { insforge } from "@/lib/insforge/client";
 import {
-  createBankStatement,
-  linkBankStatementSource,
+  getMyCompanyId,
+  importBankStatementAction,
   listBankAccounts,
   listBankStatementLines,
 } from "@/lib/actions/reconciliation";
@@ -13,15 +15,11 @@ import { requestReconciliationSuggestions } from "@/lib/actions/ai";
 import type { ReconciliationSuggestion } from "@/types/functions";
 
 /**
- * StatementImporter — uploads a bank statement CSV to the `imports` bucket,
- * parses it server-side, and inserts `bank_statement_lines` rows. The
- * preview table reads from the DB (not in-memory) after upload.
+ * StatementImporter — parse CSV client-side, optionally upload to `imports`,
+ * then call `import_bank_statement` in one shot (no table DML).
  *
  * Expected CSV header (case-insensitive):
  *   date, description, [reference], amount
- *
- * Rule-based match suggestions stay client-side for now; AI match ships in
- * the `functions` todo.
  */
 
 export type StatementRow = {
@@ -32,51 +30,38 @@ export type StatementRow = {
   amount: number;
 };
 
-export type ReconRule = {
-  id: string;
-  refContains?: string;
-  amountMin?: number;
-  amountMax?: number;
-  targetDocId: string;
+type ParsedLine = {
+  lineNumber: number;
+  date: string;
+  description: string;
+  reference: string | null;
+  amount: number;
 };
 
-const RULES_KEY = "atmata.recon.rules";
-
-export function loadRules(): ReconRule[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(window.sessionStorage.getItem(RULES_KEY) ?? "[]");
-  } catch {
-    return [];
+function parseCsv(text: string): ParsedLine[] {
+  const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length === 0) return [];
+  const header = lines[0].toLowerCase().split(",").map((h) => h.trim());
+  const idx = (k: string) => header.indexOf(k);
+  const di = idx("date");
+  const desci = idx("description");
+  const refi = idx("reference");
+  const ami = idx("amount");
+  if (di < 0 || desci < 0 || ami < 0) {
+    throw new Error(
+      "CSV header must include: date, description, [reference], amount",
+    );
   }
-}
-
-export function saveRules(rules: ReconRule[]) {
-  if (typeof window === "undefined") return;
-  try {
-    window.sessionStorage.setItem(RULES_KEY, JSON.stringify(rules));
-  } catch {
-    /* ignore */
-  }
-}
-
-function applyRules(row: StatementRow, rules: ReconRule[]) {
-  for (const r of rules) {
-    const okRef = r.refContains
-      ? row.reference.toLowerCase().includes(r.refContains.toLowerCase()) ||
-        row.description.toLowerCase().includes(r.refContains.toLowerCase())
-      : true;
-    const okAmtMin = r.amountMin === undefined ? true : Math.abs(row.amount) >= r.amountMin;
-    const okAmtMax = r.amountMax === undefined ? true : Math.abs(row.amount) <= r.amountMax;
-    if (okRef && okAmtMin && okAmtMax) {
-      return {
-        docId: r.targetDocId,
-        reason: `rule ${r.id}${r.refContains ? `: ref contains "${r.refContains}"` : ""}`,
-        confidence: r.refContains ? 0.85 : 0.6,
-      };
-    }
-  }
-  return undefined;
+  return lines.slice(1).map((line, i) => {
+    const cells = line.split(",").map((c) => c.trim());
+    return {
+      lineNumber: i + 1,
+      date: cells[di] ?? "",
+      description: cells[desci] ?? "",
+      reference: refi >= 0 ? cells[refi] || null : null,
+      amount: Number(cells[ami] ?? "0") || 0,
+    };
+  });
 }
 
 function safeFileName(name: string): string {
@@ -84,13 +69,17 @@ function safeFileName(name: string): string {
 }
 
 export function StatementImporter() {
+  const locale = useLocale();
+  const writeLocale = locale === "ar" ? "ar" : "en";
+  const router = useRouter();
+  const idempotencyKeyRef = React.useRef(crypto.randomUUID());
+
   const [bankAccounts, setBankAccounts] = React.useState<
     Array<{ id: string; name: string; currency: string }>
   >([]);
   const [bankAccountId, setBankAccountId] = React.useState<string>("");
   const [statementNumber, setStatementNumber] = React.useState<string>("");
   const [rows, setRows] = React.useState<StatementRow[]>([]);
-  const [rules, setRules] = React.useState<ReconRule[]>([]);
   const [uploading, setUploading] = React.useState(false);
   const [statementId, setStatementId] = React.useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = React.useState<
@@ -110,13 +99,9 @@ export function StatementImporter() {
         toast.error(e instanceof Error ? e.message : String(e));
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- load once
   }, []);
 
-  React.useEffect(() => {
-    setRules(loadRules());
-  }, []);
-
-  // When a statement has been imported, refetch its lines from the DB.
   React.useEffect(() => {
     if (!statementId) return;
     void (async () => {
@@ -146,25 +131,62 @@ export function StatementImporter() {
     setUploading(true);
     try {
       const csvText = await file.text();
+      const parsed = parseCsv(csvText);
+      if (parsed.length === 0) {
+        toast.error("CSV contained no statement lines.");
+        return;
+      }
+
       const number =
         statementNumber || `STMT-${new Date().toISOString().slice(0, 10)}`;
-      const { statementId: sid, companyId } = await createBankStatement({
-        bankAccountId,
-        number,
-      });
-      const objectKey = `${companyId}/bank_statements/${sid}/${safeFileName(file.name)}`;
-      const { data, error } = await insforge.storage
+      const companyId = await getMyCompanyId();
+      const uploadId = crypto.randomUUID();
+      const objectKey = `${companyId}/bank_statements/${uploadId}/${safeFileName(file.name)}`;
+
+      const { data: uploadData, error: uploadError } = await insforge.storage
         .from("imports")
         .upload(objectKey, file);
-      if (error) throw new Error(error.message);
-      const { lines } = await linkBankStatementSource({
-        statementId: sid,
-        key: data?.key ?? objectKey,
-        url: data?.url ?? "",
-        csvText,
+      if (uploadError) throw new Error(uploadError.message);
+
+      const result = await importBankStatementAction({
+        locale: writeLocale,
+        idempotencyKey: idempotencyKeyRef.current,
+        header: {
+          bankAccountId,
+          number,
+        },
+        lines: parsed.map((p) => ({
+          lineNumber: p.lineNumber,
+          date: p.date,
+          description: p.description,
+          reference: p.reference,
+          amount: p.amount,
+        })),
+        attachment: {
+          key: uploadData?.key ?? objectKey,
+          url: uploadData?.url ?? "",
+          filename: file.name,
+          mime: file.type || "text/csv",
+          size: file.size,
+        },
       });
-      setStatementId(sid);
-      toast.success(`Imported ${lines} statement line${lines === 1 ? "" : "s"}.`);
+
+      if (!result.ok) {
+        toast.error(result.error.messageKey || result.error.code);
+        return;
+      }
+
+      idempotencyKeyRef.current = crypto.randomUUID();
+      const payload = result.data as { statementId?: string; lineCount?: number };
+      if (payload.statementId) {
+        setStatementId(payload.statementId);
+      }
+      toast.success(
+        `Imported ${payload.lineCount ?? parsed.length} statement line${
+          (payload.lineCount ?? parsed.length) === 1 ? "" : "s"
+        }.`,
+      );
+      router.refresh();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e));
     } finally {
@@ -199,7 +221,7 @@ export function StatementImporter() {
             <select
               value={bankAccountId}
               onChange={(e) => setBankAccountId(e.target.value)}
-                  className="block w-full cursor-pointer rounded-md border border-input bg-card px-3 py-2 text-sm"
+              className="block w-full cursor-pointer rounded-md border border-input bg-card px-3 py-2 text-sm"
               disabled={uploading || bankAccounts.length === 0}
             >
               {bankAccounts.length === 0 ? (
@@ -234,7 +256,8 @@ export function StatementImporter() {
             <span className="font-mono">
               date, description, [reference], amount
             </span>
-            . Parsed server-side; rows stored in `bank_statement_lines`.
+            . Parsed in-browser; imported via{" "}
+            <span className="font-mono">import_bank_statement</span>.
           </span>
           <input
             type="file"
@@ -277,7 +300,6 @@ export function StatementImporter() {
             </thead>
             <tbody className="divide-y divide-border">
               {rows.map((r) => {
-                const ruleMatch = applyRules(r, rules);
                 const aiMatch = aiSuggestions.get(r.id);
                 const match = aiMatch
                   ? {
@@ -288,7 +310,7 @@ export function StatementImporter() {
                       reason: aiMatch.reason,
                       confidence: aiMatch.confidence,
                     }
-                  : ruleMatch;
+                  : undefined;
                 return (
                   <tr key={r.id}>
                     <td className="px-4 py-3">{r.date}</td>
@@ -314,15 +336,13 @@ export function StatementImporter() {
                             {Math.round(match.confidence * 100)}% ·{" "}
                             {match.reason}
                           </span>
-                          {aiMatch ? (
-                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                              AI proposal · review only
-                            </span>
-                          ) : null}
+                          <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                            AI proposal · review only
+                          </span>
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">
-                          No rule matched
+                          No suggestion
                         </span>
                       )}
                     </td>

@@ -15,6 +15,10 @@ export default async function Page({
   const taxCodes = await listTaxCodes();
   return (
     <DocEditShell
+      locale={locale === "ar" ? "ar" : "en"}
+      docType="dn"
+      docId={dn.id}
+      expectedRowVersion={dn.rowVersion}
       docNumber={dn.number}
       docTitle={`Delivery ${dn.date} · against ${dn.soId}`}
       state={dn.state}

@@ -131,7 +131,11 @@ export default async function Page({
       }
       actionBar={
         <DocActionBar
+          locale={locale === "ar" ? "ar" : "en"}
           docType="vendor_bill"
+          docId={bill.id}
+          expectedRowVersion={bill.rowVersion}
+          docDate={bill.date}
           docNumber={bill.number}
           currentState={bill.state}
           totalLabel={`${bill.currency} ${bill.total.toFixed(3)}`}

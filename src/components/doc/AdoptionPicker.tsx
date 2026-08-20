@@ -24,7 +24,7 @@ import type {
  * - Per-line checkbox + qty override (clamped to maxQty).
  * - Multi-parent merging: when more than one parent is passed, lines
  *   sharing the same productId are visually grouped in the preview pane.
- * - On Continue: stashes an AdoptionContext in sessionStorage and
+ * - On Continue: stashes an AdoptionContext in browser scratch and
  *   navigates to the target /new form (which reads the stash on mount).
  */
 

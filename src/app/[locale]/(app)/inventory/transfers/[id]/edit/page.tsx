@@ -14,6 +14,10 @@ export default async function Page({
   const products = await listProducts();
   return (
     <DocEditShell
+      locale={locale === "ar" ? "ar" : "en"}
+      docType="internal_transfer"
+      docId={trx.id}
+      expectedRowVersion={trx.rowVersion}
       docNumber={trx.number}
       docTitle={`Transfer ${trx.date}`}
       state={trx.state}

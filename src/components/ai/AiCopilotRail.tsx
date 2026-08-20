@@ -17,6 +17,7 @@ import {
   persistSuggestionDismissal,
   recordQueuedAction,
 } from "@/lib/api/ai";
+import { browserGet, browserSet } from "@/lib/browser-store";
 import { AiChatPanel } from "./AiChatPanel";
 
 /**
@@ -85,7 +86,7 @@ export function AiCopilotRail({ locale, scope, suggestions: initialSuggestions }
 
   React.useEffect(() => {
     try {
-      const m = window.sessionStorage.getItem(MODE_KEY) as AiMode | null;
+      const m = browserGet(MODE_KEY) as AiMode | null;
       if (m === "observe" || m === "suggest" || m === "auto") setMode(m);
     } catch {
       /* ignore */
@@ -95,7 +96,7 @@ export function AiCopilotRail({ locale, scope, suggestions: initialSuggestions }
   const changeMode = (next: AiMode) => {
     setMode(next);
     try {
-      window.sessionStorage.setItem(MODE_KEY, next);
+      browserSet(MODE_KEY, next);
     } catch {
       /* ignore */
     }
