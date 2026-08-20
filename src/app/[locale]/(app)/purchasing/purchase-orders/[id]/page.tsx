@@ -12,9 +12,10 @@ import { getPurchaseOrder, listGoodsReceipts, listVendorBills } from "@/lib/api/
 import { getSupplier, listTaxCodes } from "@/lib/api/master";
 import { relatedDocsFor } from "@/lib/api/links";
 import { listAuditEvents } from "@/lib/api/audit";
-import { getAncestry, getDescendants } from "@/lib/api/adoption";
+import { getAncestry, getDescendants } from "@/lib/api/adoption.server";
 import { getAiSuggestions } from "@/lib/api/ai";
 import { AiCopilotRail } from "@/components/ai/AiCopilotRail";
+import { DocPdfActions } from "@/components/doc/DocPdfActions";
 import { formatMoney } from "@/lib/money";
 
 const STATES = [
@@ -51,7 +52,7 @@ export default async function Page({
     listVendorBills(),
     getAncestry("po", po.id),
     getDescendants("po", po.id),
-    getAiSuggestions({ kind: "doc", docType: "po", docId: po.id }),
+    getAiSuggestions({ kind: "doc", docType: "po", docId: po.id }, locale === "ar" ? "ar" : "en"),
   ]);
 
   // Inject qtyReceived / qtyInvoiced into each line for the mini-bar.
@@ -78,6 +79,7 @@ export default async function Page({
       subtitle={`PO date ${po.date} · expected ${po.expectedDate}`}
       states={STATES}
       currentState={po.state}
+      actions={<DocPdfActions docType="purchase_order" docId={po.id} locale={locale} />}
       totals={
         <div>
           <div className="text-xs text-muted-foreground">Total</div>

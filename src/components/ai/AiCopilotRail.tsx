@@ -12,8 +12,12 @@ import type {
   AiSuggestionScope,
   DocType,
 } from "@/types";
-import { recordQueuedAction, getAiSuggestions } from "@/lib/api/ai";
-import { USE_AI_BACKEND } from "@/lib/api/_client";
+import {
+  getAiSuggestions,
+  persistSuggestionDismissal,
+  recordQueuedAction,
+} from "@/lib/api/ai";
+import { AiChatPanel } from "./AiChatPanel";
 
 /**
  * AI Co-pilot rail — a doc-aware assistant panel.
@@ -30,13 +34,12 @@ import { USE_AI_BACKEND } from "@/lib/api/_client";
  */
 
 const MODE_KEY = "atmata.ai.mode";
-const DISMISSED_KEY = "atmata.ai.dismissed";
 
 export type AiCopilotRailProps = {
   locale: string;
   scope: AiSuggestionScope;
   /** Pre-fetched suggestions (from server component). If omitted and
-   *  USE_AI_BACKEND is true, the rail fetches suggestions client-side. */
+   *  supplied, the rail fetches suggestions through the Server Action. */
   suggestions?: AiSuggestion[];
 };
 
@@ -56,13 +59,11 @@ export function AiCopilotRail({ locale, scope, suggestions: initialSuggestions }
   // Client-side fetch when no initial suggestions provided and backend is enabled
   React.useEffect(() => {
     if (initialSuggestions && initialSuggestions.length > 0) return;
-    if (!USE_AI_BACKEND) return;
-
     let cancelled = false;
     setLoading(true);
     setError(null);
 
-    getAiSuggestions(scope)
+    getAiSuggestions(scope, locale === "ar" ? "ar" : "en")
       .then((result) => {
         if (!cancelled) {
           setSuggestions(result);
@@ -86,8 +87,6 @@ export function AiCopilotRail({ locale, scope, suggestions: initialSuggestions }
     try {
       const m = window.sessionStorage.getItem(MODE_KEY) as AiMode | null;
       if (m === "observe" || m === "suggest" || m === "auto") setMode(m);
-      const d = JSON.parse(window.sessionStorage.getItem(DISMISSED_KEY) ?? "[]");
-      setDismissed(new Set(d));
     } catch {
       /* ignore */
     }
@@ -104,32 +103,42 @@ export function AiCopilotRail({ locale, scope, suggestions: initialSuggestions }
     console.info("atmata:event", "ai.mode.change", { mode: next });
   };
 
-  const dismiss = (id: string) => {
+  const dismiss = async (id: string) => {
+    const persisted = await persistSuggestionDismissal(id);
+    if (!persisted) {
+      toast.error(t("error"));
+      return;
+    }
     setDismissed((prev) => {
       const next = new Set(prev);
       next.add(id);
-      try {
-        window.sessionStorage.setItem(DISMISSED_KEY, JSON.stringify([...next]));
-      } catch {
-        /* ignore */
-      }
       return next;
     });
     // eslint-disable-next-line no-console
     console.info("atmata:event", "ai.suggestion.dismiss", { id });
   };
 
-  const runAction = (s: AiSuggestion) => {
+  const runAction = async (s: AiSuggestion) => {
     const a = s.primaryAction;
     if (!a) return;
     if (mode === "auto") {
-      recordQueuedAction({
+      if (!a.actionName) {
+        toast.error(t("notQueueable"));
+        return;
+      }
+      const queued = await recordQueuedAction({
         suggestionId: s.id,
         scope: s.scope,
         label: a.label,
+        action: a.actionName,
+        payload: a.actionPayload ?? {},
         proposedByBot: true,
       });
-      toast.success(`Queued for approval: ${a.label}`);
+      if (!queued) {
+        toast.error(t("error"));
+        return;
+      }
+      toast.success(t("queued"));
       return;
     }
     // suggest mode: execute immediately
@@ -193,12 +202,13 @@ export function AiCopilotRail({ locale, scope, suggestions: initialSuggestions }
                 key={s.id}
                 suggestion={s}
                 mode={mode}
-                onAct={() => runAction(s)}
-                onDismiss={() => dismiss(s.id)}
+                onAct={() => void runAction(s)}
+                onDismiss={() => void dismiss(s.id)}
                 t={t}
               />
             ))
           )}
+          <AiChatPanel locale={locale} onSuggestionAct={(suggestion) => void runAction(suggestion)} />
         </div>
       ) : null}
     </div>

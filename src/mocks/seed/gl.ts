@@ -16,6 +16,7 @@ export const ACCOUNTS: Account[] = [
 export const JOURNAL_ENTRIES: JournalEntry[] = [
   {
     id: "je_grn_1",
+    rowVersion: 1,
     number: "JE-2026-00001",
     companyId: "co_1",
     date: "2026-04-18",
@@ -31,6 +32,7 @@ export const JOURNAL_ENTRIES: JournalEntry[] = [
   },
   {
     id: "je_grn_2",
+    rowVersion: 1,
     number: "JE-2026-00002",
     companyId: "co_1",
     date: "2026-04-19",
@@ -46,6 +48,7 @@ export const JOURNAL_ENTRIES: JournalEntry[] = [
   },
   {
     id: "je_bill_1",
+    rowVersion: 1,
     number: "JE-2026-00003",
     companyId: "co_1",
     date: "2026-04-19",
@@ -62,6 +65,7 @@ export const JOURNAL_ENTRIES: JournalEntry[] = [
   },
   {
     id: "je_vpay_1",
+    rowVersion: 1,
     number: "JE-2026-00004",
     companyId: "co_1",
     date: "2026-05-15",
@@ -77,6 +81,7 @@ export const JOURNAL_ENTRIES: JournalEntry[] = [
   },
   {
     id: "je_dn_1",
+    rowVersion: 1,
     number: "JE-2026-00005",
     companyId: "co_1",
     date: "2026-04-12",
@@ -92,6 +97,7 @@ export const JOURNAL_ENTRIES: JournalEntry[] = [
   },
   {
     id: "je_inv_1",
+    rowVersion: 1,
     number: "JE-2026-00006",
     companyId: "co_1",
     date: "2026-04-13",
@@ -108,6 +114,7 @@ export const JOURNAL_ENTRIES: JournalEntry[] = [
   },
   {
     id: "je_rcp_1",
+    rowVersion: 1,
     number: "JE-2026-00007",
     companyId: "co_1",
     date: "2026-05-02",
@@ -123,6 +130,7 @@ export const JOURNAL_ENTRIES: JournalEntry[] = [
   },
   {
     id: "je_adj_1",
+    rowVersion: 1,
     number: "JE-2026-00008",
     companyId: "co_1",
     date: "2026-04-20",

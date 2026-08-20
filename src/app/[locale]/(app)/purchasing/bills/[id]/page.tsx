@@ -17,9 +17,10 @@ import {
 import { getSupplier, listTaxCodes } from "@/lib/api/master";
 import { relatedDocsFor } from "@/lib/api/links";
 import { listAuditEvents } from "@/lib/api/audit";
-import { getAncestry, getDescendants } from "@/lib/api/adoption";
+import { getAncestry, getDescendants } from "@/lib/api/adoption.server";
 import { getAiSuggestions } from "@/lib/api/ai";
 import { AiCopilotRail } from "@/components/ai/AiCopilotRail";
+import { DocPdfActions } from "@/components/doc/DocPdfActions";
 import { formatMoney } from "@/lib/money";
 
 const STATES = [
@@ -47,7 +48,7 @@ export default async function Page({
       listAuditEvents("vendor_bill", bill.id),
       getAncestry("vendor_bill", bill.id),
       getDescendants("vendor_bill", bill.id),
-      getAiSuggestions({ kind: "doc", docType: "vendor_bill", docId: bill.id }),
+      getAiSuggestions({ kind: "doc", docType: "vendor_bill", docId: bill.id }, locale === "ar" ? "ar" : "en"),
     ]);
 
   const balance = bill.total - bill.paid;
@@ -112,6 +113,7 @@ export default async function Page({
       subtitle={`Vendor inv ${bill.invoiceNumber} · ${bill.date} · due ${bill.dueDate}`}
       states={STATES}
       currentState={bill.state}
+      actions={<DocPdfActions docType="vendor_bill" docId={bill.id} locale={locale} />}
       totals={
         <div className="space-y-1">
           <div>

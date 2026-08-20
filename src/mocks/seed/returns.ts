@@ -16,6 +16,7 @@ import type {
 export const VENDOR_RETURNS: VendorReturn[] = [
   {
     id: "vret_1",
+    rowVersion: 1,
     number: "VR-2026-00001",
     companyId: "co_1",
     grnId: "grn_2",
@@ -44,6 +45,7 @@ export const VENDOR_RETURNS: VendorReturn[] = [
 export const DEBIT_NOTES: DebitNote[] = [
   {
     id: "dnote_1",
+    rowVersion: 1,
     number: "DN-2026-00001",
     companyId: "co_1",
     supplierId: "sup_2",
@@ -62,6 +64,7 @@ export const DEBIT_NOTES: DebitNote[] = [
 export const CUSTOMER_RETURNS: CustomerReturn[] = [
   {
     id: "cret_1",
+    rowVersion: 1,
     number: "CR-2026-00001",
     companyId: "co_1",
     dnId: "dn_1",
@@ -90,6 +93,7 @@ export const CUSTOMER_RETURNS: CustomerReturn[] = [
 export const CREDIT_NOTES: CreditNote[] = [
   {
     id: "cnote_1",
+    rowVersion: 1,
     number: "CN-2026-00001",
     companyId: "co_1",
     customerId: "cust_1",

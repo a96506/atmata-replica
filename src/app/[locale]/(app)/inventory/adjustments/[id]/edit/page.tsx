@@ -18,7 +18,7 @@ export default async function Page({
       docTitle={`Adjustment ${adj.date}`}
       state={adj.state}
       date={adj.date}
-      notes={adj.notes}
+      notes={adj.notes ?? undefined}
       linesPreview={
         <ul className="divide-y divide-border rounded-xl border border-border bg-card">
           {adj.lines.map((l) => {

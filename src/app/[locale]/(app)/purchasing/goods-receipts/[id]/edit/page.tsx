@@ -19,7 +19,7 @@ export default async function Page({
       docTitle={`GRN against ${grn.poId}`}
       state={grn.state}
       date={grn.date}
-      notes={grn.notes}
+      notes={grn.notes ?? undefined}
       linesPreview={
         <DocLines
           lines={grn.lines.map((l) => ({

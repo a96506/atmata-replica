@@ -11,7 +11,7 @@ export type StockMove = {
   direction: StockMoveDirection;
   qty: number;
   costPerUnit: number;
-  lotNumber?: string;
+  lotNumber?: string | null;
   /** What produced this move — used by the related-docs rail. */
   sourceType:
     | "grn"
@@ -27,11 +27,12 @@ export type InternalTransferLine = {
   id: string;
   productId: string;
   qty: number;
-  lotNumber?: string;
+  lotNumber?: string | null;
 };
 
 export type InternalTransfer = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   fromWarehouseId: string;
@@ -39,7 +40,7 @@ export type InternalTransfer = {
   date: ISO8601;
   state: DocState;
   lines: InternalTransferLine[];
-  notes?: string;
+  notes?: string | null;
 };
 
 export type StockAdjustmentReason =
@@ -59,11 +60,12 @@ export type StockAdjustmentLine = {
 
 export type StockAdjustment = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   date: ISO8601;
   state: DocState;
   lines: StockAdjustmentLine[];
-  approvedBy?: string;
-  notes?: string;
+  approvedBy?: string | null;
+  notes?: string | null;
 };

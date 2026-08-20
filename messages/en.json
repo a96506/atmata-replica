@@ -61,7 +61,8 @@
     "kpiPending": "Pending approvals",
     "kpiSuccess": "AI success rate",
     "arAging": "AR aging",
-    "alerts": "AI alerts"
+    "alerts": "AI alerts",
+    "cfoNarrative": "CFO narrative"
   },
   "inbox": {
     "title": "AI Inbox",
@@ -338,7 +339,69 @@
     "save": "Save",
     "reset": "Reset",
     "platform": "platform",
-    "tenantOverride": "tenant override"
+    "tenantOverride": "tenant override",
+    "users": {
+      "title": "Users",
+      "subtitle": "Roles drive permission gating across the app.",
+      "name": "Name",
+      "email": "Email",
+      "rolesLabel": "Roles",
+      "active": "Active?",
+      "actions": "Actions",
+      "yes": "yes",
+      "no": "no",
+      "expires": "Expires",
+      "pendingTitle": "Pending invitations",
+      "noMembers": "No members yet.",
+      "noInvitations": "No pending invitations.",
+      "forbidden": "You need the admin role to manage users.",
+      "editRoles": "Edit roles",
+      "lastOwnerHint": "The last active owner must keep the admin role.",
+      "invite": {
+        "action": "Invite user",
+        "title": "Invite a user",
+        "subtitle": "They join with the roles you select. The invitation link still works if email delivery fails.",
+        "submit": "Send invitation",
+        "submitting": "Sending…",
+        "complete": "Invitation created. Copy the link below.",
+        "emailFailed": "Invitation created, but email delivery failed. Copy the link below.",
+        "copyLink": "Copy invitation link",
+        "copied": "Copied"
+      },
+      "edit": {
+        "title": "Edit roles",
+        "submit": "Save roles",
+        "submitting": "Saving…"
+      },
+      "deactivate": {
+        "action": "Deactivate",
+        "title": "Deactivate this user?",
+        "description": "They will lose access on their next request. You cannot deactivate yourself or the last owner.",
+        "confirm": "Deactivate"
+      },
+      "validation": {
+        "email": "Enter a valid email address.",
+        "roles": "Select at least one valid role.",
+        "aiAgent": "The AI agent role cannot be assigned to a person."
+      },
+      "errors": {
+        "selfDeactivate": "You cannot deactivate your own account."
+      },
+      "roles": {
+        "admin": "Admin",
+        "approver": "Approver",
+        "ap_clerk": "AP clerk",
+        "ar_clerk": "AR clerk",
+        "warehouse": "Warehouse",
+        "buyer": "Buyer",
+        "sales_rep": "Sales representative",
+        "accountant": "Accountant",
+        "period_adjust": "Period adjustments",
+        "audit_unlock": "Audit unlock",
+        "viewer": "Viewer",
+        "ai_agent": "AI agent"
+      }
+    }
   },
   "common": {
     "back": "Back",
@@ -441,7 +504,144 @@
     },
     "doIt": "Do it",
     "queue": "Queue",
+    "queued": "Queued for human approval.",
+    "notQueueable": "This suggestion cannot be queued.",
     "dismiss": "Dismiss",
-    "empty": "Nothing to flag right now."
+    "empty": "Nothing to flag right now.",
+    "error": "The AI request failed.",
+    "errors": {
+      "modelFailed": "The AI service is temporarily unavailable."
+    },
+    "chat": {
+      "title": "AI Chat",
+      "empty": "Ask about your ERP data",
+      "examples": "Try: \"Show overdue bills\"",
+      "placeholder": "Type a question or request…",
+      "send": "Send",
+      "thinking": "Thinking…",
+      "failed": "I couldn't process that request. Please try again."
+    }
+  },
+  "documents": {
+    "actions": {
+      "groupLabel": "PDF actions",
+      "preview": "Preview",
+      "download": "Download",
+      "failed": "PDF generation failed. Try again.",
+      "cached": "Downloaded the existing PDF.",
+      "downloadReady": "PDF is ready.",
+      "popupBlocked": "Allow pop-ups to preview the PDF."
+    },
+    "errors": {
+      "generationFailed": "PDF generation failed.",
+      "invalidRequest": "The PDF request is invalid."
+    }
+  },
+  "email": {
+    "errors": {
+      "invalidRequest": "The email request is invalid.",
+      "deliveryFailed": "Email delivery failed."
+    }
+  },
+  "errors": {
+    "unauthenticated": "Sign in to continue.",
+    "forbidden": "You cannot do that.",
+    "validation": "Check the highlighted fields.",
+    "notFound": "Not found.",
+    "conflict": "That change conflicts with existing data.",
+    "staleVersion": "This record changed. Refresh and try again.",
+    "illegalTransition": "That status change is not allowed.",
+    "periodClosed": "The period is closed.",
+    "duplicate": "That record already exists.",
+    "invariant": "The change violates a business rule.",
+    "rateLimited": "Too many attempts. Try again later.",
+    "unavailable": "The service is temporarily unavailable.",
+    "emailDeliveryFailed": "Email delivery failed.",
+    "storageFailed": "File storage failed.",
+    "modelFailed": "The AI service is temporarily unavailable.",
+    "internal": "Something went wrong."
+  },
+  "platformAdmin": {
+    "brand": "Atmata platform",
+    "title": "Platform administration",
+    "subtitle": "Provision companies, manage suspension, and inspect tenant size. This is not a tenant workspace.",
+    "list": {
+      "search": "Search companies",
+      "status": "Status",
+      "allStatuses": "All statuses",
+      "filter": "Filter",
+      "name": "Company",
+      "plan": "Plan",
+      "created": "Created",
+      "empty": "No companies match.",
+      "total": "{count} companies"
+    },
+    "status": {
+      "active": "Active",
+      "suspended": "Suspended",
+      "suspend": "Suspend",
+      "suspendTitle": "Suspend this company",
+      "suspendHint": "Members lose access immediately, including existing sessions.",
+      "suspendConfirm": "Suspend company",
+      "reactivate": "Reactivate",
+      "reason": "Reason",
+      "suspendedDone": "Company suspended.",
+      "reactivated": "Company reactivated."
+    },
+    "provision": {
+      "action": "Provision company",
+      "title": "Provision a company",
+      "companyName": "Company name",
+      "ownerName": "Owner name",
+      "ownerEmail": "Owner email",
+      "submit": "Create company and invite owner",
+      "submitting": "Provisioning…",
+      "complete": "Company created. Copy the invitation link if the owner still needs it.",
+      "emailFailed": "Company created, invitation not delivered. Copy the link below and resend later."
+    },
+    "resend": {
+      "action": "Resend owner invitation",
+      "complete": "Invitation resent."
+    },
+    "detail": {
+      "id": "Company ID",
+      "plan": "Plan",
+      "profile": "Tax profile",
+      "members": "Members",
+      "invitations": "Invitations",
+      "audit": "Company audit",
+      "email": "Email",
+      "roles": "Roles",
+      "owner": "Owner",
+      "yes": "Yes",
+      "no": "No",
+      "noMembers": "No members yet.",
+      "noInvitations": "No invitations.",
+      "noAudit": "No company audit events.",
+      "from": "From",
+      "to": "To",
+      "reason": "Reason",
+      "at": "When"
+    },
+    "counts": {
+      "title": "Row counts",
+      "total": "{count} rows",
+      "table": "Table",
+      "rows": "Rows",
+      "generatedAt": "Generated {at}"
+    },
+    "errors": {
+      "generic": "Something went wrong.",
+      "retry": "Retry",
+      "notFound": "Not found.",
+      "UNAUTHENTICATED": "Sign in to continue.",
+      "FORBIDDEN": "You cannot do that.",
+      "VALIDATION": "Check the highlighted fields.",
+      "NOT_FOUND": "Not found.",
+      "CONFLICT": "That email or operation already exists.",
+      "STALE_VERSION": "This record changed. Refresh and try again.",
+      "EMAIL_DELIVERY_FAILED": "Email delivery failed.",
+      "INTERNAL": "Something went wrong."
+    }
   }
 }

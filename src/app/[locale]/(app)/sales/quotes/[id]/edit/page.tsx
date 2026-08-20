@@ -22,7 +22,7 @@ export default async function Page({
       docTitle={`Quote ${q.date} · valid until ${q.validUntil}`}
       state={shellState}
       date={q.date}
-      notes={q.notes}
+      notes={q.notes ?? undefined}
       linesPreview={
         <DocLines lines={q.lines} currency={q.currency} taxCodes={taxCodes} />
       }

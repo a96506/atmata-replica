@@ -9,7 +9,7 @@ import { getRfq } from "@/lib/api/rfq";
 import { listSuppliers } from "@/lib/api/master";
 import { relatedDocsFor } from "@/lib/api/links";
 import { listAuditEvents } from "@/lib/api/audit";
-import { getAncestry, getDescendants } from "@/lib/api/adoption";
+import { getAncestry, getDescendants } from "@/lib/api/adoption.server";
 import { getAiSuggestions } from "@/lib/api/ai";
 import { AiCopilotRail } from "@/components/ai/AiCopilotRail";
 

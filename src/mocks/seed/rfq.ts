@@ -7,6 +7,7 @@ import type { RFQ } from "@/types";
 export const RFQS: RFQ[] = [
   {
     id: "rfq_1",
+    rowVersion: 1,
     number: "RFQ-2026-00001",
     companyId: "co_1",
     prIds: ["pr_1"],

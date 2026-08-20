@@ -1,30 +1,30 @@
 import {
-  GOODS_RECEIPTS,
-  PURCHASE_ORDERS,
-  PURCHASE_REQUISITIONS,
-  VENDOR_BILLS,
-  VENDOR_PAYMENTS,
-} from "@/mocks/seed/p2p";
+  listGoodsReceipts,
+  listPurchaseOrders,
+  listPurchaseRequisitions,
+  listVendorBills,
+  listVendorPayments,
+} from "./p2p";
 import {
-  CUSTOMER_INVOICES,
-  CUSTOMER_RECEIPTS,
-  DELIVERY_NOTES,
-  QUOTES,
-  SALES_ORDERS,
-} from "@/mocks/seed/q2c";
+  listCustomerInvoices,
+  listCustomerReceipts,
+  listDeliveryNotes,
+  listQuotes,
+  listSalesOrders,
+} from "./q2c";
 import {
-  INTERNAL_TRANSFERS,
-  STOCK_ADJUSTMENTS,
-  STOCK_MOVES,
-} from "@/mocks/seed/inv";
-import { JOURNAL_ENTRIES } from "@/mocks/seed/gl";
-import { RFQS } from "@/mocks/seed/rfq";
+  listInternalTransfers,
+  listStockAdjustments,
+  listStockMoves,
+} from "./inventory-tx";
+import { listJournalEntries } from "./gl";
+import { listRfqs } from "./rfq";
 import {
-  CREDIT_NOTES,
-  CUSTOMER_RETURNS,
-  DEBIT_NOTES,
-  VENDOR_RETURNS,
-} from "@/mocks/seed/returns";
+  listCreditNotes,
+  listCustomerReturns,
+  listDebitNotes,
+  listVendorReturns,
+} from "./returns";
 import type { DocType } from "@/types";
 
 export type RelatedLink = {
@@ -51,6 +51,47 @@ export async function relatedDocsFor(
   docId: string,
   locale: string,
 ): Promise<RelatedDocsGroup[]> {
+  const [
+    PURCHASE_REQUISITIONS,
+    PURCHASE_ORDERS,
+    GOODS_RECEIPTS,
+    VENDOR_BILLS,
+    VENDOR_PAYMENTS,
+    QUOTES,
+    SALES_ORDERS,
+    DELIVERY_NOTES,
+    CUSTOMER_INVOICES,
+    CUSTOMER_RECEIPTS,
+    INTERNAL_TRANSFERS,
+    STOCK_ADJUSTMENTS,
+    STOCK_MOVES,
+    JOURNAL_ENTRIES,
+    RFQS,
+    VENDOR_RETURNS,
+    DEBIT_NOTES,
+    CUSTOMER_RETURNS,
+    CREDIT_NOTES,
+  ] = await Promise.all([
+    listPurchaseRequisitions(),
+    listPurchaseOrders(),
+    listGoodsReceipts(),
+    listVendorBills(),
+    listVendorPayments(),
+    listQuotes(),
+    listSalesOrders(),
+    listDeliveryNotes(),
+    listCustomerInvoices(),
+    listCustomerReceipts(),
+    listInternalTransfers(),
+    listStockAdjustments(),
+    listStockMoves(),
+    listJournalEntries(),
+    listRfqs(),
+    listVendorReturns(),
+    listDebitNotes(),
+    listCustomerReturns(),
+    listCreditNotes(),
+  ]);
   const groups: RelatedDocsGroup[] = [];
   const p = (path: string) => localePath(locale, path);
 
@@ -378,7 +419,7 @@ export async function relatedDocsFor(
                     : je.sourceType === "stock_adjustment"
                       ? `/inventory/adjustments/${je.sourceId}`
                       : null;
-      if (sourceHref)
+      if (sourceHref && je.sourceId)
         groups.push({
           groupLabel: "Source document",
           links: [{ label: je.sourceId, href: p(sourceHref), badge: je.sourceType }],

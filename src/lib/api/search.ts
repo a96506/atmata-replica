@@ -1,39 +1,3 @@
-/**
- * Builds the global-search index from all seeded documents, products,
- * settings sub-pages, and a hardcoded action list.
- *
- * Backend will replace this with a real search service that returns the
- * same SearchResult[] shape.
- */
-
-import {
-  GOODS_RECEIPTS,
-  PURCHASE_ORDERS,
-  PURCHASE_REQUISITIONS,
-  VENDOR_BILLS,
-  VENDOR_PAYMENTS,
-} from "@/mocks/seed/p2p";
-import {
-  CUSTOMER_INVOICES,
-  CUSTOMER_RECEIPTS,
-  DELIVERY_NOTES,
-  QUOTES,
-  SALES_ORDERS,
-} from "@/mocks/seed/q2c";
-import {
-  CREDIT_NOTES,
-  CUSTOMER_RETURNS,
-  DEBIT_NOTES,
-  VENDOR_RETURNS,
-} from "@/mocks/seed/returns";
-import { RFQS } from "@/mocks/seed/rfq";
-import {
-  INTERNAL_TRANSFERS,
-  STOCK_ADJUSTMENTS,
-  STOCK_MOVES,
-} from "@/mocks/seed/inv";
-import { JOURNAL_ENTRIES } from "@/mocks/seed/gl";
-import { CUSTOMERS, PRODUCTS, SUPPLIERS } from "@/mocks/seed/master";
 import type { SearchResult } from "@/types/search";
 
 const ACTIONS: SearchResult[] = [
@@ -173,7 +137,7 @@ const SETTINGS_PAGES: Array<{ slug: string; label: string; keywords?: string[] }
   { slug: "users", label: "Users", keywords: ["roles", "permissions"] },
 ];
 
-/** Build the in-memory index. Safe to call on every search-open. */
+/** Client-safe static action/settings index. Database results come from /api/search. */
 export async function buildSearchIndex(): Promise<SearchResult[]> {
   const out: SearchResult[] = [...ACTIONS];
 
@@ -189,126 +153,21 @@ export async function buildSearchIndex(): Promise<SearchResult[]> {
     });
   }
 
-  // Products → Product 360
-  for (const p of PRODUCTS) {
-    out.push({
-      id: `prod_${p.id}`,
-      kind: "product",
-      label: `${p.sku} · ${p.name}`,
-      subtitle: `Product 360 · ${p.uom}`,
-      href: (l) => `/${l}/inventory/products/${encodeURIComponent(p.sku)}`,
-      keywords: [p.sku, p.name, p.uom],
-    });
-  }
-
-  // Helper to push a doc result
-  const pushDoc = (
-    id: string,
-    label: string,
-    subtitle: string,
-    href: (l: string) => string,
-    extra?: string[],
-  ) =>
-    out.push({
-      id,
-      kind: "doc",
-      label,
-      subtitle,
-      href,
-      keywords: extra,
-    });
-
-  for (const x of PURCHASE_REQUISITIONS)
-    pushDoc(
-      `pr_${x.id}`,
-      x.number,
-      `PR · ${x.state}`,
-      (l) => `/${l}/purchasing/purchase-requisitions/${x.id}`,
-      [x.id, "pr"],
-    );
-  for (const x of RFQS)
-    pushDoc(`rfq_${x.id}`, x.number, `RFQ · ${x.state}`, (l) => `/${l}/purchasing/rfqs/${x.id}`, [x.id, "rfq"]);
-  for (const x of PURCHASE_ORDERS) {
-    const sup = SUPPLIERS.find((s) => s.id === x.supplierId);
-    pushDoc(
-      `po_${x.id}`,
-      x.number,
-      `PO · ${sup?.name ?? x.supplierId} · ${x.state}`,
-      (l) => `/${l}/purchasing/purchase-orders/${x.id}`,
-      [x.id, "po", sup?.name ?? ""],
-    );
-  }
-  for (const x of GOODS_RECEIPTS)
-    pushDoc(`grn_${x.id}`, x.number, `GRN · ${x.state}`, (l) => `/${l}/purchasing/goods-receipts/${x.id}`, [x.id, "grn"]);
-  for (const x of VENDOR_BILLS) {
-    const sup = SUPPLIERS.find((s) => s.id === x.supplierId);
-    pushDoc(
-      `vb_${x.id}`,
-      x.number,
-      `Bill · ${sup?.name ?? ""} · ${x.invoiceNumber} · ${x.state}`,
-      (l) => `/${l}/purchasing/bills/${x.id}`,
-      [x.id, "bill", x.invoiceNumber],
-    );
-  }
-  for (const x of VENDOR_PAYMENTS)
-    pushDoc(`vp_${x.id}`, x.number, `Payment · ${x.state}`, (l) => `/${l}/purchasing/payments/${x.id}`, [x.id, "payment"]);
-  for (const x of VENDOR_RETURNS)
-    pushDoc(
-      `vret_${x.id}`,
-      x.number,
-      `Vendor return · ${x.state}`,
-      (l) => `/${l}/purchasing/vendor-returns/${x.id}`,
-      [x.id, "return"],
-    );
-  for (const x of DEBIT_NOTES)
-    pushDoc(`dnote_${x.id}`, x.number, `Debit note · ${x.state}`, (l) => `/${l}/purchasing/debit-notes/${x.id}`, [x.id, "debit"]);
-
-  for (const x of QUOTES) {
-    const cust = CUSTOMERS.find((c) => c.id === x.customerId);
-    pushDoc(`qt_${x.id}`, x.number, `Quote · ${cust?.name ?? ""} · ${x.state}`, (l) => `/${l}/sales/quotes/${x.id}`, [
-      x.id,
-      "quote",
-      cust?.name ?? "",
-    ]);
-  }
-  for (const x of SALES_ORDERS) {
-    const cust = CUSTOMERS.find((c) => c.id === x.customerId);
-    pushDoc(`so_${x.id}`, x.number, `SO · ${cust?.name ?? ""} · ${x.state}`, (l) => `/${l}/sales/orders/${x.id}`, [
-      x.id,
-      "so",
-      cust?.name ?? "",
-    ]);
-  }
-  for (const x of DELIVERY_NOTES)
-    pushDoc(`dn_${x.id}`, x.number, `Delivery · ${x.state}`, (l) => `/${l}/sales/deliveries/${x.id}`, [x.id, "delivery"]);
-  for (const x of CUSTOMER_INVOICES) {
-    const cust = CUSTOMERS.find((c) => c.id === x.customerId);
-    pushDoc(
-      `ci_${x.id}`,
-      x.number,
-      `Invoice · ${cust?.name ?? ""} · ${x.state}`,
-      (l) => `/${l}/sales/invoices/${x.id}`,
-      [x.id, "invoice", cust?.name ?? ""],
-    );
-  }
-  for (const x of CUSTOMER_RECEIPTS)
-    pushDoc(`cr_${x.id}`, x.number, `Receipt · ${x.state}`, (l) => `/${l}/sales/receipts/${x.id}`, [x.id, "receipt"]);
-  for (const x of CUSTOMER_RETURNS)
-    pushDoc(`cret_${x.id}`, x.number, `Customer return · ${x.state}`, (l) => `/${l}/sales/returns/${x.id}`, [x.id, "return"]);
-  for (const x of CREDIT_NOTES)
-    pushDoc(`cnote_${x.id}`, x.number, `Credit note · ${x.state}`, (l) => `/${l}/sales/credit-notes/${x.id}`, [x.id, "credit"]);
-
-  for (const x of JOURNAL_ENTRIES)
-    pushDoc(`je_${x.id}`, x.number, `JE · ${x.state}`, (l) => `/${l}/accounting/journal-entries/${x.id}`, [x.id, "je"]);
-  for (const x of STOCK_MOVES)
-    pushDoc(`sm_${x.id}`, x.number, `Stock move · ${x.direction === "in" ? "+" : "-"}${x.qty}`, (l) => `/${l}/inventory/stock-moves`, [
-      x.id,
-      "stock",
-    ]);
-  for (const x of INTERNAL_TRANSFERS)
-    pushDoc(`trx_${x.id}`, x.number, `Transfer · ${x.state}`, (l) => `/${l}/inventory/transfers/${x.id}`, [x.id, "transfer"]);
-  for (const x of STOCK_ADJUSTMENTS)
-    pushDoc(`adj_${x.id}`, x.number, `Adjustment · ${x.state}`, (l) => `/${l}/inventory/adjustments/${x.id}`, [x.id, "adjustment"]);
-
   return out;
+}
+
+export type DatabaseSearchResult = {
+  id: string;
+  kind: SearchResult["kind"];
+  label: string;
+  subtitle?: string;
+  path: string;
+  keywords?: string[];
+};
+
+export function hydrateDatabaseSearchResult(row: DatabaseSearchResult): SearchResult {
+  return {
+    ...row,
+    href: (locale) => `/${locale}${row.path}`,
+  };
 }

@@ -41,6 +41,11 @@ export async function signInAction(input: {
 
   const appSession = await getAppSession();
   if (!appSession.session) {
+    const insforge = await createInsForgeServerClient();
+    const { data: isAdmin } = await insforge.database.rpc("is_platform_admin");
+    if (isAdmin === true) {
+      return { ok: true };
+    }
     await auth.signOut();
     const message =
       appSession.reason === "suspended"
@@ -118,17 +123,41 @@ export async function resetPasswordAction(input: {
   return { ok: true };
 }
 
+export async function resolveInvitationEmail(token: string): Promise<string | null> {
+  const trimmed = token.trim();
+  if (!trimmed) return null;
+  const admin = createInsForgeAdminClient();
+  const tokenHash = createHash("sha256").update(trimmed).digest("hex");
+  const { data, error } = await admin.database
+    .from("invitations")
+    .select("email, status, expires_at")
+    .eq("token_hash", tokenHash)
+    .maybeSingle();
+  const invitation = data as {
+    email: string;
+    status: string;
+    expires_at: string;
+  } | null;
+  if (
+    error ||
+    !invitation ||
+    invitation.status !== "pending" ||
+    new Date(invitation.expires_at).getTime() <= Date.now()
+  ) {
+    return null;
+  }
+  return invitation.email.toLowerCase();
+}
+
 export async function acceptInvitationAction(input: {
   token: string;
-  email: string;
   fullName: string;
   password: string;
 }): Promise<AuthActionResult> {
   const token = input.token.trim();
-  const email = input.email.trim().toLowerCase();
   const fullName = input.fullName.trim();
 
-  if (!token || !email || !fullName || input.password.length < 6) {
+  if (!token || !fullName || input.password.length < 6) {
     return {
       ok: false,
       message: "Complete every field and use a password of at least 6 characters.",
@@ -139,25 +168,8 @@ export async function acceptInvitationAction(input: {
   const auth = await createInsForgeAuthActions();
   let userId: string | null = null;
 
-  const tokenHash = createHash("sha256").update(token).digest("hex");
-  const { data: invitationData, error: invitationError } = await admin.database
-    .from("invitations")
-    .select("email, status, expires_at")
-    .eq("token_hash", tokenHash)
-    .maybeSingle();
-  const invitation = invitationData as {
-    email: string;
-    status: string;
-    expires_at: string;
-  } | null;
-
-  if (
-    invitationError ||
-    !invitation ||
-    invitation.status !== "pending" ||
-    new Date(invitation.expires_at).getTime() <= Date.now() ||
-    invitation.email.toLowerCase() !== email
-  ) {
+  const email = await resolveInvitationEmail(token);
+  if (!email) {
     return { ok: false, message: "Invalid or expired invitation." };
   }
 
@@ -181,6 +193,11 @@ export async function acceptInvitationAction(input: {
         ok: false,
         message: "This email already has an account. Enter its current password.",
       };
+    }
+    const signedEmail = signInData.user.email?.trim().toLowerCase() ?? "";
+    if (signedEmail !== email) {
+      await auth.signOut();
+      return { ok: false, message: "Invalid or expired invitation." };
     }
     userId = signInData.user.id;
   }

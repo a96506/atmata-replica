@@ -19,7 +19,7 @@ export default async function Page({
       docTitle={`PO date ${po.date} · expected ${po.expectedDate}`}
       state={po.state}
       date={po.date}
-      notes={po.notes}
+      notes={po.notes ?? undefined}
       linesPreview={
         <DocLines lines={po.lines} currency={po.currency} taxCodes={taxCodes} />
       }

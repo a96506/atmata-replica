@@ -8,10 +8,13 @@ import { DocForm } from "@/components/form/DocForm";
 import { DatePicker } from "@/components/form/DatePicker";
 import { SearchSelect } from "@/components/form/SearchSelect";
 import { MoneyInput } from "@/components/form/MoneyInput";
+import { createCustomerReceiptAction } from "@/lib/actions/q2c";
+import type { WriteIntent } from "@/lib/actions/validation/p2p";
 import { previewSequence } from "@/lib/numbering";
 import { formatMoney } from "@/lib/money";
 import type {
   BankAccount,
+  Currency,
   CustomerInvoice,
   Customer,
 } from "@/types";
@@ -35,6 +38,9 @@ export function NewReceiptForm({
   const router = useRouter();
   const confirm = useConfirm();
   const today = new Date().toISOString().slice(0, 10);
+  const writeLocale = locale === "ar" ? "ar" : "en";
+  const idempotencyKeyRef = React.useRef(crypto.randomUUID());
+  const [pending, setPending] = React.useState(false);
 
   const [customerId, setCustomerId] = React.useState(sourceInv?.customerId ?? "");
   const [bankId, setBankId] = React.useState(banks[0]?.id ?? "");
@@ -61,6 +67,8 @@ export function NewReceiptForm({
     (i) => i.state === "posted" && i.paid < i.total && (!customerId || i.customerId === customerId),
   );
 
+  const currency: Currency = sourceInv?.currency ?? open[0]?.currency ?? "KWD";
+
   const allocated = allocs.reduce((s, a) => s + a.amount, 0);
   const unallocated = amount - allocated;
 
@@ -68,10 +76,12 @@ export function NewReceiptForm({
   if (!customerId) errors.push({ field: "customer", message: "Customer required." });
   if (!bankId) errors.push({ field: "bank", message: "Bank account required." });
   if (amount <= 0) errors.push({ field: "amount", message: "Amount must be > 0." });
+  if (allocs.length === 0)
+    errors.push({ field: "allocation", message: "Allocate to at least one invoice." });
   if (Math.abs(unallocated) > 0.001)
     errors.push({
       field: "allocation",
-      message: `${unallocated > 0 ? "Under" : "Over"}-allocated by ${formatMoney(Math.abs(unallocated), "KWD")}.`,
+      message: `${unallocated > 0 ? "Under" : "Over"}-allocated by ${formatMoney(Math.abs(unallocated), currency)}.`,
     });
 
   const setAlloc = (invoiceId: string, value: number) => {
@@ -84,6 +94,51 @@ export function NewReceiptForm({
 
   const previewNumber = previewSequence("customer_receipt", 2026, 99);
 
+  const runWrite = async (intent: WriteIntent) => {
+    if (pending) return;
+    if (errors.length > 0) {
+      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      return;
+    }
+    setPending(true);
+    try {
+      const result = await createCustomerReceiptAction({
+        locale: writeLocale,
+        idempotencyKey: idempotencyKeyRef.current,
+        intent,
+        header: {
+          customerId,
+          bankAccountId: bankId,
+          date,
+          currency,
+          amount,
+          method,
+        },
+        lines: allocs.map((a) => ({ invoiceId: a.invoiceId, amount: a.amount })),
+        source: {
+          allocations: allocs.map((a) => ({
+            invoiceId: a.invoiceId,
+            amount: a.amount,
+          })),
+        },
+      });
+      if (!result.ok) {
+        toast.error(result.error.messageKey || result.error.code);
+        return;
+      }
+      const verb =
+        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Submitted";
+      toast.success(
+        `${verb}: ${result.data.number} · ${result.data.state} · ${formatMoney(amount, currency)}`,
+      );
+      idempotencyKeyRef.current = crypto.randomUUID();
+      setDirty(false);
+      router.push(`/${locale}/sales/receipts/${result.data.id}`);
+    } finally {
+      setPending(false);
+    }
+  };
+
   const onSubmit = async () => {
     if (errors.length > 0) {
       toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
@@ -91,19 +146,21 @@ export function NewReceiptForm({
     }
     const ok = await confirm({
       title: `Post ${previewNumber}?`,
-      description: `Receive ${formatMoney(amount, "KWD")} from ${customers.find((c) => c.id === customerId)?.name ?? ""}. ${allocs.length} allocation(s). Generates JE Dr Bank / Cr AR. Demo · this action will not persist.`,
+      description: `Receive ${formatMoney(amount, currency)} from ${customers.find((c) => c.id === customerId)?.name ?? ""}. ${allocs.length} allocation(s). Generates JE Dr Bank / Cr AR.`,
       confirmLabel: "Post receipt",
     });
     if (!ok) return;
-    toast.success(`Posted (demo): ${previewNumber} · ${formatMoney(amount, "KWD")}`);
-    setDirty(false);
-    router.push(`/${locale}/sales/receipts`);
+    await runWrite("post");
   };
 
   return (
     <DocForm
       title={`New customer receipt · ${previewNumber}`}
-      subtitle={sourceInv ? `Settling ${sourceInv.number}` : "Manual receipt"}
+      subtitle={
+        sourceInv
+          ? `Settling ${sourceInv.number}`
+          : "Manual receipt · backend issues the number on save."
+      }
       header={
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           <SearchSelect
@@ -143,13 +200,13 @@ export function NewReceiptForm({
             label="Amount"
             value={amount}
             onChange={wrap(setAmount)}
-            currency="KWD"
+            currency={currency}
             required
           />
           <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-xs">
             <div className="text-muted-foreground">Allocated / Unallocated</div>
             <div className="mt-0.5 font-mono tabular-nums">
-              {formatMoney(allocated, "KWD")} / {formatMoney(unallocated, "KWD")}
+              {formatMoney(allocated, currency)} / {formatMoney(unallocated, currency)}
             </div>
           </div>
         </div>
@@ -214,11 +271,9 @@ export function NewReceiptForm({
       }
       errors={errors}
       dirty={dirty}
+      pending={pending}
       onSubmit={onSubmit}
-      onSaveDraft={() => {
-        toast.success(`Saved as draft (demo): ${previewNumber}`);
-        setDirty(false);
-      }}
+      onSaveDraft={() => void runWrite("save_draft")}
       onCancel={() => router.back()}
       submitDisabled={errors.length > 0}
       submitLabel="Post receipt"

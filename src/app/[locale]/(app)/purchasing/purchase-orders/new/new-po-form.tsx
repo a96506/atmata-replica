@@ -14,6 +14,8 @@ import {
 } from "@/components/form/ProductLinesEditor";
 import { TaxBreakdown } from "@/components/form/TaxBreakdown";
 import { ApprovalRoutePreview } from "@/components/form/ApprovalRoutePreview";
+import { createPurchaseOrderAction } from "@/lib/actions/p2p";
+import type { WriteIntent } from "@/lib/actions/validation/p2p";
 import { previewSequence } from "@/lib/numbering";
 import { useSession } from "@/lib/session";
 import type {
@@ -47,6 +49,9 @@ export function NewPoForm({
   const confirm = useConfirm();
   const { role } = useSession();
   const today = new Date().toISOString().slice(0, 10);
+  const writeLocale = locale === "ar" ? "ar" : "en";
+  const idempotencyKeyRef = React.useRef(crypto.randomUUID());
+  const [pending, setPending] = React.useState(false);
 
   const [supplierId, setSupplierId] = React.useState("");
   const [currency, setCurrency] = React.useState<Currency>("KWD");
@@ -59,6 +64,7 @@ export function NewPoForm({
   const [date, setDate] = React.useState(today);
   const [expectedDate, setExpectedDate] = React.useState(today);
   const [notes, setNotes] = React.useState("");
+  const [dirty, setDirty] = React.useState(false);
   const [lines, setLines] = React.useState<LineDraft[]>([
     createEmptyLine(taxCodes[0]?.id),
   ]);
@@ -73,6 +79,10 @@ export function NewPoForm({
   const errors: ValidationError[] = [];
   if (!supplierId) errors.push({ field: "supplier", message: "Pick a supplier." });
   if (!date) errors.push({ field: "date", message: "PO date is required." });
+  if (!expectedDate)
+    errors.push({ field: "expected date", message: "Expected delivery is required." });
+  if (!paymentTermId)
+    errors.push({ field: "payment term", message: "Pick a payment term." });
   if (!warehouseId) errors.push({ field: "warehouse", message: "Pick a warehouse." });
   if (lines.length === 0)
     errors.push({ field: "lines", message: "At least one line is required." });
@@ -91,7 +101,7 @@ export function NewPoForm({
   const supplierOptions = suppliers.map((s) => ({
     value: s.id,
     label: s.name,
-    hint: s.vatNumber,
+    hint: s.vatNumber ?? undefined,
   }));
   const paymentTermOptions = paymentTerms.map((p) => ({
     value: p.id,
@@ -106,34 +116,53 @@ export function NewPoForm({
 
   const previewNumber = previewSequence("po", 2026, 99);
 
-  const buildPayload = () => ({
-    number: previewNumber,
-    supplierId,
-    currency,
-    paymentTermId,
-    warehouseId,
-    date,
-    expectedDate,
-    notes,
-    lines: lines.map((l) => ({
+  const productLines = () =>
+    lines.map((l) => ({
       productId: l.productId,
-      description: l.description,
+      description: l.description.trim() || "Item",
       qty: l.qty,
       unitPrice: l.unitPrice,
-      taxCodeId: l.taxCodeId,
-    })),
-    subtotal,
-    taxTotal,
-    total,
-  });
+      ...(l.taxCodeId ? { taxCodeId: l.taxCodeId } : {}),
+    }));
 
-  const onSaveDraft = () => {
+  const runWrite = async (intent: WriteIntent) => {
+    if (pending) return;
     if (errors.length > 0) {
       toast.error(`Fix ${errors.length} validation error${errors.length === 1 ? "" : "s"} first.`);
       return;
     }
-    toast.success(`Saved as draft (demo): ${previewNumber}`);
-    setDirty(false);
+    setPending(true);
+    try {
+      const result = await createPurchaseOrderAction({
+        locale: writeLocale,
+        idempotencyKey: idempotencyKeyRef.current,
+        intent,
+        header: {
+          supplierId,
+          currency,
+          paymentTermId,
+          warehouseId,
+          date,
+          expectedDate,
+          ...(notes.trim() ? { notes: notes.trim() } : {}),
+        },
+        lines: productLines(),
+      });
+      if (!result.ok) {
+        toast.error(result.error.messageKey || result.error.code);
+        return;
+      }
+      const verb =
+        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Submitted";
+      toast.success(
+        `${verb}: ${result.data.number} · ${result.data.state} · ${currency} ${total.toFixed(3)}`,
+      );
+      idempotencyKeyRef.current = crypto.randomUUID();
+      setDirty(false);
+      router.push(`/${locale}/purchasing/purchase-orders/${result.data.id}`);
+    } finally {
+      setPending(false);
+    }
   };
 
   const onSubmit = async () => {
@@ -145,15 +174,11 @@ export function NewPoForm({
       title: `Submit ${previewNumber}?`,
       description:
         `Total ${currency} ${total.toFixed(3)}. ` +
-        `Routes for approval per the approval rules below. ` +
-        `Demo · this action will not persist.`,
+        `Routes for approval per the approval rules below.`,
       confirmLabel: "Submit",
     });
     if (!ok) return;
-    void buildPayload();
-    toast.success(`Submitted (demo): ${previewNumber} · ${currency} ${total.toFixed(3)}`);
-    setDirty(false);
-    router.push(`/${locale}/purchasing/purchase-orders`);
+    await runWrite("submit");
   };
 
   const onCancel = async () => {
@@ -173,7 +198,6 @@ export function NewPoForm({
     }
   };
 
-  const [dirty, setDirty] = React.useState(false);
   const wrap =
     <T,>(setter: (v: T) => void) =>
     (v: T) => {
@@ -256,8 +280,9 @@ export function NewPoForm({
       approvalPreview={<ApprovalRoutePreview docType="po" amount={total} />}
       errors={errors}
       dirty={dirty}
+      pending={pending}
       onSubmit={onSubmit}
-      onSaveDraft={onSaveDraft}
+      onSaveDraft={() => void runWrite("save_draft")}
       onCancel={onCancel}
       submitDisabled={errors.length > 0}
       submitLabel="Submit for approval"

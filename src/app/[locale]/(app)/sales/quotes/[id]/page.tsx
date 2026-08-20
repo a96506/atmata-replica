@@ -13,9 +13,10 @@ import { getQuote } from "@/lib/api/q2c";
 import { getCustomer, listTaxCodes } from "@/lib/api/master";
 import { relatedDocsFor } from "@/lib/api/links";
 import { listAuditEvents } from "@/lib/api/audit";
-import { getAncestry, getDescendants } from "@/lib/api/adoption";
+import { getAncestry, getDescendants } from "@/lib/api/adoption.server";
 import { getAiSuggestions } from "@/lib/api/ai";
 import { AiCopilotRail } from "@/components/ai/AiCopilotRail";
+import { DocPdfActions } from "@/components/doc/DocPdfActions";
 import { formatMoney } from "@/lib/money";
 import type { DocState } from "@/types";
 
@@ -41,7 +42,7 @@ export default async function Page({
     listAuditEvents("quote", q.id),
     getAncestry("quote", q.id),
     getDescendants("quote", q.id),
-    getAiSuggestions({ kind: "doc", docType: "quote", docId: q.id }),
+    getAiSuggestions({ kind: "doc", docType: "quote", docId: q.id }, locale === "ar" ? "ar" : "en"),
   ]);
 
   const stateAlias = q.state === "accepted" ? "confirmed" : q.state;
@@ -55,6 +56,7 @@ export default async function Page({
       subtitle={`Issued ${q.date} · valid until ${q.validUntil}`}
       states={STATES}
       currentState={isExpired ? "expired" : stateAlias}
+      actions={<DocPdfActions docType="quote" docId={q.id} locale={locale} />}
       totals={
         <div>
           <div className="text-xs text-muted-foreground">Total</div>

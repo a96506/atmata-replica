@@ -11,18 +11,19 @@ import { Label } from "@/components/ui/label";
 
 export function InvitationForm({
   token,
-  initialEmail,
+  email,
 }: {
   token?: string;
-  initialEmail?: string;
+  email: string;
 }) {
   const t = useTranslations("auth");
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
-  const [error, setError] = React.useState(token ? "" : t("invalidInvitation"));
+  const [error, setError] = React.useState(token && email ? "" : t("invalidInvitation"));
 
   return (
     <form
+      method="post"
       className="w-full max-w-sm space-y-5 rounded-2xl border border-border bg-card p-8 shadow-lg"
       onSubmit={(event) => {
         event.preventDefault();
@@ -38,7 +39,6 @@ export function InvitationForm({
         startTransition(async () => {
           const result = await acceptInvitationAction({
             token,
-            email: String(form.get("email") ?? ""),
             fullName: String(form.get("fullName") ?? ""),
             password,
           });
@@ -81,7 +81,8 @@ export function InvitationForm({
           type="email"
           name="email"
           autoComplete="email"
-          defaultValue={initialEmail}
+          value={email}
+          readOnly
           required
           disabled={!token}
         />
@@ -113,7 +114,7 @@ export function InvitationForm({
         />
       </div>
 
-      <Button type="submit" className="w-full" disabled={pending || !token}>
+      <Button type="submit" className="w-full" disabled={pending || !token || !email}>
         {pending ? t("acceptingInvitation") : t("acceptInvitation")}
       </Button>
 

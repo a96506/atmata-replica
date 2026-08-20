@@ -9,6 +9,8 @@ import { DatePicker } from "@/components/form/DatePicker";
 import { SearchSelect } from "@/components/form/SearchSelect";
 import { MoneyInput } from "@/components/form/MoneyInput";
 import { ApprovalRoutePreview } from "@/components/form/ApprovalRoutePreview";
+import { createJournalEntryAction } from "@/lib/actions/gl";
+import type { WriteIntent } from "@/lib/actions/validation/p2p";
 import { formatMoney } from "@/lib/money";
 import { previewSequence } from "@/lib/numbering";
 import type { Account } from "@/types";
@@ -32,6 +34,9 @@ export function NewJeForm({
   const router = useRouter();
   const confirm = useConfirm();
   const today = new Date().toISOString().slice(0, 10);
+  const writeLocale = locale === "ar" ? "ar" : "en";
+  const idempotencyKeyRef = React.useRef(crypto.randomUUID());
+  const [pending, setPending] = React.useState(false);
 
   const [date, setDate] = React.useState(today);
   const [description, setDescription] = React.useState("");
@@ -87,9 +92,55 @@ export function NewJeForm({
         field: `line ${i + 1} · side`,
         message: "Line can only be debit OR credit, not both.",
       });
+    if (l.debit === 0 && l.credit === 0)
+      errors.push({
+        field: `line ${i + 1} · amount`,
+        message: "Enter a debit or credit.",
+      });
   });
 
   const previewNumber = previewSequence("journal_entry", 2026, 99);
+
+  const runWrite = async (intent: WriteIntent) => {
+    if (pending) return;
+    if (errors.length > 0) {
+      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      return;
+    }
+    setPending(true);
+    try {
+      const result = await createJournalEntryAction({
+        locale: writeLocale,
+        idempotencyKey: idempotencyKeyRef.current,
+        intent,
+        header: {
+          date,
+          currency: "KWD",
+          notes: description.trim(),
+        },
+        lines: lines.map((l) => ({
+          accountId: l.accountId,
+          ...(l.description.trim() ? { description: l.description.trim() } : {}),
+          debit: l.debit,
+          credit: l.credit,
+        })),
+      });
+      if (!result.ok) {
+        toast.error(result.error.messageKey || result.error.code);
+        return;
+      }
+      const verb =
+        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Submitted";
+      toast.success(
+        `${verb}: ${result.data.number} · ${result.data.state} · ${formatMoney(totalDr, "KWD")}`,
+      );
+      idempotencyKeyRef.current = crypto.randomUUID();
+      setDirty(false);
+      router.push(`/${locale}/accounting/journal-entries/${result.data.id}`);
+    } finally {
+      setPending(false);
+    }
+  };
 
   const onSubmit = async () => {
     if (errors.length > 0) {
@@ -98,18 +149,17 @@ export function NewJeForm({
     }
     const ok = await confirm({
       title: `Post ${previewNumber}?`,
-      description: `Posts ${formatMoney(totalDr, "KWD")} in balanced journal lines. Demo · this action will not persist.`,
+      description: `Posts ${formatMoney(totalDr, "KWD")} in balanced journal lines.`,
       confirmLabel: "Post JE",
     });
     if (!ok) return;
-    toast.success(`Posted (demo): ${previewNumber} · ${formatMoney(totalDr, "KWD")}`);
-    setDirty(false);
-    router.push(`/${locale}/accounting/journal-entries`);
+    await runWrite("post");
   };
 
   return (
     <DocForm
       title={`New journal entry · ${previewNumber}`}
+      subtitle="Backend issues the final number on save."
       banner={
         <div
           className={
@@ -202,11 +252,9 @@ export function NewJeForm({
       approvalPreview={<ApprovalRoutePreview docType="journal_entry" amount={totalDr} />}
       errors={errors}
       dirty={dirty}
+      pending={pending}
       onSubmit={onSubmit}
-      onSaveDraft={() => {
-        toast.success(`Saved as draft (demo): ${previewNumber}`);
-        setDirty(false);
-      }}
+      onSaveDraft={() => void runWrite("save_draft")}
       onCancel={() => router.back()}
       submitDisabled={errors.length > 0}
       submitLabel="Post JE"

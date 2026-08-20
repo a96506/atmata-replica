@@ -1,11 +1,3 @@
-import {
-  CUSTOMER_INVOICES,
-  CUSTOMER_RECEIPTS,
-  DELIVERY_NOTES,
-  OPPORTUNITIES,
-  QUOTES,
-  SALES_ORDERS,
-} from "@/mocks/seed/q2c";
 import type {
   CustomerInvoice,
   CustomerReceipt,
@@ -14,48 +6,56 @@ import type {
   Quote,
   SalesOrder,
 } from "@/types";
+import { getTable, listTable } from "@/lib/db/read";
+import { Q2C_SELECTS } from "@/lib/db/selects";
 
-const byId = <T extends { id: string }>(rows: T[], id: string) =>
-  rows.find((r) => r.id === id) ?? null;
+const docOrder = [
+  { column: "date", ascending: false },
+  { column: "number", ascending: false },
+  { column: "id" },
+];
 
 export async function listOpportunities(): Promise<Opportunity[]> {
-  return OPPORTUNITIES;
+  return listTable("opportunities", Q2C_SELECTS.opportunities, [
+    { column: "number", ascending: false },
+    { column: "id" },
+  ]);
 }
 export async function getOpportunity(id: string): Promise<Opportunity | null> {
-  return byId(OPPORTUNITIES, id);
+  return getTable("opportunities", Q2C_SELECTS.opportunities, id);
 }
 
 export async function listQuotes(): Promise<Quote[]> {
-  return QUOTES;
+  return listTable("quotes", Q2C_SELECTS.quotes, docOrder);
 }
 export async function getQuote(id: string): Promise<Quote | null> {
-  return byId(QUOTES, id);
+  return getTable("quotes", Q2C_SELECTS.quotes, id);
 }
 
 export async function listSalesOrders(): Promise<SalesOrder[]> {
-  return SALES_ORDERS;
+  return listTable("sales_orders", Q2C_SELECTS.salesOrders, docOrder);
 }
 export async function getSalesOrder(id: string): Promise<SalesOrder | null> {
-  return byId(SALES_ORDERS, id);
+  return getTable("sales_orders", Q2C_SELECTS.salesOrders, id);
 }
 
 export async function listDeliveryNotes(): Promise<DeliveryNote[]> {
-  return DELIVERY_NOTES;
+  return listTable("delivery_notes", Q2C_SELECTS.deliveryNotes, docOrder);
 }
 export async function getDeliveryNote(id: string): Promise<DeliveryNote | null> {
-  return byId(DELIVERY_NOTES, id);
+  return getTable("delivery_notes", Q2C_SELECTS.deliveryNotes, id);
 }
 
 export async function listCustomerInvoices(): Promise<CustomerInvoice[]> {
-  return CUSTOMER_INVOICES;
+  return listTable("customer_invoices", Q2C_SELECTS.customerInvoices, docOrder);
 }
 export async function getCustomerInvoice(id: string): Promise<CustomerInvoice | null> {
-  return byId(CUSTOMER_INVOICES, id);
+  return getTable("customer_invoices", Q2C_SELECTS.customerInvoices, id);
 }
 
 export async function listCustomerReceipts(): Promise<CustomerReceipt[]> {
-  return CUSTOMER_RECEIPTS;
+  return listTable("customer_receipts", Q2C_SELECTS.customerReceipts, docOrder);
 }
 export async function getCustomerReceipt(id: string): Promise<CustomerReceipt | null> {
-  return byId(CUSTOMER_RECEIPTS, id);
+  return getTable("customer_receipts", Q2C_SELECTS.customerReceipts, id);
 }

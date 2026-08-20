@@ -12,9 +12,10 @@ import { getCustomerInvoice } from "@/lib/api/q2c";
 import { getCustomer, listTaxCodes } from "@/lib/api/master";
 import { relatedDocsFor } from "@/lib/api/links";
 import { listAuditEvents } from "@/lib/api/audit";
-import { getAncestry, getDescendants } from "@/lib/api/adoption";
+import { getAncestry, getDescendants } from "@/lib/api/adoption.server";
 import { getAiSuggestions } from "@/lib/api/ai";
 import { AiCopilotRail } from "@/components/ai/AiCopilotRail";
+import { DocPdfActions } from "@/components/doc/DocPdfActions";
 import { formatMoney } from "@/lib/money";
 
 const STATES = [
@@ -40,7 +41,7 @@ export default async function Page({
       listAuditEvents("customer_invoice", inv.id),
       getAncestry("customer_invoice", inv.id),
       getDescendants("customer_invoice", inv.id),
-      getAiSuggestions({ kind: "doc", docType: "customer_invoice", docId: inv.id }),
+      getAiSuggestions({ kind: "doc", docType: "customer_invoice", docId: inv.id }, locale === "ar" ? "ar" : "en"),
     ]);
 
   const balance = inv.total - inv.paid;
@@ -52,6 +53,7 @@ export default async function Page({
       subtitle={`Issued ${inv.date} · due ${inv.dueDate}`}
       states={STATES}
       currentState={inv.state}
+      actions={<DocPdfActions docType="invoice" docId={inv.id} locale={locale} />}
       totals={
         <div className="space-y-1">
           <div>

@@ -9,16 +9,17 @@ export type Opportunity = {
   stage: "qualified" | "proposal" | "negotiation" | "won" | "lost";
   value: number;
   probability: number;
-  nextAction?: string;
+  nextAction?: string | null;
   daysIdle: number;
 };
 
 export type Quote = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   customerId: string;
-  opportunityId?: string;
+  opportunityId?: string | null;
   date: ISO8601;
   validUntil: ISO8601;
   currency: Currency;
@@ -27,21 +28,22 @@ export type Quote = {
   subtotal: number;
   taxTotal: number;
   total: number;
-  notes?: string;
+  notes?: string | null;
 };
 
 export type SalesOrder = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   customerId: string;
-  quoteId?: string;
+  quoteId?: string | null;
   date: ISO8601;
   expectedDeliveryDate: ISO8601;
   currency: Currency;
   warehouseId: string;
   state: DocState;
-  blockedReason?: string;
+  blockedReason?: string | null;
   exceptional: boolean;
   lines: DocLine[];
   subtotal: number;
@@ -56,6 +58,7 @@ export type DeliveryLine = DocLine & {
 
 export type DeliveryNote = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   soId: string;
@@ -67,17 +70,18 @@ export type DeliveryNote = {
 };
 
 export type CustomerInvoiceLine = DocLine & {
-  soLineId?: string;
-  dnLineId?: string;
+  soLineId?: string | null;
+  dnLineId?: string | null;
 };
 
 export type CustomerInvoice = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   customerId: string;
-  soId?: string;
-  dnId?: string;
+  soId?: string | null;
+  dnId?: string | null;
   date: ISO8601;
   dueDate: ISO8601;
   currency: Currency;
@@ -113,12 +117,13 @@ export type CustomerReturnLine = {
     | "customer_dissatisfied"
     | "expired"
     | "other";
-  notes?: string;
-  lotNumber?: string;
+  notes?: string | null;
+  lotNumber?: string | null;
 };
 
 export type CustomerReturn = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   /** DN this return reverses. */
@@ -129,19 +134,20 @@ export type CustomerReturn = {
   state: DocState;
   lines: CustomerReturnLine[];
   /** Credit Note generated on post. */
-  creditNoteId?: string;
-  notes?: string;
+  creditNoteId?: string | null;
+  notes?: string | null;
 };
 
 export type CreditNote = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   customerId: string;
   /** The Customer Return that gave rise to this Credit Note. */
   customerReturnId: string;
   /** The Customer Invoice being credited against (if any). */
-  invoiceId?: string;
+  invoiceId?: string | null;
   date: ISO8601;
   currency: Currency;
   state: DocState;
@@ -154,6 +160,7 @@ export type CreditNote = {
 
 export type CustomerReceipt = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   customerId: string;

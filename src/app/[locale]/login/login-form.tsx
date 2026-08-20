@@ -10,9 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 function safeNextPath(nextPath?: string) {
-  return nextPath?.startsWith("/") && !nextPath.startsWith("//")
-    ? nextPath
-    : "/inbox";
+  if (!nextPath?.startsWith("/") || nextPath.startsWith("//")) return "/inbox";
+  const withoutLocale = nextPath.replace(/^\/(en|ar)(?=\/|$)/, "");
+  return withoutLocale.length > 0 ? withoutLocale : "/inbox";
 }
 
 export function LoginForm({
@@ -31,6 +31,7 @@ export function LoginForm({
 
   return (
     <form
+      method="post"
       className="w-full max-w-sm space-y-5 rounded-2xl border border-border bg-card p-8 shadow-lg"
       onSubmit={(event) => {
         event.preventDefault();

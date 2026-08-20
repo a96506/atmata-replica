@@ -9,10 +9,13 @@ import { DatePicker } from "@/components/form/DatePicker";
 import { SearchSelect } from "@/components/form/SearchSelect";
 import { MoneyInput } from "@/components/form/MoneyInput";
 import { ApprovalRoutePreview } from "@/components/form/ApprovalRoutePreview";
+import { createVendorPaymentAction } from "@/lib/actions/p2p";
+import type { WriteIntent } from "@/lib/actions/validation/p2p";
 import { previewSequence } from "@/lib/numbering";
 import { formatMoney } from "@/lib/money";
 import type {
   BankAccount,
+  Currency,
   Supplier,
   VendorBill,
 } from "@/types";
@@ -36,6 +39,9 @@ export function NewPaymentForm({
   const router = useRouter();
   const confirm = useConfirm();
   const today = new Date().toISOString().slice(0, 10);
+  const writeLocale = locale === "ar" ? "ar" : "en";
+  const idempotencyKeyRef = React.useRef(crypto.randomUUID());
+  const [pending, setPending] = React.useState(false);
 
   const [supplierId, setSupplierId] = React.useState(sourceBill?.supplierId ?? "");
   const [bankId, setBankId] = React.useState(banks[0]?.id ?? "");
@@ -62,6 +68,8 @@ export function NewPaymentForm({
     (b) => b.state === "posted" && b.paid < b.total && (!supplierId || b.supplierId === supplierId),
   );
 
+  const currency: Currency = sourceBill?.currency ?? openBills[0]?.currency ?? "KWD";
+
   const allocated = allocations.reduce((s, a) => s + a.amount, 0);
   const unallocated = amount - allocated;
 
@@ -69,10 +77,12 @@ export function NewPaymentForm({
   if (!supplierId) errors.push({ field: "supplier", message: "Supplier required." });
   if (!bankId) errors.push({ field: "bank", message: "Bank account required." });
   if (amount <= 0) errors.push({ field: "amount", message: "Amount must be > 0." });
+  if (allocations.length === 0)
+    errors.push({ field: "allocation", message: "Allocate to at least one bill." });
   if (Math.abs(unallocated) > 0.001)
     errors.push({
       field: "allocation",
-      message: `${unallocated > 0 ? "Under" : "Over"}-allocated by ${formatMoney(Math.abs(unallocated), "KWD")}.`,
+      message: `${unallocated > 0 ? "Under" : "Over"}-allocated by ${formatMoney(Math.abs(unallocated), currency)}.`,
     });
 
   const allocFor = (billId: string) =>
@@ -93,6 +103,51 @@ export function NewPaymentForm({
   const whtWithheld = whtRate > 0 ? amount * whtRate : 0;
   const netPay = amount - whtWithheld;
 
+  const runWrite = async (intent: WriteIntent) => {
+    if (pending) return;
+    if (errors.length > 0) {
+      toast.error(`Fix ${errors.length} validation error${errors.length === 1 ? "" : "s"} first.`);
+      return;
+    }
+    setPending(true);
+    try {
+      const result = await createVendorPaymentAction({
+        locale: writeLocale,
+        idempotencyKey: idempotencyKeyRef.current,
+        intent,
+        header: {
+          supplierId,
+          bankAccountId: bankId,
+          date,
+          currency,
+          amount,
+          method,
+        },
+        lines: allocations.map((a) => ({ billId: a.billId, amount: a.amount })),
+        source: {
+          allocations: allocations.map((a) => ({
+            billId: a.billId,
+            amount: a.amount,
+          })),
+        },
+      });
+      if (!result.ok) {
+        toast.error(result.error.messageKey || result.error.code);
+        return;
+      }
+      const verb =
+        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Submitted";
+      toast.success(
+        `${verb}: ${result.data.number} · ${result.data.state} · ${formatMoney(amount, currency)}`,
+      );
+      idempotencyKeyRef.current = crypto.randomUUID();
+      setDirty(false);
+      router.push(`/${locale}/purchasing/payments/${result.data.id}`);
+    } finally {
+      setPending(false);
+    }
+  };
+
   const onSubmit = async () => {
     if (errors.length > 0) {
       toast.error(`Fix ${errors.length} validation error${errors.length === 1 ? "" : "s"} first.`);
@@ -100,19 +155,21 @@ export function NewPaymentForm({
     }
     const ok = await confirm({
       title: `Post ${previewNumber}?`,
-      description: `Pay ${formatMoney(amount, "KWD")} from ${banks.find((b) => b.id === bankId)?.name ?? "—"} to ${suppliers.find((s) => s.id === supplierId)?.name ?? "—"}. ${allocations.length} allocation(s). Generates a JE Dr AP / Cr Bank. Demo · this action will not persist.`,
+      description: `Pay ${formatMoney(amount, currency)} from ${banks.find((b) => b.id === bankId)?.name ?? "—"} to ${suppliers.find((s) => s.id === supplierId)?.name ?? "—"}. ${allocations.length} allocation(s). Generates a JE Dr AP / Cr Bank.`,
       confirmLabel: "Post payment",
     });
     if (!ok) return;
-    toast.success(`Posted (demo): ${previewNumber} · ${formatMoney(amount, "KWD")}`);
-    setDirty(false);
-    router.push(`/${locale}/purchasing/payments`);
+    await runWrite("post");
   };
 
   return (
     <DocForm
       title={`New vendor payment · ${previewNumber}`}
-      subtitle={sourceBill ? `Settling ${sourceBill.number}` : "Manual payment"}
+      subtitle={
+        sourceBill
+          ? `Settling ${sourceBill.number}`
+          : "Manual payment · backend issues the number on save."
+      }
       header={
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           <SearchSelect
@@ -146,13 +203,13 @@ export function NewPaymentForm({
             label="Amount"
             value={amount}
             onChange={wrap(setAmount)}
-            currency="KWD"
+            currency={currency}
             required
           />
           <div className="rounded-md border border-border bg-muted/50 px-3 py-2 text-xs">
             <div className="text-muted-foreground">Allocated / Unallocated</div>
             <div className="mt-0.5 font-mono tabular-nums">
-              {formatMoney(allocated, "KWD")} / {formatMoney(unallocated, "KWD")}
+              {formatMoney(allocated, currency)} / {formatMoney(unallocated, currency)}
             </div>
           </div>
         </div>
@@ -168,24 +225,24 @@ export function NewPaymentForm({
                 <div>
                   <div className="text-status-pending-foreground">Gross amount</div>
                   <div className="font-mono tabular-nums text-foreground">
-                    {formatMoney(amount, "KWD")}
+                    {formatMoney(amount, currency)}
                   </div>
                 </div>
                 <div>
                   <div className="text-status-pending-foreground">Withheld ({(whtRate * 100).toFixed(0)}%)</div>
                   <div className="font-mono tabular-nums text-destructive">
-                    −{formatMoney(whtWithheld, "KWD")}
+                    −{formatMoney(whtWithheld, currency)}
                   </div>
                 </div>
                 <div>
                   <div className="text-status-pending-foreground">Net pay</div>
                   <div className="font-mono font-semibold tabular-nums text-status-success-foreground">
-                    {formatMoney(netPay, "KWD")}
+                    {formatMoney(netPay, currency)}
                   </div>
                 </div>
               </div>
               <div className="mt-2 text-[11px] text-status-pending-foreground">
-                Posts: Dr AP {formatMoney(amount, "KWD")} · Cr Bank {formatMoney(netPay, "KWD")} · Cr WHT payable {formatMoney(whtWithheld, "KWD")}.
+                Posts: Dr AP {formatMoney(amount, currency)} · Cr Bank {formatMoney(netPay, currency)} · Cr WHT payable {formatMoney(whtWithheld, currency)}.
               </div>
             </div>
           ) : null}
@@ -250,11 +307,9 @@ export function NewPaymentForm({
       approvalPreview={<ApprovalRoutePreview docType="vendor_payment" amount={amount} />}
       errors={errors}
       dirty={dirty}
+      pending={pending}
       onSubmit={onSubmit}
-      onSaveDraft={() => {
-        toast.success(`Saved as draft (demo): ${previewNumber}`);
-        setDirty(false);
-      }}
+      onSaveDraft={() => void runWrite("save_draft")}
       onCancel={() => router.back()}
       submitDisabled={errors.length > 0}
       submitLabel="Post payment"

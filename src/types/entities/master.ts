@@ -2,6 +2,7 @@ import type { Currency, TaxJurisdiction } from "../common";
 
 export type Company = {
   id: string;
+  rowVersion: number;
   name: string;
   taxProfile: TaxJurisdiction;
   baseCurrency: Currency;
@@ -17,7 +18,8 @@ export type Branch = {
 export type Customer = {
   id: string;
   name: string;
-  vatNumber?: string;
+  email: string;
+  vatNumber?: string | null;
   creditLimit: number;
   exposure: number;
   paymentStatus: "current" | "overdue_14" | "on_hold";
@@ -27,13 +29,14 @@ export type Customer = {
 export type Supplier = {
   id: string;
   name: string;
-  vatNumber?: string;
-  bankAccount?: string;
+  email: string;
+  vatNumber?: string | null;
+  bankAccount?: string | null;
   paymentTermId: string;
   /** Whether vendor payments to this supplier withhold tax. */
   whtApplicable?: boolean;
   /** Withholding rate (e.g. 0.05 for 5%). Defaults to 0.05 when whtApplicable=true and unset. */
-  whtRate?: number;
+  whtRate?: number | null;
 };
 
 export type Product = {

@@ -14,6 +14,8 @@ import {
 } from "@/components/form/ProductLinesEditor";
 import { TaxBreakdown } from "@/components/form/TaxBreakdown";
 import { CreditHoldBanner, CreditLimitWarning } from "@/components/banners";
+import { createQuoteAction } from "@/lib/actions/q2c";
+import type { WriteIntent } from "@/lib/actions/validation/p2p";
 import { previewSequence } from "@/lib/numbering";
 import type { Currency, Customer, Product, TaxCode } from "@/types";
 import type { ValidationError } from "@/components/form/ValidationSummary";
@@ -34,6 +36,9 @@ export function NewQuoteForm({
   const router = useRouter();
   const confirm = useConfirm();
   const today = new Date().toISOString().slice(0, 10);
+  const writeLocale = locale === "ar" ? "ar" : "en";
+  const idempotencyKeyRef = React.useRef(crypto.randomUUID());
+  const [pending, setPending] = React.useState(false);
 
   const [customerId, setCustomerId] = React.useState("");
   const [currency, setCurrency] = React.useState<Currency>("KWD");
@@ -82,6 +87,52 @@ export function NewQuoteForm({
 
   const previewNumber = previewSequence("quote", 2026, 99);
 
+  const productLines = () =>
+    lines.map((l) => ({
+      productId: l.productId,
+      description: l.description.trim() || "Item",
+      qty: l.qty,
+      unitPrice: l.unitPrice,
+      ...(l.taxCodeId ? { taxCodeId: l.taxCodeId } : {}),
+    }));
+
+  const runWrite = async (intent: WriteIntent) => {
+    if (pending) return;
+    if (errors.length > 0) {
+      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      return;
+    }
+    setPending(true);
+    try {
+      const result = await createQuoteAction({
+        locale: writeLocale,
+        idempotencyKey: idempotencyKeyRef.current,
+        intent,
+        header: {
+          customerId,
+          currency,
+          date,
+          validUntil,
+        },
+        lines: productLines(),
+      });
+      if (!result.ok) {
+        toast.error(result.error.messageKey || result.error.code);
+        return;
+      }
+      const verb =
+        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Submitted";
+      toast.success(
+        `${verb}: ${result.data.number} · ${result.data.state} · ${currency} ${total.toFixed(3)}`,
+      );
+      idempotencyKeyRef.current = crypto.randomUUID();
+      setDirty(false);
+      router.push(`/${locale}/sales/quotes/${result.data.id}`);
+    } finally {
+      setPending(false);
+    }
+  };
+
   const onSubmit = async () => {
     if (errors.length > 0) {
       toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
@@ -89,18 +140,17 @@ export function NewQuoteForm({
     }
     const ok = await confirm({
       title: `Send ${previewNumber}?`,
-      description: `Generates a customer-facing PDF for ${customer?.name ?? ""} totaling ${currency} ${total.toFixed(3)}. Demo · this action will not persist.`,
+      description: `Generates a customer-facing PDF for ${customer?.name ?? ""} totaling ${currency} ${total.toFixed(3)}.`,
       confirmLabel: "Send",
     });
     if (!ok) return;
-    toast.success(`Sent (demo): ${previewNumber} · ${currency} ${total.toFixed(3)}`);
-    setDirty(false);
-    router.push(`/${locale}/sales/quotes`);
+    await runWrite("submit");
   };
 
   return (
     <DocForm
       title={`New quote · ${previewNumber}`}
+      subtitle="Backend issues the final number on save."
       banner={
         onCreditHold && customer ? (
           <CreditHoldBanner exposure={customer.exposure} limit={customer.creditLimit} />
@@ -121,7 +171,7 @@ export function NewQuoteForm({
             options={customers.map((c) => ({
               value: c.id,
               label: c.name,
-              hint: c.vatNumber,
+              hint: c.vatNumber ?? undefined,
               badges:
                 c.paymentStatus === "on_hold"
                   ? [{ label: "credit hold", tone: "red" as const }]
@@ -160,11 +210,9 @@ export function NewQuoteForm({
       totals={<TaxBreakdown lines={lines} currency={currency} taxCodes={taxCodes} />}
       errors={errors}
       dirty={dirty}
+      pending={pending}
       onSubmit={onSubmit}
-      onSaveDraft={() => {
-        toast.success(`Saved as draft (demo): ${previewNumber}`);
-        setDirty(false);
-      }}
+      onSaveDraft={() => void runWrite("save_draft")}
       onCancel={() => router.back()}
       submitDisabled={errors.length > 0}
       submitLabel="Send quote"

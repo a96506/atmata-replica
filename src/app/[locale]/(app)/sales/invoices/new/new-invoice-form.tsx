@@ -14,7 +14,8 @@ import {
 } from "@/components/form/ProductLinesEditor";
 import { TaxBreakdown } from "@/components/form/TaxBreakdown";
 import { ApprovalRoutePreview } from "@/components/form/ApprovalRoutePreview";
-import { useSession } from "@/lib/session";
+import { createCustomerInvoiceAction } from "@/lib/actions/q2c";
+import type { WriteIntent } from "@/lib/actions/validation/p2p";
 import { previewSequence } from "@/lib/numbering";
 import type {
   Company,
@@ -31,7 +32,7 @@ const CURRENCY_OPTIONS: Currency[] = ["KWD", "SAR", "AED", "USD"];
 
 export function NewInvoiceForm({
   locale,
-  companies,
+  companies: _companies,
   customers,
   products,
   taxCodes,
@@ -46,13 +47,13 @@ export function NewInvoiceForm({
   so: SalesOrder | null;
   dn: DeliveryNote | null;
 }) {
+  void _companies;
   const router = useRouter();
   const confirm = useConfirm();
-  const { companyId } = useSession();
   const today = new Date().toISOString().slice(0, 10);
-
-  const activeCompany = companies.find((c) => c.id === companyId);
-  const isSaudi = activeCompany?.taxProfile === "SA";
+  const writeLocale = locale === "ar" ? "ar" : "en";
+  const idempotencyKeyRef = React.useRef(crypto.randomUUID());
+  const [pending, setPending] = React.useState(false);
 
   const [customerId, setCustomerId] = React.useState(
     so?.customerId ?? dn?.customerId ?? "",
@@ -60,8 +61,6 @@ export function NewInvoiceForm({
   const [currency, setCurrency] = React.useState<Currency>(so?.currency ?? "KWD");
   const [date, setDate] = React.useState(today);
   const [dueDate, setDueDate] = React.useState(today);
-  const [buyerVat, setBuyerVat] = React.useState("");
-  const [isB2B, setIsB2B] = React.useState(true);
   const [dirty, setDirty] = React.useState(false);
   const [lines, setLines] = React.useState<LineDraft[]>(
     so
@@ -105,13 +104,77 @@ export function NewInvoiceForm({
   if (!dueDate) errors.push({ field: "due date", message: "Due date required." });
   if (dueDate && date && new Date(dueDate) < new Date(date))
     errors.push({ field: "due date", message: "Due date must be ≥ invoice date." });
-  if (isSaudi && isB2B && !buyerVat.trim())
-    errors.push({
-      field: "buyer VAT",
-      message: "Buyer VAT required for Saudi B2B invoices (FATOORA).",
-    });
+  lines.forEach((l, i) => {
+    if (!l.productId)
+      errors.push({ field: `line ${i + 1} · product`, message: "Pick a product." });
+    if (l.qty <= 0)
+      errors.push({ field: `line ${i + 1} · qty`, message: "Qty must be > 0." });
+  });
 
   const previewNumber = previewSequence("customer_invoice", 2026, 99);
+
+  const invoiceLines = () =>
+    lines.map((l) => {
+      const sourceId = l.id.startsWith("pre_") ? l.id.slice(4) : undefined;
+      return {
+        productId: l.productId,
+        description: l.description.trim() || "Item",
+        qty: l.qty,
+        unitPrice: l.unitPrice,
+        ...(l.taxCodeId ? { taxCodeId: l.taxCodeId } : {}),
+        ...(so && sourceId ? { soLineId: sourceId } : {}),
+        ...(dn && !so && sourceId ? { dnLineId: sourceId } : {}),
+      };
+    });
+
+  const runWrite = async (intent: WriteIntent) => {
+    if (pending) return;
+    if (errors.length > 0) {
+      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      return;
+    }
+    setPending(true);
+    try {
+      const result = await createCustomerInvoiceAction({
+        locale: writeLocale,
+        idempotencyKey: idempotencyKeyRef.current,
+        intent,
+        header: {
+          customerId,
+          date,
+          dueDate,
+          currency,
+          ...(so ? { soId: so.id } : {}),
+          ...(dn ? { dnId: dn.id } : {}),
+        },
+        lines: invoiceLines(),
+        ...(so || dn
+          ? {
+              source: {
+                parents: [
+                  ...(so ? [{ docType: "so" as const, docId: so.id }] : []),
+                  ...(dn ? [{ docType: "dn" as const, docId: dn.id }] : []),
+                ],
+              },
+            }
+          : {}),
+      });
+      if (!result.ok) {
+        toast.error(result.error.messageKey || result.error.code);
+        return;
+      }
+      const verb =
+        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Submitted";
+      toast.success(
+        `${verb}: ${result.data.number} · ${result.data.state} · ${currency} ${total.toFixed(3)}`,
+      );
+      idempotencyKeyRef.current = crypto.randomUUID();
+      setDirty(false);
+      router.push(`/${locale}/sales/invoices/${result.data.id}`);
+    } finally {
+      setPending(false);
+    }
+  };
 
   const onSubmit = async () => {
     if (errors.length > 0) {
@@ -120,13 +183,11 @@ export function NewInvoiceForm({
     }
     const ok = await confirm({
       title: `Post ${previewNumber}?`,
-      description: `Issues invoice for ${customers.find((c) => c.id === customerId)?.name ?? ""} totaling ${currency} ${total.toFixed(3)}. ${isSaudi ? "FATOORA QR generated. " : ""}Demo · this action will not persist.`,
+      description: `Issues invoice for ${customers.find((c) => c.id === customerId)?.name ?? ""} totaling ${currency} ${total.toFixed(3)}.`,
       confirmLabel: "Post invoice",
     });
     if (!ok) return;
-    toast.success(`Posted (demo): ${previewNumber} · ${currency} ${total.toFixed(3)}`);
-    setDirty(false);
-    router.push(`/${locale}/sales/invoices`);
+    await runWrite("post");
   };
 
   return (
@@ -137,16 +198,7 @@ export function NewInvoiceForm({
           ? `From ${so.number}${dn ? ` · delivered via ${dn.number}` : ""}`
           : dn
             ? `From ${dn.number}`
-            : "Manual invoice"
-      }
-      banner={
-        isSaudi ? (
-          <div className="rounded-md border border-status-success-border bg-status-success-muted p-3 text-sm text-status-success-foreground">
-            <span className="font-medium">FATOORA Phase 2 active</span> · Buyer VAT,
-            seller VAT and QR payload required on post. Active company:{" "}
-            {activeCompany?.name}.
-          </div>
-        ) : null
+            : "Manual invoice · backend issues the number on save."
       }
       header={
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -158,7 +210,7 @@ export function NewInvoiceForm({
             options={customers.map((c) => ({
               value: c.id,
               label: c.name,
-              hint: c.vatNumber,
+              hint: c.vatNumber ?? undefined,
             }))}
             disabled={!!so || !!dn}
             hint={so || dn ? "Locked by source SO/DN" : undefined}
@@ -177,31 +229,6 @@ export function NewInvoiceForm({
             onChange={wrap(setDueDate)}
             min={date}
           />
-          {isSaudi ? (
-            <>
-              <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-foreground">
-                  Buyer VAT{isB2B ? <span className="text-destructive"> *</span> : null}
-                </label>
-                <input
-                  type="text"
-                  value={buyerVat}
-                  onChange={(e) => wrap(setBuyerVat)(e.target.value)}
-                  placeholder="SA3xxxxxxxxxxxxx"
-                  className="rounded-md border border-input bg-card px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                />
-              </div>
-              <label className="flex items-center gap-2 self-end text-sm">
-                <input
-                  type="checkbox"
-                  checked={isB2B}
-                  onChange={(e) => wrap(setIsB2B)(e.target.checked)}
-                  className="h-4 w-4 cursor-pointer"
-                />
-                <span>B2B invoice (buyer VAT required)</span>
-              </label>
-            </>
-          ) : null}
         </div>
       }
       lines={
@@ -221,11 +248,9 @@ export function NewInvoiceForm({
       }
       errors={errors}
       dirty={dirty}
+      pending={pending}
       onSubmit={onSubmit}
-      onSaveDraft={() => {
-        toast.success(`Saved as draft (demo): ${previewNumber}`);
-        setDirty(false);
-      }}
+      onSaveDraft={() => void runWrite("save_draft")}
       onCancel={() => router.back()}
       submitDisabled={errors.length > 0}
       submitLabel="Post invoice"

@@ -15,6 +15,7 @@ import type {
 export const COMPANIES: Company[] = [
   {
     id: "co_1",
+    rowVersion: 1,
     name: "Atmata Trading Co.",
     taxProfile: "KW",
     baseCurrency: "KWD",
@@ -22,6 +23,7 @@ export const COMPANIES: Company[] = [
   },
   {
     id: "co_2",
+    rowVersion: 1,
     name: "Atmata Saudi",
     taxProfile: "SA",
     baseCurrency: "SAR",
@@ -29,6 +31,7 @@ export const COMPANIES: Company[] = [
   },
   {
     id: "co_3",
+    rowVersion: 1,
     name: "Atmata Emirates",
     taxProfile: "AE",
     baseCurrency: "AED",
@@ -116,6 +119,7 @@ export const CUSTOMERS: Customer[] = [
   {
     id: "cust_1",
     name: "Kuwait Retail Co.",
+    email: "quotes@kuwait-retail.example",
     vatNumber: "KW200200200",
     creditLimit: 25_000,
     exposure: 18_420,
@@ -125,6 +129,7 @@ export const CUSTOMERS: Customer[] = [
   {
     id: "cust_2",
     name: "Gulf Foods WLL",
+    email: "accounts@gulf-foods.example",
     vatNumber: "KW200300300",
     creditLimit: 40_000,
     exposure: 38_900,
@@ -134,6 +139,7 @@ export const CUSTOMERS: Customer[] = [
   {
     id: "cust_3",
     name: "City Pharmacy",
+    email: "orders@city-pharmacy.example",
     vatNumber: "KW200400400",
     creditLimit: 15_000,
     exposure: 14_200,
@@ -143,6 +149,7 @@ export const CUSTOMERS: Customer[] = [
   {
     id: "cust_4",
     name: "Project Alpha JV",
+    email: "procurement@project-alpha.example",
     vatNumber: "KW200500500",
     creditLimit: 60_000,
     exposure: 62_500,
@@ -155,6 +162,7 @@ export const SUPPLIERS: Supplier[] = [
   {
     id: "sup_1",
     name: "PetroChem Gulf",
+    email: "rfq@petrochem-gulf.example",
     vatNumber: "KW300100100",
     bankAccount: "KW81NBOK0000000000999100",
     paymentTermId: "pt_net30",
@@ -162,6 +170,7 @@ export const SUPPLIERS: Supplier[] = [
   {
     id: "sup_2",
     name: "PackLine KW",
+    email: "sales@packline-kw.example",
     vatNumber: "KW300200200",
     bankAccount: "KW81NBOK0000000000999200",
     paymentTermId: "pt_net30",
@@ -169,6 +178,7 @@ export const SUPPLIERS: Supplier[] = [
   {
     id: "sup_3",
     name: "PrintHub",
+    email: "quotes@printhub.example",
     vatNumber: "KW300300300",
     bankAccount: "KW81NBOK0000000000999300",
     paymentTermId: "pt_net60",
@@ -178,6 +188,7 @@ export const SUPPLIERS: Supplier[] = [
   {
     id: "sup_4",
     name: "Gulf Supplies WLL",
+    email: "sales@gulf-supplies.example",
     vatNumber: "KW300400400",
     bankAccount: "KW81NBOK0000000000999400",
     paymentTermId: "pt_net30",

@@ -12,9 +12,10 @@ import { getDeliveryNote, getSalesOrder } from "@/lib/api/q2c";
 import { getCustomer, getWarehouse, listTaxCodes } from "@/lib/api/master";
 import { relatedDocsFor } from "@/lib/api/links";
 import { listAuditEvents } from "@/lib/api/audit";
-import { getAncestry, getDescendants } from "@/lib/api/adoption";
+import { getAncestry, getDescendants } from "@/lib/api/adoption.server";
 import { getAiSuggestions } from "@/lib/api/ai";
 import { AiCopilotRail } from "@/components/ai/AiCopilotRail";
+import { DocPdfActions } from "@/components/doc/DocPdfActions";
 
 const STATES = [
   { id: "draft", label: "Draft" },
@@ -39,7 +40,7 @@ export default async function Page({
       listAuditEvents("dn", dn.id),
       getAncestry("dn", dn.id),
       getDescendants("dn", dn.id),
-      getAiSuggestions({ kind: "doc", docType: "dn", docId: dn.id }),
+      getAiSuggestions({ kind: "doc", docType: "dn", docId: dn.id }, locale === "ar" ? "ar" : "en"),
     ]);
 
   const totalQty = dn.lines.reduce((s, l) => s + l.qtyDelivered, 0);
@@ -51,6 +52,7 @@ export default async function Page({
       subtitle={`Shipped ${dn.date} · ${warehouse?.name ?? ""} · against ${so?.number ?? "—"}`}
       states={STATES}
       currentState={dn.state}
+      actions={<DocPdfActions docType="delivery" docId={dn.id} locale={locale} />}
       totals={
         <div>
           <div className="text-xs text-muted-foreground">Qty shipped</div>

@@ -8,6 +8,8 @@ import { DocForm } from "@/components/form/DocForm";
 import { DatePicker } from "@/components/form/DatePicker";
 import { SearchSelect } from "@/components/form/SearchSelect";
 import { ApprovalRoutePreview } from "@/components/form/ApprovalRoutePreview";
+import { createStockAdjustmentAction } from "@/lib/actions/inventory";
+import type { WriteIntent } from "@/lib/actions/validation/p2p";
 import { previewSequence } from "@/lib/numbering";
 import type { Product, Warehouse } from "@/types";
 import type { ValidationError } from "@/components/form/ValidationSummary";
@@ -42,6 +44,9 @@ export function NewAdjustmentForm({
   const router = useRouter();
   const confirm = useConfirm();
   const today = new Date().toISOString().slice(0, 10);
+  const writeLocale = locale === "ar" ? "ar" : "en";
+  const idempotencyKeyRef = React.useRef(crypto.randomUUID());
+  const [pending, setPending] = React.useState(false);
 
   const [date, setDate] = React.useState(today);
   const [notes, setNotes] = React.useState("");
@@ -94,6 +99,8 @@ export function NewAdjustmentForm({
   lines.forEach((l, i) => {
     if (!l.productId)
       errors.push({ field: `line ${i + 1} · product`, message: "Pick a product." });
+    if (!l.warehouseId)
+      errors.push({ field: `line ${i + 1} · warehouse`, message: "Pick a warehouse." });
     if (l.qtyDelta === 0)
       errors.push({
         field: `line ${i + 1} · delta`,
@@ -103,23 +110,60 @@ export function NewAdjustmentForm({
 
   const previewNumber = previewSequence("stock_adjustment", 2026, 99);
 
+  const runWrite = async (intent: WriteIntent) => {
+    if (pending) return;
+    if (errors.length > 0) {
+      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      return;
+    }
+    setPending(true);
+    try {
+      const result = await createStockAdjustmentAction({
+        locale: writeLocale,
+        idempotencyKey: idempotencyKeyRef.current,
+        intent,
+        header: {
+          date,
+          ...(notes.trim() ? { notes: notes.trim() } : {}),
+        },
+        lines: lines.map((l) => ({
+          productId: l.productId,
+          warehouseId: l.warehouseId,
+          qtyDelta: l.qtyDelta,
+          reason: REASONS.find((r) => r.value === l.reason)?.label ?? l.reason,
+        })),
+      });
+      if (!result.ok) {
+        toast.error(result.error.messageKey || result.error.code);
+        return;
+      }
+      const verb =
+        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Submitted";
+      toast.success(`${verb}: ${result.data.number} · ${result.data.state}`);
+      idempotencyKeyRef.current = crypto.randomUUID();
+      setDirty(false);
+      router.push(`/${locale}/inventory/adjustments/${result.data.id}`);
+    } finally {
+      setPending(false);
+    }
+  };
+
   const onSubmit = async () => {
     if (errors.length > 0) {
       toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
       return;
     }
+    const intent: WriteIntent = needsApproval ? "submit" : "post";
     const ok = await confirm({
       title: `${needsApproval ? "Submit" : "Post"} ${previewNumber}?`,
       description: needsApproval
-        ? `Estimated value KWD ${estimatedValue.toFixed(3)} exceeds the ${APPROVAL_THRESHOLD_KWD.toLocaleString()} threshold — routes for warehouse-manager approval. Demo · this action will not persist.`
-        : `Posts the stock adjustment immediately. Generates stock moves + a JE (Dr inventory loss / Cr inventory). Demo · this action will not persist.`,
+        ? `Estimated value KWD ${estimatedValue.toFixed(3)} exceeds the ${APPROVAL_THRESHOLD_KWD.toLocaleString()} threshold — routes for warehouse-manager approval.`
+        : `Posts the stock adjustment immediately. Generates stock moves + a JE (Dr inventory loss / Cr inventory).`,
       confirmLabel: needsApproval ? "Submit" : "Post",
       tone: "destructive",
     });
     if (!ok) return;
-    toast.success(`${needsApproval ? "Submitted" : "Posted"} (demo): ${previewNumber}`);
-    setDirty(false);
-    router.push(`/${locale}/inventory/adjustments`);
+    await runWrite(intent);
   };
 
   return (
@@ -128,7 +172,7 @@ export function NewAdjustmentForm({
       subtitle={
         needsApproval
           ? `Estimated KWD ${estimatedValue.toFixed(3)} — routes for approval (> ${APPROVAL_THRESHOLD_KWD.toLocaleString()} threshold).`
-          : `Estimated KWD ${estimatedValue.toFixed(3)} — posts directly.`
+          : `Estimated KWD ${estimatedValue.toFixed(3)} — posts directly. Backend issues the number on save.`
       }
       header={
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -221,11 +265,9 @@ export function NewAdjustmentForm({
       }
       errors={errors}
       dirty={dirty}
+      pending={pending}
       onSubmit={onSubmit}
-      onSaveDraft={() => {
-        toast.success(`Saved as draft (demo): ${previewNumber}`);
-        setDirty(false);
-      }}
+      onSaveDraft={() => void runWrite("save_draft")}
       onCancel={() => router.back()}
       submitDisabled={errors.length > 0}
       submitLabel={needsApproval ? "Submit for approval" : "Post"}

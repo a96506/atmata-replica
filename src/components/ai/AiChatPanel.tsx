@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { toast } from "@/components/toast";
 import type { AiSuggestion } from "@/types";
+import { sendAiChat } from "@/lib/actions/ai";
 
 /**
  * AI Chat Panel — a conversational interface for natural-language ERP operations.
@@ -12,8 +12,7 @@ import type { AiSuggestion } from "@/types";
  * "create a PO for 100 units of SKU-001 from Supplier X" and receive
  * structured action plans as AiSuggestion[].
  *
- * When the backend is available, messages are sent to `/api/ai/chat`.
- * Falls back to keyword-based parsing when the backend is unavailable.
+ * Messages are sent through the authenticated AI Server Action.
  */
 
 type ChatMessage = {
@@ -57,23 +56,18 @@ export function AiChatPanel({ locale, onSuggestionAct }: AiChatPanelProps) {
     setIsSending(true);
 
     try {
-      const response = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: text,
-          context: { locale },
-          locale,
-        }),
+      const result = await sendAiChat({
+        message: text,
+        context: { route: window.location.pathname },
+        locale: locale === "ar" ? "ar" : "en",
       });
-
-      if (response.ok) {
-        const data = await response.json();
+      if (result.ok) {
+        const data = result.data;
         const assistantMsg: ChatMessage = {
           id: `assistant_${Date.now()}`,
           role: "assistant",
-          content: data.reply || "I've processed your request.",
-          suggestions: data.suggestions || [],
+          content: data.reply,
+          suggestions: data.suggestions,
           timestamp: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, assistantMsg]);
@@ -81,7 +75,7 @@ export function AiChatPanel({ locale, onSuggestionAct }: AiChatPanelProps) {
         const errorMsg: ChatMessage = {
           id: `error_${Date.now()}`,
           role: "assistant",
-          content: "Sorry, I couldn't process your request. Please try again.",
+          content: t("failed"),
           timestamp: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, errorMsg]);
@@ -90,7 +84,7 @@ export function AiChatPanel({ locale, onSuggestionAct }: AiChatPanelProps) {
       const errorMsg: ChatMessage = {
         id: `error_${Date.now()}`,
         role: "assistant",
-        content: "Connection error. Please check if the AI service is running.",
+        content: t("failed"),
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMsg]);
@@ -151,7 +145,7 @@ export function AiChatPanel({ locale, onSuggestionAct }: AiChatPanelProps) {
                   <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-primary/40 [animation-delay:150ms]" />
                   <span className="inline-block h-2 w-2 animate-bounce rounded-full bg-primary/40 [animation-delay:300ms]" />
                 </div>
-                <span>Thinking...</span>
+                <span>{t("thinking")}</span>
               </div>
             )}
             <div ref={messagesEndRef} />

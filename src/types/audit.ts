@@ -6,7 +6,7 @@ export type AuditEvent = {
   docType: DocType;
   fromState: DocState | null;
   toState: DocState;
-  by: string;
+  by: string | null;
   at: ISO8601;
   reason?: string | null;
 };

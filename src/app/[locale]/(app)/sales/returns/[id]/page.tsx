@@ -9,7 +9,7 @@ import { getCustomerReturn } from "@/lib/api/returns";
 import { getCustomer, getWarehouse, listTaxCodes } from "@/lib/api/master";
 import { relatedDocsFor } from "@/lib/api/links";
 import { listAuditEvents } from "@/lib/api/audit";
-import { getAncestry, getDescendants } from "@/lib/api/adoption";
+import { getAncestry, getDescendants } from "@/lib/api/adoption.server";
 
 const STATES = [
   { id: "draft", label: "Draft" },

@@ -18,14 +18,15 @@ export type JournalLine = {
 
 export type JournalEntry = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   date: ISO8601;
   currency: Currency;
   state: DocState;
   /** The business document that produced this JE. */
-  sourceType: DocType;
-  sourceId: string;
+  sourceType: DocType | null;
+  sourceId: string | null;
   description: string;
   lines: JournalLine[];
 };

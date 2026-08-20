@@ -42,6 +42,7 @@ export const OPPORTUNITIES: Opportunity[] = [
 export const QUOTES: Quote[] = [
   {
     id: "qt_1",
+    rowVersion: 1,
     number: "QT-2026-00001",
     companyId: "co_1",
     customerId: "cust_1",
@@ -66,6 +67,7 @@ export const QUOTES: Quote[] = [
   },
   {
     id: "qt_2",
+    rowVersion: 1,
     number: "QT-2026-00002",
     companyId: "co_1",
     customerId: "cust_2",
@@ -89,6 +91,7 @@ export const QUOTES: Quote[] = [
   },
   {
     id: "qt_3",
+    rowVersion: 1,
     number: "QT-2026-00003",
     companyId: "co_1",
     customerId: "cust_4",
@@ -114,6 +117,7 @@ export const QUOTES: Quote[] = [
   /** Edge case: expired quote — validUntil in the past. */
   {
     id: "qt_4",
+    rowVersion: 1,
     number: "QT-2026-00004",
     companyId: "co_1",
     customerId: "cust_3",
@@ -140,6 +144,7 @@ export const QUOTES: Quote[] = [
 export const SALES_ORDERS: SalesOrder[] = [
   {
     id: "so_1",
+    rowVersion: 1,
     number: "SO-2026-00001",
     companyId: "co_1",
     customerId: "cust_1",
@@ -168,6 +173,7 @@ export const SALES_ORDERS: SalesOrder[] = [
    *  accepted quote, but the action bar will not let them confirm. */
   {
     id: "so_2",
+    rowVersion: 1,
     number: "SO-2026-00002",
     companyId: "co_1",
     customerId: "cust_4",
@@ -198,6 +204,7 @@ export const SALES_ORDERS: SalesOrder[] = [
 export const DELIVERY_NOTES: DeliveryNote[] = [
   {
     id: "dn_1",
+    rowVersion: 1,
     number: "DEL-2026-00001",
     companyId: "co_1",
     soId: "so_1",
@@ -223,6 +230,7 @@ export const DELIVERY_NOTES: DeliveryNote[] = [
 export const CUSTOMER_INVOICES: CustomerInvoice[] = [
   {
     id: "inv_1",
+    rowVersion: 1,
     number: "INV-2026-00001",
     companyId: "co_1",
     customerId: "cust_1",
@@ -254,6 +262,7 @@ export const CUSTOMER_INVOICES: CustomerInvoice[] = [
 export const CUSTOMER_RECEIPTS: CustomerReceipt[] = [
   {
     id: "rcp_1",
+    rowVersion: 1,
     number: "RCP-2026-00001",
     companyId: "co_1",
     customerId: "cust_1",

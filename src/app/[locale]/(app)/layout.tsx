@@ -10,7 +10,7 @@ import { AppSidebar } from "@/components/app/AppSidebar";
 import { AppTopBar } from "@/components/app/AppTopBar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { getAppSession } from "@/lib/insforge/session";
+import { getAppSession, getPlatformAdminGate } from "@/lib/insforge/session";
 
 export default async function AppLayout({
   children,
@@ -22,6 +22,12 @@ export default async function AppLayout({
   const { locale } = await params;
   const { session, reason } = await getAppSession();
   if (!session) {
+    if (reason === "no_company" || reason === "suspended") {
+      const platform = await getPlatformAdminGate();
+      if (platform.reason === null) {
+        redirect(`/${locale}/platform-admin`);
+      }
+    }
     const suffix = reason && reason !== "unauthenticated" ? `?error=${reason}` : "";
     redirect(`/${locale}/login${suffix}`);
   }

@@ -30,6 +30,8 @@ export type DocFormProps = {
   saveDraftLabel?: string;
   cancelLabel?: string;
   submitDisabled?: boolean;
+  /** Disables footer actions while a server write is in flight. */
+  pending?: boolean;
   banner?: ReactNode;
 };
 
@@ -56,12 +58,15 @@ export function DocForm({
   saveDraftLabel = "Save as draft",
   cancelLabel = "Cancel",
   submitDisabled,
+  pending = false,
   banner,
 }: DocFormProps) {
+  const actionsDisabled = Boolean(submitDisabled) || pending;
   return (
     <form
       onSubmit={(e) => {
         e.preventDefault();
+        if (pending) return;
         onSubmit();
       }}
       className="flex flex-col gap-4"
@@ -86,21 +91,32 @@ export function DocForm({
 
       <div className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center justify-end gap-2 border-t px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
         {onCancel ? (
-          <Button type="button" variant="ghost" onClick={onCancel}>
+          <Button type="button" variant="ghost" onClick={onCancel} disabled={pending}>
             {cancelLabel}
           </Button>
         ) : null}
         {onSaveDraft ? (
-          <Button type="button" variant="outline" onClick={onSaveDraft}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onSaveDraft}
+            disabled={pending}
+          >
             {saveDraftLabel}
           </Button>
         ) : null}
         <Button
           type="submit"
-          disabled={submitDisabled}
-          title={submitDisabled ? "Resolve validation errors first" : undefined}
+          disabled={actionsDisabled}
+          title={
+            pending
+              ? "Saving…"
+              : submitDisabled
+                ? "Resolve validation errors first"
+                : undefined
+          }
         >
-          {submitLabel}
+          {pending ? "Saving…" : submitLabel}
         </Button>
       </div>
     </form>

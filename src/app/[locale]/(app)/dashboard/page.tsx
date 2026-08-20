@@ -19,6 +19,8 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { formatKwd } from "@/lib/utils";
 import { DEMO_CFO, DEMO_STATS } from "@/lib/demo-data";
+import { listFiscalPeriods } from "@/lib/api/master";
+import { requestCfoNarrative } from "@/lib/actions/ai";
 
 function KpiCard({
   label,
@@ -72,6 +74,11 @@ export default async function DashboardPage() {
   const lk = locale === "ar" ? "ar" : "en";
   const stats = DEMO_STATS;
   const cfo = DEMO_CFO;
+  const periods = await listFiscalPeriods();
+  const periodId = periods.at(-1)?.id;
+  const narrativeResult = periodId
+    ? await requestCfoNarrative({ periodId, locale: lk })
+    : null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -100,6 +107,19 @@ export default async function DashboardPage() {
           }
         />
       </section>
+
+      {narrativeResult?.ok ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("cfoNarrative")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm leading-relaxed text-pretty" dir="auto">
+              {narrativeResult.data.narrative}
+            </p>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {cfo.ar_aging.length > 0 ? (

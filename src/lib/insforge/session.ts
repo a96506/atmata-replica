@@ -76,3 +76,34 @@ export async function getAppSession(): Promise<AppSessionResult> {
     },
   };
 }
+
+export type PlatformAdminGate =
+  | { user: { id: string; name: string; email: string }; reason: null }
+  | { user: null; reason: "unauthenticated" | "not_platform_admin" };
+
+export async function getPlatformAdminGate(): Promise<PlatformAdminGate> {
+  const insforge = await createInsForgeServerClient();
+  const { data: authData, error: authError } =
+    await insforge.auth.getCurrentUser();
+  const user = authData?.user;
+
+  if (authError || !user) {
+    return { user: null, reason: "unauthenticated" };
+  }
+
+  const { data: isAdmin, error } = await insforge.database.rpc(
+    "is_platform_admin",
+  );
+  if (error || isAdmin !== true) {
+    return { user: null, reason: "not_platform_admin" };
+  }
+
+  return {
+    reason: null,
+    user: {
+      id: user.id,
+      name: user.profile?.name?.trim() || user.email,
+      email: user.email,
+    },
+  };
+}

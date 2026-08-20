@@ -1,27 +1,27 @@
-import {
-  INTERNAL_TRANSFERS,
-  STOCK_ADJUSTMENTS,
-  STOCK_MOVES,
-} from "@/mocks/seed/inv";
 import type { InternalTransfer, StockAdjustment, StockMove } from "@/types";
+import { getTable, listTable } from "@/lib/db/read";
+import { INVENTORY_SELECTS } from "@/lib/db/selects";
 
-const byId = <T extends { id: string }>(rows: T[], id: string) =>
-  rows.find((r) => r.id === id) ?? null;
+const docOrder = [
+  { column: "date", ascending: false },
+  { column: "number", ascending: false },
+  { column: "id" },
+];
 
 export async function listStockMoves(): Promise<StockMove[]> {
-  return STOCK_MOVES;
+  return listTable("stock_moves", INVENTORY_SELECTS.stockMoves, docOrder);
 }
 
 export async function listInternalTransfers(): Promise<InternalTransfer[]> {
-  return INTERNAL_TRANSFERS;
+  return listTable("internal_transfers", INVENTORY_SELECTS.internalTransfers, docOrder);
 }
 export async function getInternalTransfer(id: string): Promise<InternalTransfer | null> {
-  return byId(INTERNAL_TRANSFERS, id);
+  return getTable("internal_transfers", INVENTORY_SELECTS.internalTransfers, id);
 }
 
 export async function listStockAdjustments(): Promise<StockAdjustment[]> {
-  return STOCK_ADJUSTMENTS;
+  return listTable("stock_adjustments", INVENTORY_SELECTS.stockAdjustments, docOrder);
 }
 export async function getStockAdjustment(id: string): Promise<StockAdjustment | null> {
-  return byId(STOCK_ADJUSTMENTS, id);
+  return getTable("stock_adjustments", INVENTORY_SELECTS.stockAdjustments, id);
 }

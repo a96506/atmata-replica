@@ -2,7 +2,11 @@
 
 import * as React from "react";
 import { useRouter, useParams } from "next/navigation";
-import { buildSearchIndex } from "@/lib/api/search";
+import {
+  buildSearchIndex,
+  hydrateDatabaseSearchResult,
+  type DatabaseSearchResult,
+} from "@/lib/api/search";
 import { fuzzy, type ScoredResult } from "@/lib/search/match";
 import type { SearchKind, SearchResult } from "@/types/search";
 
@@ -33,6 +37,7 @@ export function GlobalSearch({
   const params = useParams<{ locale?: string }>();
   const locale = params?.locale ?? "en";
   const [index, setIndex] = React.useState<SearchResult[]>([]);
+  const [databaseResults, setDatabaseResults] = React.useState<SearchResult[]>([]);
   const [query, setQuery] = React.useState("");
   const [active, setActive] = React.useState(0);
   const [recent, setRecent] = React.useState<SearchResult[]>([]);
@@ -43,7 +48,12 @@ export function GlobalSearch({
     buildSearchIndex().then(setIndex);
     try {
       const raw = window.sessionStorage.getItem(RECENT_KEY);
-      if (raw) setRecent(JSON.parse(raw));
+      if (raw) {
+        const saved = (JSON.parse(raw) as DatabaseSearchResult[]).filter(
+          (entry) => typeof entry.path === "string",
+        );
+        setRecent(saved.map(hydrateDatabaseSearchResult));
+      }
     } catch {
       /* ignore */
     }
@@ -54,15 +64,52 @@ export function GlobalSearch({
     console.info("atmata:event", "globalSearch.open");
   }, [open]);
 
+  React.useEffect(() => {
+    const trimmed = query.trim();
+    if (!open || !trimmed) {
+      setDatabaseResults([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `/api/search?q=${encodeURIComponent(trimmed)}&limit=12`,
+          { signal: controller.signal, cache: "no-store" },
+        );
+        if (!response.ok) throw new Error("Search request failed");
+        const body = (await response.json()) as { results: DatabaseSearchResult[] };
+        setDatabaseResults(body.results.map(hydrateDatabaseSearchResult));
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") setDatabaseResults([]);
+      }
+    }, 250);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [open, query]);
+
   const results: ScoredResult[] = React.useMemo(() => fuzzy(index, query, 12), [index, query]);
-  const visible: SearchResult[] = query.trim() ? results : recent.slice(0, 8);
+  const visible: SearchResult[] = query.trim()
+    ? [...databaseResults, ...results].slice(0, 12)
+    : recent.slice(0, 8);
 
   const select = (r: SearchResult) => {
     const href = r.href(locale);
     // Persist to recents (dedupe + cap).
     try {
       const dedup = [r, ...recent.filter((x) => x.id !== r.id)].slice(0, 8);
-      window.sessionStorage.setItem(RECENT_KEY, JSON.stringify(dedup));
+      const serializable: DatabaseSearchResult[] = dedup.map((entry) => ({
+        id: entry.id,
+        kind: entry.kind,
+        label: entry.label,
+        ...(entry.subtitle ? { subtitle: entry.subtitle } : {}),
+        path: entry.href("").replace(/^\/\//, "/"),
+        keywords: entry.keywords,
+      }));
+      window.sessionStorage.setItem(RECENT_KEY, JSON.stringify(serializable));
+      setRecent(dedup);
     } catch {
       /* ignore */
     }
@@ -167,7 +214,7 @@ export function GlobalSearch({
         </div>
         <footer className="flex items-center justify-between border-t border-border bg-muted/50 px-3 py-2 text-[11px] text-muted-foreground">
           <span>↑ ↓ navigate · Enter select · Esc close</span>
-          <span>{index.length} items indexed</span>
+          <span>{index.length + databaseResults.length} items indexed</span>
         </footer>
       </div>
     </div>

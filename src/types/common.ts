@@ -49,6 +49,27 @@ export type Role =
   /** Synthetic role used to render the AI co-pilot as a first-class actor. */
   | "ai_agent";
 
+export const ALL_ROLES = [
+  "admin",
+  "approver",
+  "ap_clerk",
+  "ar_clerk",
+  "warehouse",
+  "buyer",
+  "sales_rep",
+  "accountant",
+  "period_adjust",
+  "audit_unlock",
+  "viewer",
+  "ai_agent",
+] as const satisfies readonly Role[];
+
+export const ASSIGNABLE_USER_ROLES = ALL_ROLES.filter(
+  (role): role is Exclude<Role, "ai_agent"> => role !== "ai_agent",
+);
+
+export type AssignableUserRole = (typeof ASSIGNABLE_USER_ROLES)[number];
+
 export type DocType =
   | "pr"
   | "rfq"

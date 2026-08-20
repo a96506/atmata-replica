@@ -16,6 +16,7 @@ import type {
 export const PURCHASE_REQUISITIONS: PurchaseRequisition[] = [
   {
     id: "pr_1",
+    rowVersion: 1,
     number: "PR-2026-00001",
     companyId: "co_1",
     requestedBy: "Demo User",
@@ -39,6 +40,7 @@ export const PURCHASE_REQUISITIONS: PurchaseRequisition[] = [
 export const PURCHASE_ORDERS: PurchaseOrder[] = [
   {
     id: "po_1",
+    rowVersion: 1,
     number: "PO-2026-00001",
     companyId: "co_1",
     supplierId: "sup_1",
@@ -65,6 +67,7 @@ export const PURCHASE_ORDERS: PurchaseOrder[] = [
   },
   {
     id: "po_2",
+    rowVersion: 1,
     number: "PO-2026-00002",
     companyId: "co_1",
     supplierId: "sup_2",
@@ -90,6 +93,7 @@ export const PURCHASE_ORDERS: PurchaseOrder[] = [
   },
   {
     id: "po_3",
+    rowVersion: 1,
     number: "PO-2026-00003",
     companyId: "co_1",
     supplierId: "sup_3",
@@ -116,6 +120,7 @@ export const PURCHASE_ORDERS: PurchaseOrder[] = [
   /** Edge case: dated in a hard-closed period (Feb 2026). */
   {
     id: "po_4",
+    rowVersion: 1,
     number: "PO-2026-00004",
     companyId: "co_1",
     supplierId: "sup_2",
@@ -143,6 +148,7 @@ export const PURCHASE_ORDERS: PurchaseOrder[] = [
   /** Edge case: dated in a soft-closed period (Mar 2026). */
   {
     id: "po_5",
+    rowVersion: 1,
     number: "PO-2026-00005",
     companyId: "co_1",
     supplierId: "sup_1",
@@ -172,6 +178,7 @@ export const PURCHASE_ORDERS: PurchaseOrder[] = [
 export const GOODS_RECEIPTS: GoodsReceipt[] = [
   {
     id: "grn_1",
+    rowVersion: 1,
     number: "GRN-2026-00001",
     companyId: "co_1",
     poId: "po_1",
@@ -194,6 +201,7 @@ export const GOODS_RECEIPTS: GoodsReceipt[] = [
   },
   {
     id: "grn_2",
+    rowVersion: 1,
     number: "GRN-2026-00002",
     companyId: "co_1",
     poId: "po_2",
@@ -219,6 +227,7 @@ export const GOODS_RECEIPTS: GoodsReceipt[] = [
 export const VENDOR_BILLS: VendorBill[] = [
   {
     id: "bill_1",
+    rowVersion: 1,
     number: "BILL-2026-00001",
     companyId: "co_1",
     supplierId: "sup_1",
@@ -249,6 +258,7 @@ export const VENDOR_BILLS: VendorBill[] = [
   },
   {
     id: "bill_2",
+    rowVersion: 1,
     number: "BILL-2026-00002",
     companyId: "co_1",
     supplierId: "sup_2",
@@ -281,6 +291,7 @@ export const VENDOR_BILLS: VendorBill[] = [
   /** Edge case: USD bill (FX mismatch). */
   {
     id: "bill_3",
+    rowVersion: 1,
     number: "BILL-2026-00003",
     companyId: "co_1",
     supplierId: "sup_4",
@@ -308,6 +319,7 @@ export const VENDOR_BILLS: VendorBill[] = [
   /** Edge case: duplicate vendor invoice number — re-uses bill_1's `PCG/2026/INV-447`. */
   {
     id: "bill_4",
+    rowVersion: 1,
     number: "BILL-2026-00004",
     companyId: "co_1",
     supplierId: "sup_1",
@@ -338,6 +350,7 @@ export const VENDOR_BILLS: VendorBill[] = [
 export const VENDOR_PAYMENTS: VendorPayment[] = [
   {
     id: "vpay_1",
+    rowVersion: 1,
     number: "VPAY-2026-00001",
     companyId: "co_1",
     supplierId: "sup_1",

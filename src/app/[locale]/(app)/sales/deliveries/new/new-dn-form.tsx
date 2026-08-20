@@ -13,6 +13,8 @@ import {
   type LineDraft,
 } from "@/components/form/ProductLinesEditor";
 import { InsufficientStockBanner, LotRequiredBanner } from "@/components/banners";
+import { createDeliveryNoteAction } from "@/lib/actions/q2c";
+import type { WriteIntent } from "@/lib/actions/validation/p2p";
 import { previewSequence } from "@/lib/numbering";
 import type {
   Customer,
@@ -22,6 +24,11 @@ import type {
   Warehouse,
 } from "@/types";
 import type { ValidationError } from "@/components/form/ValidationSummary";
+
+function soLineIdFromDraft(line: LineDraft): string | null {
+  if (line.id.startsWith("pre_")) return line.id.slice(4);
+  return null;
+}
 
 export function NewDnForm({
   locale,
@@ -41,6 +48,9 @@ export function NewDnForm({
   const router = useRouter();
   const confirm = useConfirm();
   const today = new Date().toISOString().slice(0, 10);
+  const writeLocale = locale === "ar" ? "ar" : "en";
+  const idempotencyKeyRef = React.useRef(crypto.randomUUID());
+  const [pending, setPending] = React.useState(false);
 
   const [customerId, setCustomerId] = React.useState(so?.customerId ?? "");
   const [warehouseId, setWarehouseId] = React.useState(so?.warehouseId ?? warehouses[0]?.id ?? "");
@@ -80,6 +90,7 @@ export function NewDnForm({
   const totalQty = lines.reduce((s, l) => s + l.qty, 0);
 
   const errors: ValidationError[] = [];
+  if (!so) errors.push({ field: "SO", message: "Select a sales order to deliver against." });
   if (!customerId) errors.push({ field: "customer", message: "Customer required." });
   if (!warehouseId) errors.push({ field: "warehouse", message: "Warehouse required." });
   if (!date) errors.push({ field: "date", message: "Date required." });
@@ -92,8 +103,62 @@ export function NewDnForm({
       field: "stock",
       message: "Insufficient stock at warehouse for one line.",
     });
+  lines.forEach((l, i) => {
+    if (l.qty > 0 && !soLineIdFromDraft(l))
+      errors.push({
+        field: `line ${i + 1} · SO line`,
+        message: "Line must come from the source SO.",
+      });
+  });
 
   const previewNumber = previewSequence("dn", 2026, 99);
+
+  const deliveryLines = () =>
+    lines
+      .filter((l) => l.qty > 0)
+      .map((l) => ({
+        soLineId: soLineIdFromDraft(l)!,
+        qtyDelivered: l.qty,
+        ...(l.description.trim() ? { description: l.description.trim() } : {}),
+        ...(l.unitPrice >= 0 ? { unitPrice: l.unitPrice } : {}),
+        ...(l.taxCodeId ? { taxCodeId: l.taxCodeId } : {}),
+        ...(l.lotNumber?.trim() ? { lotNumber: l.lotNumber.trim() } : {}),
+      }));
+
+  const runWrite = async (intent: WriteIntent) => {
+    if (pending || !so) return;
+    if (errors.length > 0) {
+      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      return;
+    }
+    setPending(true);
+    try {
+      const result = await createDeliveryNoteAction({
+        locale: writeLocale,
+        idempotencyKey: idempotencyKeyRef.current,
+        intent,
+        header: {
+          soId: so.id,
+          warehouseId,
+          date,
+        },
+        lines: deliveryLines(),
+        source: { parents: [{ docType: "so", docId: so.id }] },
+      });
+      if (!result.ok) {
+        toast.error(result.error.messageKey || result.error.code);
+        return;
+      }
+      const verb =
+        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Submitted";
+      toast.success(`${verb}: ${result.data.number} · ${result.data.state} · ${totalQty} units`);
+      idempotencyKeyRef.current = crypto.randomUUID();
+      setDirty(false);
+      router.push(`/${locale}/sales/deliveries/${result.data.id}`);
+    } finally {
+      setPending(false);
+    }
+  };
 
   const onSubmit = async () => {
     if (errors.length > 0) {
@@ -102,19 +167,21 @@ export function NewDnForm({
     }
     const ok = await confirm({
       title: `Post ${previewNumber}?`,
-      description: `Ships ${totalQty} unit(s) to ${customers.find((c) => c.id === customerId)?.name ?? ""}. Generates stock-out moves and updates SO line qty_delivered. Demo · this action will not persist.`,
+      description: `Ships ${totalQty} unit(s) to ${customers.find((c) => c.id === customerId)?.name ?? ""}. Generates stock-out moves and updates SO line qty_delivered.`,
       confirmLabel: "Post",
     });
     if (!ok) return;
-    toast.success(`Posted (demo): ${previewNumber} · ${totalQty} units`);
-    setDirty(false);
-    router.push(`/${locale}/sales/deliveries`);
+    await runWrite("post");
   };
 
   return (
     <DocForm
       title={`New delivery note · ${previewNumber}`}
-      subtitle={so ? `Delivering against ${so.number}` : "Manual delivery"}
+      subtitle={
+        so
+          ? `Delivering against ${so.number}`
+          : "Open from an SO to deliver · backend issues the number on save."
+      }
       banner={
         <div className="space-y-2">
           {lotMissing ? <LotRequiredBanner /> : null}
@@ -162,11 +229,9 @@ export function NewDnForm({
       }
       errors={errors}
       dirty={dirty}
+      pending={pending}
       onSubmit={onSubmit}
-      onSaveDraft={() => {
-        toast.success(`Saved as draft (demo): ${previewNumber}`);
-        setDirty(false);
-      }}
+      onSaveDraft={() => void runWrite("save_draft")}
       onCancel={() => router.back()}
       submitDisabled={errors.length > 0}
       submitLabel="Post delivery"

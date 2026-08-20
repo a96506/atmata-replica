@@ -16,6 +16,7 @@ export type DocLine = {
 
 export type PurchaseRequisition = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   requestedBy: string;
@@ -23,15 +24,16 @@ export type PurchaseRequisition = {
   neededBy: ISO8601;
   state: DocState;
   lines: DocLine[];
-  notes?: string;
+  notes?: string | null;
 };
 
 export type PurchaseOrder = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   supplierId: string;
-  prId?: string;
+  prId?: string | null;
   date: ISO8601;
   expectedDate: ISO8601;
   currency: Currency;
@@ -42,17 +44,18 @@ export type PurchaseOrder = {
   subtotal: number;
   taxTotal: number;
   total: number;
-  notes?: string;
+  notes?: string | null;
 };
 
 export type GrnLine = DocLine & {
   poLineId: string;
   qtyReceived: number;
-  lotNumber?: string;
+  lotNumber?: string | null;
 };
 
 export type GoodsReceipt = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   poId: string;
@@ -61,23 +64,24 @@ export type GoodsReceipt = {
   date: ISO8601;
   state: DocState;
   lines: GrnLine[];
-  notes?: string;
+  notes?: string | null;
 };
 
 export type VendorBillLine = DocLine & {
-  poLineId?: string;
-  grnLineId?: string;
+  poLineId?: string | null;
+  grnLineId?: string | null;
 };
 
 export type ThreeWayMatchResult = "matched" | "discrepancy" | "review";
 
 export type VendorBill = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   supplierId: string;
-  poId?: string;
-  grnId?: string;
+  poId?: string | null;
+  grnId?: string | null;
   invoiceNumber: string;
   date: ISO8601;
   dueDate: ISO8601;
@@ -89,8 +93,8 @@ export type VendorBill = {
   total: number;
   paid: number;
   threeWayMatch: ThreeWayMatchResult;
-  discrepancyReason?: string;
-  sourceOcrJobId?: number;
+  discrepancyReason?: string | null;
+  sourceOcrJobId?: number | null;
 };
 
 export type VendorPaymentAllocation = {
@@ -121,12 +125,12 @@ export type RFQQuote = {
     rfqLineId: string;
     unitPrice: number;
     leadTimeDays: number;
-    notes?: string;
+    notes?: string | null;
   }>;
   currency: Currency;
   /** Roll-up of all line quotes × qty, for ranking. */
   total: number;
-  validUntil?: ISO8601;
+  validUntil?: ISO8601 | null;
 };
 
 export type RFQAward = {
@@ -136,11 +140,12 @@ export type RFQAward = {
   awardedAt: ISO8601;
   awardedBy: string;
   /** PO id created from the award. */
-  poId?: string;
+  poId?: string | null;
 };
 
 export type RFQ = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   /** PR(s) this RFQ was adopted from. */
@@ -152,7 +157,7 @@ export type RFQ = {
   lines: RFQLine[];
   quotes: RFQQuote[];
   award?: RFQAward;
-  notes?: string;
+  notes?: string | null;
 };
 
 /* ------------------------------------------------------------------ *
@@ -168,12 +173,13 @@ export type VendorReturnLine = {
   unitPrice: number;
   taxCodeId: string | null;
   reasonCode: "damaged" | "wrong_item" | "quality_fail" | "expired" | "other";
-  notes?: string;
-  lotNumber?: string;
+  notes?: string | null;
+  lotNumber?: string | null;
 };
 
 export type VendorReturn = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   /** GRN this return reverses. */
@@ -184,19 +190,20 @@ export type VendorReturn = {
   state: DocState;
   lines: VendorReturnLine[];
   /** Debit Note generated on post (set when state === "posted"). */
-  debitNoteId?: string;
-  notes?: string;
+  debitNoteId?: string | null;
+  notes?: string | null;
 };
 
 export type DebitNote = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   supplierId: string;
   /** The Vendor Return that gave rise to this Debit Note. */
   vendorReturnId: string;
   /** The Vendor Bill being debited against (if any). */
-  billId?: string;
+  billId?: string | null;
   date: ISO8601;
   currency: Currency;
   state: DocState;
@@ -209,6 +216,7 @@ export type DebitNote = {
 
 export type VendorPayment = {
   id: string;
+  rowVersion: number;
   number: string;
   companyId: string;
   supplierId: string;

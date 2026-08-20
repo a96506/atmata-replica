@@ -13,6 +13,8 @@ import {
   type LineDraft,
 } from "@/components/form/ProductLinesEditor";
 import { OverReceiveBanner } from "@/components/banners";
+import { createGoodsReceiptAction } from "@/lib/actions/p2p";
+import type { WriteIntent } from "@/lib/actions/validation/p2p";
 import { previewSequence } from "@/lib/numbering";
 import type {
   Product,
@@ -22,6 +24,11 @@ import type {
   Warehouse,
 } from "@/types";
 import type { ValidationError } from "@/components/form/ValidationSummary";
+
+function poLineIdFromDraft(line: LineDraft): string | null {
+  if (line.id.startsWith("pre_")) return line.id.slice(4);
+  return null;
+}
 
 export function NewGrnForm({
   locale,
@@ -41,6 +48,9 @@ export function NewGrnForm({
   const router = useRouter();
   const confirm = useConfirm();
   const today = new Date().toISOString().slice(0, 10);
+  const writeLocale = locale === "ar" ? "ar" : "en";
+  const idempotencyKeyRef = React.useRef(crypto.randomUUID());
+  const [pending, setPending] = React.useState(false);
 
   const [supplierId, setSupplierId] = React.useState(po?.supplierId ?? "");
   const [warehouseId, setWarehouseId] = React.useState(po?.warehouseId ?? warehouses[0]?.id ?? "");
@@ -74,12 +84,18 @@ export function NewGrnForm({
   const totalQty = lines.reduce((s, l) => s + l.qty, 0);
 
   const errors: ValidationError[] = [];
+  if (!po) errors.push({ field: "PO", message: "Select a purchase order to receive against." });
   if (!supplierId) errors.push({ field: "supplier", message: "Supplier required." });
   if (!warehouseId) errors.push({ field: "warehouse", message: "Warehouse required." });
   if (!date) errors.push({ field: "date", message: "Receipt date required." });
   if (lines.length === 0 || totalQty === 0)
     errors.push({ field: "lines", message: "Receive at least one unit." });
   lines.forEach((l, i) => {
+    if (l.qty > 0 && !poLineIdFromDraft(l))
+      errors.push({
+        field: `line ${i + 1} · PO line`,
+        message: "Line must come from the source PO.",
+      });
     const product = products.find((p) => p.id === l.productId);
     if (product?.lotTracked && !l.lotNumber)
       errors.push({
@@ -89,6 +105,53 @@ export function NewGrnForm({
   });
 
   const previewNumber = previewSequence("grn", 2026, 99);
+
+  const receiptLines = () =>
+    lines
+      .filter((l) => l.qty > 0)
+      .map((l) => ({
+        poLineId: poLineIdFromDraft(l)!,
+        qtyReceived: l.qty,
+        ...(l.description.trim() ? { description: l.description.trim() } : {}),
+        ...(l.lotNumber?.trim() ? { lotNumber: l.lotNumber.trim() } : {}),
+        ...(l.unitPrice >= 0 ? { unitPrice: l.unitPrice } : {}),
+      }));
+
+  const runWrite = async (intent: WriteIntent) => {
+    if (pending || !po) return;
+    if (errors.length > 0) {
+      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      return;
+    }
+    setPending(true);
+    try {
+      const result = await createGoodsReceiptAction({
+        locale: writeLocale,
+        idempotencyKey: idempotencyKeyRef.current,
+        intent,
+        header: {
+          poId: po.id,
+          warehouseId,
+          date,
+          ...(notes.trim() ? { notes: notes.trim() } : {}),
+        },
+        lines: receiptLines(),
+        source: { parents: [{ docType: "po", docId: po.id }] },
+      });
+      if (!result.ok) {
+        toast.error(result.error.messageKey || result.error.code);
+        return;
+      }
+      const verb =
+        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Submitted";
+      toast.success(`${verb}: ${result.data.number} · ${result.data.state} · ${totalQty} units`);
+      idempotencyKeyRef.current = crypto.randomUUID();
+      setDirty(false);
+      router.push(`/${locale}/purchasing/goods-receipts/${result.data.id}`);
+    } finally {
+      setPending(false);
+    }
+  };
 
   const onSubmit = async () => {
     if (errors.length > 0) {
@@ -104,22 +167,16 @@ export function NewGrnForm({
         tone: "destructive",
       });
       if (!ok) return;
-    } else {
-      const ok = await confirm({
-        title: `Post ${previewNumber}?`,
-        description: `Receives ${totalQty} unit(s) into ${warehouses.find((w) => w.id === warehouseId)?.name ?? "—"}. Creates stock-in moves and updates PO line qty_received. Demo · this will not persist.`,
-        confirmLabel: "Post",
-      });
-      if (!ok) return;
+      await runWrite("submit");
+      return;
     }
-    toast.success(`Posted (demo): ${previewNumber} · ${totalQty} units`);
-    setDirty(false);
-    router.push(`/${locale}/purchasing/goods-receipts`);
-  };
-
-  const onSaveDraft = () => {
-    toast.success(`Saved as draft (demo): ${previewNumber}`);
-    setDirty(false);
+    const ok = await confirm({
+      title: `Post ${previewNumber}?`,
+      description: `Receives ${totalQty} unit(s) into ${warehouses.find((w) => w.id === warehouseId)?.name ?? "—"}. Creates stock-in moves and updates PO line qty_received.`,
+      confirmLabel: "Post",
+    });
+    if (!ok) return;
+    await runWrite("post");
   };
 
   const onCancel = async () => {
@@ -141,7 +198,11 @@ export function NewGrnForm({
   return (
     <DocForm
       title={`New goods receipt · ${previewNumber}`}
-      subtitle={po ? `Receiving against ${po.number}` : "Receiving without PO reference"}
+      subtitle={
+        po
+          ? `Receiving against ${po.number}`
+          : "Open from a PO to receive — backend issues the number on save."
+      }
       banner={
         overReceiving ? (
           <OverReceiveBanner
@@ -200,8 +261,9 @@ export function NewGrnForm({
       }
       errors={errors}
       dirty={dirty}
+      pending={pending}
       onSubmit={onSubmit}
-      onSaveDraft={onSaveDraft}
+      onSaveDraft={() => void runWrite("save_draft")}
       onCancel={onCancel}
       submitDisabled={errors.length > 0}
       submitLabel={overReceiving ? "Submit for approval" : "Post"}

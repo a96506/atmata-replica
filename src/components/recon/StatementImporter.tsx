@@ -9,6 +9,8 @@ import {
   listBankAccounts,
   listBankStatementLines,
 } from "@/lib/actions/reconciliation";
+import { requestReconciliationSuggestions } from "@/lib/actions/ai";
+import type { ReconciliationSuggestion } from "@/types/functions";
 
 /**
  * StatementImporter — uploads a bank statement CSV to the `imports` bucket,
@@ -91,6 +93,10 @@ export function StatementImporter() {
   const [rules, setRules] = React.useState<ReconRule[]>([]);
   const [uploading, setUploading] = React.useState(false);
   const [statementId, setStatementId] = React.useState<string | null>(null);
+  const [aiSuggestions, setAiSuggestions] = React.useState<
+    Map<string, ReconciliationSuggestion>
+  >(new Map());
+  const [suggesting, setSuggesting] = React.useState(false);
 
   React.useEffect(() => {
     void (async () => {
@@ -166,13 +172,22 @@ export function StatementImporter() {
     }
   };
 
-  const acceptMatch = (row: StatementRow) => {
-    const match = applyRules(row, rules);
-    if (!match) return;
-    toast.success(
-      `Match accepted (demo): ${row.reference || row.description} → ${match.docId}`,
+  const requestAiMatches = async () => {
+    if (!statementId) return;
+    setSuggesting(true);
+    const result = await requestReconciliationSuggestions({
+      statementId,
+      lineIds: rows.map((row) => row.id),
+    });
+    setSuggesting(false);
+    if (!result.ok) {
+      toast.error("AI matching failed. Try again.");
+      return;
+    }
+    setAiSuggestions(
+      new Map(result.data.map((suggestion) => [suggestion.lineId, suggestion])),
     );
-    setRows((prev) => prev.filter((r) => r.id !== row.id));
+    toast.success(`Generated ${result.data.length} AI match suggestions.`);
   };
 
   return (
@@ -236,6 +251,19 @@ export function StatementImporter() {
       </div>
 
       {rows.length > 0 ? (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => void requestAiMatches()}
+            disabled={!statementId || suggesting}
+            className="cursor-pointer rounded-md border border-input bg-card px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {suggesting ? "Finding matches…" : "Suggest AI matches"}
+          </button>
+        </div>
+      ) : null}
+
+      {rows.length > 0 ? (
         <div className="overflow-x-auto rounded-xl border border-border">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-border bg-muted/50 text-xs font-medium uppercase text-muted-foreground">
@@ -249,7 +277,18 @@ export function StatementImporter() {
             </thead>
             <tbody className="divide-y divide-border">
               {rows.map((r) => {
-                const match = applyRules(r, rules);
+                const ruleMatch = applyRules(r, rules);
+                const aiMatch = aiSuggestions.get(r.id);
+                const match = aiMatch
+                  ? {
+                      docId:
+                        aiMatch.sourceDocId ??
+                        aiMatch.journalEntryId ??
+                        "candidate",
+                      reason: aiMatch.reason,
+                      confidence: aiMatch.confidence,
+                    }
+                  : ruleMatch;
                 return (
                   <tr key={r.id}>
                     <td className="px-4 py-3">{r.date}</td>
@@ -275,13 +314,11 @@ export function StatementImporter() {
                             {Math.round(match.confidence * 100)}% ·{" "}
                             {match.reason}
                           </span>
-                          <button
-                            type="button"
-                            onClick={() => acceptMatch(r)}
-                            className="cursor-pointer rounded-md bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground hover:bg-primary"
-                          >
-                            Accept
-                          </button>
+                          {aiMatch ? (
+                            <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                              AI proposal · review only
+                            </span>
+                          ) : null}
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">

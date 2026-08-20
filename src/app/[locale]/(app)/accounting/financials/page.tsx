@@ -1,13 +1,29 @@
 import { Link } from "@/i18n/navigation";
 import { DEMO_FINANCIALS } from "@/lib/demo-data";
+import { DocPdfActions } from "@/components/doc/DocPdfActions";
+import { listFiscalPeriods } from "@/lib/api/master";
+import type { FinancialPdfType } from "@/types/functions";
 
 export default async function FinancialsPage({
+  params,
   searchParams,
 }: {
+  params: Promise<{ locale: string }>;
   searchParams: Promise<{ type?: string; period?: string }>;
 }) {
-  const params = await searchParams;
-  const type = params.type ?? "pl";
+  const { locale } = await params;
+  const query = await searchParams;
+  const type = query.type ?? "pl";
+  const periods = await listFiscalPeriods();
+  const periodId = query.period ?? periods.at(-1)?.id;
+  const financialType: FinancialPdfType =
+    type === "balance-sheet"
+      ? "balance_sheet"
+      : type === "cash-flow"
+        ? "cash_flow"
+        : type === "trial-balance"
+          ? "trial_balance"
+          : "pl";
 
   const types = [
     { id: "pl", label: "P&L" },
@@ -25,6 +41,15 @@ export default async function FinancialsPage({
           <h1 className="text-2xl font-semibold text-foreground">Financial statements</h1>
           <p className="text-sm text-foreground">Posted entries only. KWD with 3 decimal places.</p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+        {periodId ? (
+          <DocPdfActions
+            docType="financial"
+            financialType={financialType}
+            periodId={periodId}
+            locale={locale}
+          />
+        ) : null}
         <nav className="flex flex-wrap gap-2" aria-label="Statement type">
           {types.map((t) => (
             <Link
@@ -40,6 +65,7 @@ export default async function FinancialsPage({
             </Link>
           ))}
         </nav>
+        </div>
       </header>
 
       <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">

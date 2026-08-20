@@ -20,6 +20,7 @@ export type DocumentLayoutProps = {
   states: StatusTimelineStep[];
   currentState: string;
   totals?: ReactNode;
+  actions?: ReactNode;
   actionBar?: ReactNode;
   tabs: DocumentTab[];
   rightRail?: ReactNode;
@@ -41,6 +42,7 @@ export function DocumentLayout({
   states,
   currentState,
   totals,
+  actions,
   actionBar,
   tabs,
   rightRail,
@@ -70,8 +72,13 @@ export function DocumentLayout({
                   </p>
                 ) : null}
               </div>
-              {totals ? (
-                <div className="text-end text-sm tabular-nums">{totals}</div>
+              {actions || totals ? (
+                <div className="flex flex-col items-end gap-2">
+                  {actions}
+                  {totals ? (
+                    <div className="text-end text-sm tabular-nums">{totals}</div>
+                  ) : null}
+                </div>
               ) : null}
             </div>
 

@@ -17,6 +17,14 @@ export type AiSuggestionScope =
 
 export type AiSuggestionAction = {
   label: string;
+  /** Allowlisted queued-action RPC name. */
+  actionName?:
+    | "create_draft_vendor_bill"
+    | "accept_reconciliation_match"
+    | "create_purchase_requisition"
+    | "create_draft_journal_entry";
+  /** Server-validated proposal; it is never executed by the model. */
+  actionPayload?: Record<string, unknown>;
   /** Where the "Do it" button navigates. */
   href?: string;
   /** Optional AdoptionContext to pre-stash before navigation. */
@@ -44,6 +52,9 @@ export type AiSuggestion = {
   category?: AiSuggestionCategory;
   /** Audit trail: which document chain produced this suggestion. */
   sourceChain?: Array<{ docType: DocType; docId: string }>;
+  status?: "active" | "dismissed" | "queued" | "expired";
+  model?: string;
+  promptVersion?: string;
 };
 
 export type AiMode = "observe" | "suggest" | "auto";

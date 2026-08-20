@@ -15,6 +15,8 @@ import {
 import { TaxBreakdown } from "@/components/form/TaxBreakdown";
 import { ApprovalRoutePreview } from "@/components/form/ApprovalRoutePreview";
 import { CreditHoldBanner, CreditLimitWarning } from "@/components/banners";
+import { createSalesOrderAction } from "@/lib/actions/q2c";
+import type { WriteIntent } from "@/lib/actions/validation/p2p";
 import { previewSequence } from "@/lib/numbering";
 import type {
   Currency,
@@ -46,6 +48,9 @@ export function NewSoForm({
   const router = useRouter();
   const confirm = useConfirm();
   const today = new Date().toISOString().slice(0, 10);
+  const writeLocale = locale === "ar" ? "ar" : "en";
+  const idempotencyKeyRef = React.useRef(crypto.randomUUID());
+  const [pending, setPending] = React.useState(false);
 
   const [customerId, setCustomerId] = React.useState(quote?.customerId ?? "");
   const [currency, setCurrency] = React.useState<Currency>(quote?.currency ?? "KWD");
@@ -90,6 +95,8 @@ export function NewSoForm({
   if (!customerId) errors.push({ field: "customer", message: "Pick a customer." });
   if (!warehouseId) errors.push({ field: "warehouse", message: "Pick a warehouse." });
   if (!date) errors.push({ field: "date", message: "Date required." });
+  if (!expectedDate)
+    errors.push({ field: "expected delivery", message: "Expected delivery required." });
   lines.forEach((l, i) => {
     if (!l.productId)
       errors.push({ field: `line ${i + 1} · product`, message: "Pick a product." });
@@ -98,6 +105,66 @@ export function NewSoForm({
   });
 
   const previewNumber = previewSequence("so", 2026, 99);
+
+  const productLines = () =>
+    lines.map((l) => ({
+      productId: l.productId,
+      description: l.description.trim() || "Item",
+      qty: l.qty,
+      unitPrice: l.unitPrice,
+      ...(l.taxCodeId ? { taxCodeId: l.taxCodeId } : {}),
+      ...(quote && l.id.startsWith("pre_")
+        ? { sourceLineId: l.id.slice(4) }
+        : {}),
+    }));
+
+  const runWrite = async (intent: WriteIntent) => {
+    if (pending) return;
+    if (errors.length > 0) {
+      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      return;
+    }
+    if (intent !== "save_draft" && onCreditHold) {
+      toast.error("Customer on credit hold — SO confirm blocked.");
+      return;
+    }
+    setPending(true);
+    try {
+      const result = await createSalesOrderAction({
+        locale: writeLocale,
+        idempotencyKey: idempotencyKeyRef.current,
+        intent,
+        header: {
+          customerId,
+          currency,
+          warehouseId,
+          date,
+          expectedDeliveryDate: expectedDate,
+          promisedDate: expectedDate,
+          ...(quote ? { quoteId: quote.id } : {}),
+          ...(exceptional ? { notes: "Exceptional / project" } : {}),
+        },
+        lines: productLines(),
+        ...(quote
+          ? { source: { parents: [{ docType: "quote" as const, docId: quote.id }] } }
+          : {}),
+      });
+      if (!result.ok) {
+        toast.error(result.error.messageKey || result.error.code);
+        return;
+      }
+      const verb =
+        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Confirmed";
+      toast.success(
+        `${verb}: ${result.data.number} · ${result.data.state} · ${currency} ${total.toFixed(3)}`,
+      );
+      idempotencyKeyRef.current = crypto.randomUUID();
+      setDirty(false);
+      router.push(`/${locale}/sales/orders/${result.data.id}`);
+    } finally {
+      setPending(false);
+    }
+  };
 
   const onSubmit = async () => {
     if (errors.length > 0) {
@@ -110,19 +177,21 @@ export function NewSoForm({
     }
     const ok = await confirm({
       title: `Confirm ${previewNumber}?`,
-      description: `Reserves stock for ${customer?.name ?? ""} totaling ${currency} ${total.toFixed(3)}. ${nearLimit ? "Customer near credit limit — review on next payment cycle. " : ""}Demo · this action will not persist.`,
+      description: `Reserves stock for ${customer?.name ?? ""} totaling ${currency} ${total.toFixed(3)}.${nearLimit ? " Customer near credit limit — review on next payment cycle." : ""}`,
       confirmLabel: "Confirm SO",
     });
     if (!ok) return;
-    toast.success(`Confirmed (demo): ${previewNumber} · ${currency} ${total.toFixed(3)}`);
-    setDirty(false);
-    router.push(`/${locale}/sales/orders`);
+    await runWrite("submit");
   };
 
   return (
     <DocForm
       title={`New sales order · ${previewNumber}`}
-      subtitle={quote ? `From ${quote.number}` : "Manual sales order"}
+      subtitle={
+        quote
+          ? `From ${quote.number}`
+          : "Manual sales order · backend issues the number on save."
+      }
       banner={
         onCreditHold && customer ? (
           <CreditHoldBanner exposure={customer.exposure} limit={customer.creditLimit} />
@@ -198,11 +267,9 @@ export function NewSoForm({
       approvalPreview={<ApprovalRoutePreview docType="so" amount={total} />}
       errors={errors}
       dirty={dirty}
+      pending={pending}
       onSubmit={onSubmit}
-      onSaveDraft={() => {
-        toast.success(`Saved as draft (demo): ${previewNumber}`);
-        setDirty(false);
-      }}
+      onSaveDraft={() => void runWrite("save_draft")}
       onCancel={() => router.back()}
       submitDisabled={errors.length > 0 || onCreditHold}
       submitLabel={onCreditHold ? "Blocked · credit hold" : "Confirm SO"}

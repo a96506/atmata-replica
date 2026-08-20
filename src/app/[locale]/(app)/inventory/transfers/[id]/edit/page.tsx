@@ -18,7 +18,7 @@ export default async function Page({
       docTitle={`Transfer ${trx.date}`}
       state={trx.state}
       date={trx.date}
-      notes={trx.notes}
+      notes={trx.notes ?? undefined}
       linesPreview={
         <ul className="divide-y divide-border rounded-xl border border-border bg-card">
           {trx.lines.map((l) => {

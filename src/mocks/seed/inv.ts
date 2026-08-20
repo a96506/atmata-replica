@@ -89,6 +89,7 @@ export const STOCK_MOVES: StockMove[] = [
 export const INTERNAL_TRANSFERS: InternalTransfer[] = [
   {
     id: "trx_1",
+    rowVersion: 1,
     number: "TRX-2026-00001",
     companyId: "co_1",
     fromWarehouseId: "wh_1",
@@ -105,6 +106,7 @@ export const INTERNAL_TRANSFERS: InternalTransfer[] = [
 export const STOCK_ADJUSTMENTS: StockAdjustment[] = [
   {
     id: "adj_1",
+    rowVersion: 1,
     number: "ADJ-2026-00001",
     companyId: "co_1",
     date: "2026-04-20",

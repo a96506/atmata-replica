@@ -8,7 +8,7 @@ import { getDebitNote } from "@/lib/api/returns";
 import { getSupplier } from "@/lib/api/master";
 import { relatedDocsFor } from "@/lib/api/links";
 import { listAuditEvents } from "@/lib/api/audit";
-import { getAncestry, getDescendants } from "@/lib/api/adoption";
+import { getAncestry, getDescendants } from "@/lib/api/adoption.server";
 import { formatMoney } from "@/lib/money";
 
 const STATES = [

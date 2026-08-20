@@ -7,6 +7,8 @@ import { useConfirm } from "@/components/confirm-dialog";
 import { DocForm } from "@/components/form/DocForm";
 import { DatePicker } from "@/components/form/DatePicker";
 import { SearchSelect } from "@/components/form/SearchSelect";
+import { createInternalTransferAction } from "@/lib/actions/inventory";
+import type { WriteIntent } from "@/lib/actions/validation/p2p";
 import { previewSequence } from "@/lib/numbering";
 import type { Product, Warehouse } from "@/types";
 import type { ValidationError } from "@/components/form/ValidationSummary";
@@ -25,6 +27,9 @@ export function NewTransferForm({
   const router = useRouter();
   const confirm = useConfirm();
   const today = new Date().toISOString().slice(0, 10);
+  const writeLocale = locale === "ar" ? "ar" : "en";
+  const idempotencyKeyRef = React.useRef(crypto.randomUUID());
+  const [pending, setPending] = React.useState(false);
 
   const [fromWh, setFromWh] = React.useState(warehouses[0]?.id ?? "");
   const [toWh, setToWh] = React.useState(warehouses[1]?.id ?? "");
@@ -69,6 +74,45 @@ export function NewTransferForm({
   const removeLine = (id: string) =>
     setLines((prev) => prev.filter((l) => l.id !== id));
 
+  const runWrite = async (intent: WriteIntent) => {
+    if (pending) return;
+    if (errors.length > 0) {
+      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      return;
+    }
+    setPending(true);
+    try {
+      const result = await createInternalTransferAction({
+        locale: writeLocale,
+        idempotencyKey: idempotencyKeyRef.current,
+        intent,
+        header: {
+          fromWarehouseId: fromWh,
+          toWarehouseId: toWh,
+          date,
+          ...(notes.trim() ? { notes: notes.trim() } : {}),
+        },
+        lines: lines.map((l) => ({
+          productId: l.productId,
+          qty: l.qty,
+          ...(l.lotNumber?.trim() ? { lotNumber: l.lotNumber.trim() } : {}),
+        })),
+      });
+      if (!result.ok) {
+        toast.error(result.error.messageKey || result.error.code);
+        return;
+      }
+      const verb =
+        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Submitted";
+      toast.success(`${verb}: ${result.data.number} · ${result.data.state} · ${totalQty} units`);
+      idempotencyKeyRef.current = crypto.randomUUID();
+      setDirty(false);
+      router.push(`/${locale}/inventory/transfers/${result.data.id}`);
+    } finally {
+      setPending(false);
+    }
+  };
+
   const onSubmit = async () => {
     if (errors.length > 0) {
       toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
@@ -76,18 +120,17 @@ export function NewTransferForm({
     }
     const ok = await confirm({
       title: `Post ${previewNumber}?`,
-      description: `Transfers ${totalQty} unit(s) from ${warehouses.find((w) => w.id === fromWh)?.name ?? ""} to ${warehouses.find((w) => w.id === toWh)?.name ?? ""}. Generates two stock moves (OUT + IN). Demo · this action will not persist.`,
+      description: `Transfers ${totalQty} unit(s) from ${warehouses.find((w) => w.id === fromWh)?.name ?? ""} to ${warehouses.find((w) => w.id === toWh)?.name ?? ""}. Generates two stock moves (OUT + IN).`,
       confirmLabel: "Post transfer",
     });
     if (!ok) return;
-    toast.success(`Posted (demo): ${previewNumber} · ${totalQty} units`);
-    setDirty(false);
-    router.push(`/${locale}/inventory/transfers`);
+    await runWrite("post");
   };
 
   return (
     <DocForm
       title={`New internal transfer · ${previewNumber}`}
+      subtitle="Backend issues the final number on save."
       header={
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           <SearchSelect
@@ -184,11 +227,9 @@ export function NewTransferForm({
       }
       errors={errors}
       dirty={dirty}
+      pending={pending}
       onSubmit={onSubmit}
-      onSaveDraft={() => {
-        toast.success(`Saved as draft (demo): ${previewNumber}`);
-        setDirty(false);
-      }}
+      onSaveDraft={() => void runWrite("save_draft")}
       onCancel={() => router.back()}
       submitDisabled={errors.length > 0}
       submitLabel="Post transfer"

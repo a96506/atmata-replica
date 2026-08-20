@@ -16,6 +16,8 @@ import { TaxBreakdown } from "@/components/form/TaxBreakdown";
 import { ApprovalRoutePreview } from "@/components/form/ApprovalRoutePreview";
 import { FxRateInput } from "@/components/form/FxRateInput";
 import { DuplicateBillBanner, FxRateBanner } from "@/components/banners";
+import { createVendorBillAction } from "@/lib/actions/p2p";
+import type { WriteIntent } from "@/lib/actions/validation/p2p";
 import { previewSequence } from "@/lib/numbering";
 import { readAdoptionContext, clearAdoptionContext } from "@/lib/api/adoption";
 import type {
@@ -55,6 +57,9 @@ export function NewBillForm({
   const router = useRouter();
   const confirm = useConfirm();
   const today = new Date().toISOString().slice(0, 10);
+  const writeLocale = locale === "ar" ? "ar" : "en";
+  const idempotencyKeyRef = React.useRef(crypto.randomUUID());
+  const [pending, setPending] = React.useState(false);
 
   // Read AdoptionContext on mount: multi-hop adoption from PR/RFQ stashes
   // it via AdoptionPicker. If neither po nor grn is set via query params,
@@ -160,6 +165,69 @@ export function NewBillForm({
 
   const previewNumber = previewSequence("vendor_bill", 2026, 99);
 
+  const billLines = () =>
+    lines.map((l) => {
+      const poLineId = l.id.startsWith("pre_") ? l.id.slice(4) : undefined;
+      return {
+        productId: l.productId,
+        description: l.description.trim() || "Item",
+        qty: l.qty,
+        unitPrice: l.unitPrice,
+        ...(l.taxCodeId ? { taxCodeId: l.taxCodeId } : {}),
+        ...(po && poLineId ? { poLineId } : {}),
+      };
+    });
+
+  const runWrite = async (intent: WriteIntent) => {
+    if (pending) return;
+    if (errors.length > 0) {
+      toast.error(`Fix ${errors.length} validation error${errors.length === 1 ? "" : "s"} first.`);
+      return;
+    }
+    setPending(true);
+    try {
+      const result = await createVendorBillAction({
+        locale: writeLocale,
+        idempotencyKey: idempotencyKeyRef.current,
+        intent,
+        header: {
+          supplierId,
+          invoiceNumber: invoiceNumber.trim(),
+          date,
+          dueDate,
+          currency,
+          ...(po ? { poId: po.id } : {}),
+          ...(grn ? { grnId: grn.id } : {}),
+        },
+        lines: billLines(),
+        ...(po || grn
+          ? {
+              source: {
+                parents: [
+                  ...(po ? [{ docType: "po" as const, docId: po.id }] : []),
+                  ...(grn ? [{ docType: "grn" as const, docId: grn.id }] : []),
+                ],
+              },
+            }
+          : {}),
+      });
+      if (!result.ok) {
+        toast.error(result.error.messageKey || result.error.code);
+        return;
+      }
+      const verb =
+        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Submitted";
+      toast.success(
+        `${verb}: ${result.data.number} · ${result.data.state} · ${currency} ${total.toFixed(3)}`,
+      );
+      idempotencyKeyRef.current = crypto.randomUUID();
+      setDirty(false);
+      router.push(`/${locale}/purchasing/bills/${result.data.id}`);
+    } finally {
+      setPending(false);
+    }
+  };
+
   const onSubmit = async () => {
     if (errors.length > 0) {
       toast.error(`Fix ${errors.length} validation error${errors.length === 1 ? "" : "s"} first.`);
@@ -177,23 +245,13 @@ export function NewBillForm({
         (isFx ? `Converted at FX ${fxRate} → ${(total * fxRate).toFixed(3)} KWD. ` : "") +
         (po ? `Will 3-way match against ${po.number}` : "") +
         (grn ? ` and ${grn.number}` : "") +
-        ". " +
-        (warnings.length ? `\n\nWarnings:\n• ${warnings.join("\n• ")}\n\n` : "") +
-        "Demo · this action will not persist.",
+        "." +
+        (warnings.length ? `\n\nWarnings:\n• ${warnings.join("\n• ")}` : ""),
       confirmLabel: "Submit",
       tone: duplicate ? "destructive" : "default",
     });
     if (!ok) return;
-    toast.success(
-      `Submitted (demo): ${previewNumber} · ${currency} ${total.toFixed(3)}`,
-    );
-    setDirty(false);
-    router.push(`/${locale}/purchasing/bills`);
-  };
-
-  const onSaveDraft = () => {
-    toast.success(`Saved as draft (demo): ${previewNumber}`);
-    setDirty(false);
+    await runWrite("submit");
   };
 
   const onCancel = async () => {
@@ -218,7 +276,7 @@ export function NewBillForm({
       subtitle={
         po
           ? `From ${po.number}${grn ? ` · received via ${grn.number}` : ""}`
-          : "Manual bill (no PO reference)"
+          : "Manual bill (no PO reference) · backend issues the number on save."
       }
       banner={
         <div className="space-y-2">
@@ -322,8 +380,9 @@ export function NewBillForm({
       approvalPreview={<ApprovalRoutePreview docType="vendor_bill" amount={total} />}
       errors={errors}
       dirty={dirty}
+      pending={pending}
       onSubmit={onSubmit}
-      onSaveDraft={onSaveDraft}
+      onSaveDraft={() => void runWrite("save_draft")}
       onCancel={onCancel}
       submitDisabled={errors.length > 0}
       submitLabel="Submit for approval"
