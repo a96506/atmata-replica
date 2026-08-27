@@ -1,6 +1,9 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { TrendingDown, TrendingUp } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
+import { pageMetadata } from "@/lib/metadata";
+
+export const generateMetadata = pageMetadata("nav", "dashboard");
 import {
   Card,
   CardContent,

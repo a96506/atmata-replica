@@ -5,6 +5,9 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Empty } from "@/components/state/Empty";
+import { pageMetadata } from "@/lib/metadata";
+
+export const generateMetadata = pageMetadata("nav", "inbox");
 
 const KIND_LABEL: Record<string, string> = {
   approval_requested: "Approval requested",
@@ -46,6 +49,9 @@ export default async function InboxPage() {
         <ul className="flex flex-col gap-3">
           {items.map((item) => {
             const sourceUrl = inboxDocPath(item.docType, item.docId);
+            // Synthesized pending-approval items use ids like `pending:po:...`
+            // and are not real notification rows — skip mark-read for them.
+            const isSynthesized = item.id.startsWith("pending:");
             return (
               <li key={item.id}>
                 <Card
@@ -79,7 +85,7 @@ export default async function InboxPage() {
                         source={item.kind}
                         id={item.id}
                         sourceUrl={sourceUrl}
-                        notificationId={item.id}
+                        notificationId={isSynthesized ? null : item.id}
                         doc={{
                           docType: item.docType,
                           docId: item.docId,

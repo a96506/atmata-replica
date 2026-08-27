@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import * as React from "react";
 import {
   InputGroup,
   InputGroupAddon,
@@ -24,6 +24,7 @@ export type MoneyInputProps = {
   label?: string;
   required?: boolean;
   disabled?: boolean;
+  readOnly?: boolean;
   min?: number;
   error?: string | null;
   className?: string;
@@ -40,12 +41,23 @@ export function MoneyInput({
   label,
   required,
   disabled,
+  readOnly,
   min = 0,
   error,
   className,
 }: MoneyInputProps) {
-  const id = useId();
+  const id = React.useId();
   const decimals = PRECISION[currency];
+  // Clamp to the currency's precision so the displayed, validated, and
+  // submitted values all match — the server rejects >3dp for KWD.
+  const clamp = React.useCallback(
+    (n: number) => {
+      if (!Number.isFinite(n)) return 0;
+      const f = Math.pow(10, decimals);
+      return Math.round((n + Number.EPSILON) * f) / f;
+    },
+    [decimals],
+  );
 
   return (
     <Field
@@ -79,7 +91,28 @@ export function MoneyInput({
             const raw = Number.parseFloat(e.target.value);
             onChange(Number.isFinite(raw) ? raw : 0);
           }}
+          // Select-all on focus so a pre-filled 0 clears on the first keystroke
+          // (click behaves like Tab). Skipped for read-only/disabled controls.
+          onFocus={(e) => {
+            if (readOnly || disabled) return;
+            e.currentTarget.select();
+          }}
+          // Clamp to currency precision on blur so display + validation match
+          // the server's raw-value check (KWD = 3dp).
+          onBlur={(e) => {
+            if (readOnly || disabled) return;
+            const raw = Number.parseFloat(e.target.value);
+            if (!Number.isFinite(raw)) return;
+            const clamped = clamp(raw);
+            if (clamped !== raw) {
+              e.target.value = String(clamped);
+              onChange(clamped);
+            } else if (clamped !== value) {
+              onChange(clamped);
+            }
+          }}
           disabled={disabled}
+          readOnly={readOnly}
           aria-invalid={!!error}
           className="text-end tabular-nums"
         />

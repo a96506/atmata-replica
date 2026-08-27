@@ -4,21 +4,11 @@ import * as React from "react";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
+import { useActionToast } from "@/hooks/use-action-toast";
 import {
   approveOcrJobAction,
   rejectOcrJobAction,
 } from "@/lib/actions/invoices";
-
-function actionErrorMessage(error: {
-  messageKey?: string;
-  code: string;
-  fieldErrors?: Record<string, string[]>;
-}): string {
-  const field = error.fieldErrors
-    ? Object.values(error.fieldErrors).flat()[0]
-    : undefined;
-  return field ?? error.messageKey ?? error.code;
-}
 
 export function InvoiceActions({
   jobId,
@@ -35,6 +25,7 @@ export function InvoiceActions({
 }) {
   const locale = useLocale();
   const router = useRouter();
+  const actionToast = useActionToast();
   const idempotencyKeyRef = React.useRef(crypto.randomUUID());
   const [pending, setPending] = React.useState<"approve" | "reject" | null>(
     null,
@@ -53,7 +44,7 @@ export function InvoiceActions({
         idempotencyKey: idempotencyKeyRef.current,
       });
       if (!result.ok) {
-        toast.error(actionErrorMessage(result.error));
+        actionToast.error(result.error);
         idempotencyKeyRef.current = crypto.randomUUID();
         return;
       }
@@ -61,6 +52,8 @@ export function InvoiceActions({
       idempotencyKeyRef.current = crypto.randomUUID();
       router.push(`/${locale}/purchasing/bills/${result.data.id}`);
       router.refresh();
+    } catch {
+      actionToast.network();
     } finally {
       setPending(null);
     }
@@ -77,13 +70,15 @@ export function InvoiceActions({
         reason: "REJECTED",
       });
       if (!result.ok) {
-        toast.error(actionErrorMessage(result.error));
+        actionToast.error(result.error);
         idempotencyKeyRef.current = crypto.randomUUID();
         return;
       }
       toast.message(`Invoice #${jobId} rejected`);
       idempotencyKeyRef.current = crypto.randomUUID();
       router.refresh();
+    } catch {
+      actionToast.network();
     } finally {
       setPending(null);
     }

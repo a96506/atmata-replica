@@ -47,6 +47,8 @@ import {
 export type NavLeaf = {
   href: string;
   label: string;
+  /** Translation key under the `nav` namespace; resolves to the leaf label. */
+  labelKey?: string;
   icon?: LucideIcon;
   /** Shown in the command palette to disambiguate similarly named routes. */
   keywords?: string[];
@@ -55,6 +57,8 @@ export type NavLeaf = {
 export type NavGroup = {
   /** Optional heading used for nested groups (e.g. inside Settings). */
   label?: string;
+  /** Translation key under the `nav.groups` namespace for this heading. */
+  labelKey?: string;
   items: NavLeaf[];
 };
 
@@ -63,6 +67,8 @@ export type NavModule = {
   key: string;
   href: string;
   label: string;
+  /** Translation key under the `nav` namespace; defaults to `key`. */
+  labelKey?: string;
   icon: LucideIcon;
   /** Grouped children. A module with a single unlabelled group renders flat. */
   groups: NavGroup[];
@@ -77,7 +83,7 @@ export const navigation: NavModule[] = [
     groups: [
       {
         items: [
-          { href: "/inbox", label: "Inbox", icon: Inbox, keywords: ["ai", "queue", "tasks"] },
+          { href: "/inbox", label: "Inbox", labelKey: "inbox", icon: Inbox, keywords: ["ai", "queue", "tasks"] },
         ],
       },
     ],
@@ -90,7 +96,7 @@ export const navigation: NavModule[] = [
     groups: [
       {
         items: [
-          { href: "/dashboard", label: "Overview", icon: Gauge, keywords: ["kpi", "home", "metrics"] },
+          { href: "/dashboard", label: "Overview", labelKey: "overview", icon: Gauge, keywords: ["kpi", "home", "metrics"] },
         ],
       },
     ],
@@ -102,23 +108,26 @@ export const navigation: NavModule[] = [
     icon: ShoppingCart,
     groups: [
       {
-        items: [{ href: "/sales", label: "Overview", icon: LayoutGrid }],
+        items: [{ href: "/sales", label: "Overview", labelKey: "overview", icon: LayoutGrid }],
       },
       {
         label: "Order to cash",
+        labelKey: "order_to_cash",
         items: [
-          { href: "/sales/quotes", label: "Quotes", icon: FileText, keywords: ["quotation", "q2c"] },
-          { href: "/sales/orders", label: "Sales orders", icon: ClipboardList, keywords: ["so"] },
-          { href: "/sales/deliveries", label: "Deliveries", icon: Truck, keywords: ["dn", "shipment"] },
+          { href: "/sales/quotes", label: "Quotes", labelKey: "quotes", icon: FileText, keywords: ["quotation", "q2c"] },
+          { href: "/sales/orders", label: "Sales orders", labelKey: "sales_orders", icon: ClipboardList, keywords: ["so"] },
+          { href: "/sales/deliveries", label: "Deliveries", labelKey: "deliveries", icon: Truck, keywords: ["dn", "shipment"] },
           {
             href: "/sales/invoices",
             label: "Customer invoices",
+            labelKey: "customer_invoices",
             icon: ReceiptText,
             keywords: ["ar", "billing"],
           },
           {
             href: "/sales/receipts",
             label: "Customer receipts",
+            labelKey: "customer_receipts",
             icon: Wallet,
             keywords: ["payment", "collection"],
           },
@@ -126,9 +135,10 @@ export const navigation: NavModule[] = [
       },
       {
         label: "Reversals",
+        labelKey: "reversals",
         items: [
-          { href: "/sales/returns", label: "Customer returns", icon: RotateCcw },
-          { href: "/sales/credit-notes", label: "Credit notes", icon: FileMinus },
+          { href: "/sales/returns", label: "Customer returns", labelKey: "customer_returns", icon: RotateCcw },
+          { href: "/sales/credit-notes", label: "Credit notes", labelKey: "credit_notes", icon: FileMinus },
         ],
       },
     ],
@@ -140,34 +150,39 @@ export const navigation: NavModule[] = [
     icon: Package,
     groups: [
       {
-        items: [{ href: "/purchasing", label: "Overview", icon: LayoutGrid }],
+        items: [{ href: "/purchasing", label: "Overview", labelKey: "overview", icon: LayoutGrid }],
       },
       {
         label: "Procure to pay",
+        labelKey: "procure_to_pay",
         items: [
           {
             href: "/purchasing/purchase-requisitions",
             label: "Purchase requisitions",
+            labelKey: "purchase_requisitions",
             icon: ClipboardList,
             keywords: ["pr", "request"],
           },
-          { href: "/purchasing/rfqs", label: "RFQs", icon: FileBadge, keywords: ["quotation", "bid"] },
+          { href: "/purchasing/rfqs", label: "RFQs", labelKey: "rfqs", icon: FileBadge, keywords: ["quotation", "bid"] },
           {
             href: "/purchasing/purchase-orders",
             label: "Purchase orders",
+            labelKey: "purchase_orders",
             icon: ScrollText,
             keywords: ["po"],
           },
           {
             href: "/purchasing/goods-receipts",
             label: "Goods receipts",
+            labelKey: "goods_receipts",
             icon: PackageCheck,
             keywords: ["grn", "receiving"],
           },
-          { href: "/purchasing/bills", label: "Vendor bills", icon: ReceiptText, keywords: ["ap"] },
+          { href: "/purchasing/bills", label: "Vendor bills", labelKey: "vendor_bills", icon: ReceiptText, keywords: ["ap"] },
           {
             href: "/purchasing/payments",
             label: "Vendor payments",
+            labelKey: "vendor_payments",
             icon: CreditCard,
             keywords: ["pay", "remittance"],
           },
@@ -175,9 +190,10 @@ export const navigation: NavModule[] = [
       },
       {
         label: "Reversals",
+        labelKey: "reversals",
         items: [
-          { href: "/purchasing/vendor-returns", label: "Vendor returns", icon: RotateCcw },
-          { href: "/purchasing/debit-notes", label: "Debit notes", icon: FileMinus },
+          { href: "/purchasing/vendor-returns", label: "Vendor returns", labelKey: "vendor_returns", icon: RotateCcw },
+          { href: "/purchasing/debit-notes", label: "Debit notes", labelKey: "debit_notes", icon: FileMinus },
         ],
       },
     ],
@@ -190,17 +206,19 @@ export const navigation: NavModule[] = [
     groups: [
       {
         items: [
-          { href: "/inventory", label: "Overview", icon: LayoutGrid },
+          { href: "/inventory", label: "Overview", labelKey: "overview", icon: LayoutGrid },
           {
             href: "/inventory/stock-moves",
             label: "Stock moves",
+            labelKey: "stock_moves",
             icon: Repeat,
             keywords: ["ledger", "movement"],
           },
-          { href: "/inventory/transfers", label: "Transfers", icon: Truck, keywords: ["move"] },
+          { href: "/inventory/transfers", label: "Transfers", labelKey: "transfers", icon: Truck, keywords: ["move"] },
           {
             href: "/inventory/adjustments",
             label: "Adjustments",
+            labelKey: "adjustments",
             icon: Ruler,
             keywords: ["count", "stocktake", "shrinkage"],
           },
@@ -215,26 +233,30 @@ export const navigation: NavModule[] = [
     icon: Landmark,
     groups: [
       {
-        items: [{ href: "/accounting", label: "Overview", icon: LayoutGrid }],
+        items: [{ href: "/accounting", label: "Overview", labelKey: "overview", icon: LayoutGrid }],
       },
       {
         label: "Transactions",
+        labelKey: "transactions",
         items: [
           {
             href: "/accounting/invoices",
             label: "AP invoices (OCR)",
+            labelKey: "ap_invoices_ocr",
             icon: Sparkles,
             keywords: ["ocr", "scan", "bill"],
           },
           {
             href: "/accounting/journal-entries",
             label: "Journal entries",
+            labelKey: "journal_entries",
             icon: ScrollText,
             keywords: ["je", "gl", "ledger"],
           },
           {
             href: "/accounting/reconciliation",
             label: "Reconciliation",
+            labelKey: "reconciliation",
             icon: Banknote,
             keywords: ["bank", "match", "statement"],
           },
@@ -242,16 +264,19 @@ export const navigation: NavModule[] = [
       },
       {
         label: "Reporting",
+        labelKey: "reporting",
         items: [
           {
             href: "/accounting/financials",
             label: "Financials",
+            labelKey: "financials",
             icon: FileText,
             keywords: ["p&l", "balance sheet", "trial balance"],
           },
           {
             href: "/accounting/close",
             label: "Month-end close",
+            labelKey: "month_end_close",
             icon: CalendarRange,
             keywords: ["period", "closing"],
           },
@@ -266,43 +291,47 @@ export const navigation: NavModule[] = [
     icon: Settings,
     groups: [
       {
-        items: [{ href: "/settings", label: "Overview", icon: LayoutGrid }],
+        items: [{ href: "/settings", label: "Overview", labelKey: "overview", icon: LayoutGrid }],
       },
       {
         label: "Organization",
+        labelKey: "organization",
         items: [
-          { href: "/settings/company", label: "Company", icon: Building2 },
-          { href: "/settings/branches", label: "Branches", icon: Building2 },
-          { href: "/settings/warehouses", label: "Warehouses", icon: Warehouse },
-          { href: "/settings/fiscal-calendar", label: "Fiscal calendar", icon: CalendarRange },
+          { href: "/settings/company", label: "Company", labelKey: "company", icon: Building2 },
+          { href: "/settings/branches", label: "Branches", labelKey: "branches", icon: Building2 },
+          { href: "/settings/warehouses", label: "Warehouses", labelKey: "warehouses", icon: Warehouse },
+          { href: "/settings/fiscal-calendar", label: "Fiscal calendar", labelKey: "fiscal_calendar", icon: CalendarRange },
         ],
       },
       {
         label: "Finance",
+        labelKey: "finance",
         items: [
-          { href: "/settings/coa", label: "Chart of accounts", icon: ListOrdered, keywords: ["coa"] },
-          { href: "/settings/tax-codes", label: "Tax codes", icon: Percent, keywords: ["vat"] },
-          { href: "/settings/currencies", label: "Currencies", icon: Coins },
-          { href: "/settings/fx-rates", label: "FX rates", icon: Coins, keywords: ["exchange"] },
-          { href: "/settings/payment-terms", label: "Payment terms", icon: CalendarRange },
-          { href: "/settings/bank-accounts", label: "Bank accounts", icon: Banknote },
+          { href: "/settings/coa", label: "Chart of accounts", labelKey: "coa", icon: ListOrdered, keywords: ["coa"] },
+          { href: "/settings/tax-codes", label: "Tax codes", labelKey: "tax_codes", icon: Percent, keywords: ["vat"] },
+          { href: "/settings/currencies", label: "Currencies", labelKey: "currencies", icon: Coins },
+          { href: "/settings/fx-rates", label: "FX rates", labelKey: "fx_rates", icon: Coins, keywords: ["exchange"] },
+          { href: "/settings/payment-terms", label: "Payment terms", labelKey: "payment_terms", icon: CalendarRange },
+          { href: "/settings/bank-accounts", label: "Bank accounts", labelKey: "bank_accounts", icon: Banknote },
         ],
       },
       {
         label: "Master data",
+        labelKey: "master_data",
         items: [
-          { href: "/settings/customers", label: "Customers", icon: UsersRound },
-          { href: "/settings/suppliers", label: "Suppliers", icon: Truck, keywords: ["vendor"] },
-          { href: "/settings/products", label: "Products", icon: Package, keywords: ["item", "sku"] },
-          { href: "/settings/price-lists", label: "Price lists", icon: Tags },
-          { href: "/settings/sequences", label: "Sequences", icon: ListOrdered, keywords: ["numbering"] },
+          { href: "/settings/customers", label: "Customers", labelKey: "customers", icon: UsersRound },
+          { href: "/settings/suppliers", label: "Suppliers", labelKey: "suppliers", icon: Truck, keywords: ["vendor"] },
+          { href: "/settings/products", label: "Products", labelKey: "products", icon: Package, keywords: ["item", "sku"] },
+          { href: "/settings/price-lists", label: "Price lists", labelKey: "price_lists", icon: Tags },
+          { href: "/settings/sequences", label: "Sequences", labelKey: "sequences", icon: ListOrdered, keywords: ["numbering"] },
         ],
       },
       {
         label: "Access",
+        labelKey: "access",
         items: [
-          { href: "/settings/users", label: "Users", icon: Users },
-          { href: "/settings/approval-rules", label: "Approval rules", icon: ShieldCheck },
+          { href: "/settings/users", label: "Users", labelKey: "users", icon: Users },
+          { href: "/settings/approval-rules", label: "Approval rules", labelKey: "approval_rules", icon: ShieldCheck },
         ],
       },
     ],

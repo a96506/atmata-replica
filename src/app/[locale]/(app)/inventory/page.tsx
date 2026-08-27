@@ -7,10 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getInventoryOverview } from "@/lib/api/inventory-overview";
+import { pageMetadata } from "@/lib/metadata";
 import {
   InventoryDemoToolbar,
   ShipmentNoteDemo,
 } from "./inventory-demo-actions";
+
+export const generateMetadata = pageMetadata("nav", "inventory");
 
 function Kpi({ label, value }: { label: string; value: string | number }) {
   return (

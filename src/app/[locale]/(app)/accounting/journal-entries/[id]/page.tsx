@@ -8,6 +8,7 @@ import { getJournalEntry, listAccounts } from "@/lib/api/gl";
 import { relatedDocsFor } from "@/lib/api/links";
 import { listAuditEvents } from "@/lib/api/audit";
 import { formatMoney } from "@/lib/money";
+import type { DocState } from "@/types";
 
 const STATES = [
   { id: "draft", label: "Draft" },
@@ -31,6 +32,16 @@ export default async function Page({
   const totalDr = je.lines.reduce((s, l) => s + l.debit, 0);
   const totalCr = je.lines.reduce((s, l) => s + l.credit, 0);
   const balanced = Math.abs(totalDr - totalCr) < 0.001;
+
+  // Only show a "Posted" date once the JE is actually posted/locked/archived —
+  // drafts render no posted date even though `je.date` exists.
+  const POSTED_STATES: DocState[] = ["posted", "locked", "archived"];
+  const showPostedDate = POSTED_STATES.includes(je.state);
+  const hasSource = je.sourceType != null && je.sourceId != null;
+  const subtitleParts: string[] = [];
+  if (showPostedDate) subtitleParts.push(`Posted ${je.date}`);
+  if (hasSource) subtitleParts.push(`source: ${je.sourceType} · ${je.sourceId}`);
+  const subtitle = subtitleParts.join(" · ");
 
   const linesTable = (
     <div className="space-y-3">
@@ -102,7 +113,7 @@ export default async function Page({
     <DocumentLayout
       number={je.number}
       title={je.description}
-      subtitle={`Posted ${je.date} · source: ${je.sourceType} · ${je.sourceId}`}
+      subtitle={subtitle || undefined}
       states={STATES}
       currentState={je.state}
       totals={

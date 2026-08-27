@@ -7,15 +7,33 @@ import {
   createInsForgeServerClient,
 } from "@/lib/insforge/server";
 import { getAppSession } from "@/lib/insforge/session";
+import { checkRateLimit } from "@/lib/actions/rate-limit";
 
 export type AuthActionResult = {
   ok: boolean;
   message?: string;
+  /** Stable i18n key (under the root `errors` namespace) for client-side translation. */
+  messageKey?: string;
 };
 
 function messageFrom(error: { message?: string } | null, fallback: string) {
   return error?.message?.trim() || fallback;
 }
+
+// Heuristic for the InsForge backend's IP-scoped reset-email throttle. The
+// raw backend message ("Too many send email verification requests from this
+// IP") is infra language and names the wrong flow — surface customer copy
+// via the `errors.resetRateLimited` message key instead.
+function isResetRateLimitError(error: { message?: string } | null): boolean {
+  const msg = (error?.message ?? "").toLowerCase();
+  return /too many|rate.?limit|throttl/.test(msg);
+}
+
+// Mirror the InsForge password-reset throttle: IP-scoped, ~2 attempts per
+// 15 min. Best-effort in-memory (see rate-limit.ts) — not durable across
+// serverless instances. Tuned for brute-force slowing, not a hard cap.
+const SIGN_IN_LIMIT = 5;
+const SIGN_IN_WINDOW_MS = 15 * 60_000;
 
 export async function signInAction(input: {
   email: string;
@@ -24,6 +42,15 @@ export async function signInAction(input: {
   const email = input.email.trim().toLowerCase();
   if (!email || !input.password) {
     return { ok: false, message: "Email and password are required." };
+  }
+
+  const throttle = await checkRateLimit("signIn", SIGN_IN_LIMIT, SIGN_IN_WINDOW_MS);
+  if (!throttle.ok) {
+    const minutes = Math.max(1, Math.ceil(throttle.retryAfterMs / 60_000));
+    return {
+      ok: false,
+      message: `Too many sign-in attempts. Try again in ${minutes} minute${minutes === 1 ? "" : "s"}.`,
+    };
   }
 
   const auth = await createInsForgeAuthActions();
@@ -74,6 +101,9 @@ export async function sendPasswordResetAction(input: {
   const { error } = await insforge.auth.sendResetPasswordEmail({ email });
 
   if (error) {
+    if (isResetRateLimitError(error)) {
+      return { ok: false, messageKey: "errors.resetRateLimited" };
+    }
     return {
       ok: false,
       message: messageFrom(error, "Unable to send the reset code."),

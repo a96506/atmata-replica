@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "أتماتا",
-    "description": "منصة أعمال بالذكاء الاصطناعي لشركات الكويت الصغيرة والمتوسطة (معاينة واجهة)"
+    "description": "منصة أعمال بالذكاء الاصطناعي للشركات الصغيرة والمتوسطة في الكويت."
   },
   "chrome": {
     "brand": "أتماتا",
@@ -10,7 +10,8 @@
     "tenant": "مستأجر",
     "role": "مسؤول",
     "signOut": "تسجيل الخروج",
-    "locale": "اللغة"
+    "locale": "اللغة",
+    "skipToContent": "تخطّي إلى المحتوى"
   },
   "nav": {
     "inbox": "صندوق الذكاء الاصطناعي",
@@ -19,7 +20,58 @@
     "sales": "المبيعات",
     "purchasing": "المشتريات",
     "inventory": "المخزون",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "language": "اللغة",
+    "overview": "نظرة عامة",
+    "quotes": "عروض الأسعار",
+    "sales_orders": "أوامر البيع",
+    "deliveries": "التسليمات",
+    "customer_invoices": "فواتير العملاء",
+    "customer_receipts": "إيصالات العملاء",
+    "customer_returns": "مرتجعات العملاء",
+    "credit_notes": "إشعارات دائنة",
+    "order_to_cash": "من الطلب للتحصيل",
+    "reversals": "القيود العكسية",
+    "purchase_requisitions": "طلبات الشراء",
+    "rfqs": "طلبات عروض الأسعار",
+    "purchase_orders": "أوامر الشراء",
+    "goods_receipts": "إيصالات الاستلام",
+    "vendor_bills": "فواتير الموردين",
+    "vendor_payments": "دفعات الموردين",
+    "vendor_returns": "مرتجعات الموردين",
+    "debit_notes": "إشعارات مدينة",
+    "procure_to_pay": "من الشراء للدفع",
+    "stock_moves": "حركات المخزون",
+    "transfers": "التحويلات",
+    "adjustments": "التسويات",
+    "ap_invoices_ocr": "فواتير الموردين (OCR)",
+    "journal_entries": "قيود اليومية",
+    "reconciliation": "التسوية البنكية",
+    "financials": "القوائم المالية",
+    "month_end_close": "إقفال نهاية الشهر",
+    "transactions": "المعاملات",
+    "reporting": "التقارير",
+    "company": "الشركة",
+    "branches": "الفروع",
+    "warehouses": "المستودعات",
+    "fiscal_calendar": "التقويم المالي",
+    "coa": "دليل الحسابات",
+    "tax_codes": "أكواد الضريبة",
+    "currencies": "العملات",
+    "fx_rates": "أسعار الصرف",
+    "payment_terms": "شروط الدفع",
+    "bank_accounts": "الحسابات البنكية",
+    "customers": "العملاء",
+    "suppliers": "الموردون",
+    "products": "المنتجات",
+    "price_lists": "قوائم الأسعار",
+    "sequences": "التسلسلات",
+    "users": "المستخدمون",
+    "approval_rules": "قواعد الاعتماد",
+    "organization": "المنشأة",
+    "finance": "المالية",
+    "master_data": "البيانات الأساسية",
+    "access": "الصلاحيات"
   },
   "auth": {
     "signInTitle": "تسجيل الدخول",
@@ -55,7 +107,7 @@
   },
   "dashboard": {
     "title": "لوحة المدير التنفيذي",
-    "subtitle": "عرض لحظي للسيولة والإيرادات والذمم المدينة/الدائنة ونشاط الذكاء الاصطناعي.",
+    "subtitle": "لمحة عن السيولة والإيرادات والذمم المدينة/الدائنة ونشاط الذكاء الاصطناعي. حدّث الصفحة لأحدث الأرقام.",
     "kpiCash": "الوضع النقدي",
     "kpiRevenue": "الإيرادات الشهرية",
     "kpiPending": "موافقات معلّقة",
@@ -68,7 +120,7 @@
     "title": "صندوق الذكاء الاصطناعي",
     "subtitle": "كل ما يحتاج انتباهك في مكان واحد.",
     "empty": "لا يوجد جديد.",
-    "emptyHint": "لا توجد عناصر الآن — يمكن تغيير البيانات التجريبية في الكود.",
+    "emptyHint": "أنت على اطلاع بكل شيء — ستظهر الموافقات والتنبيهات الجديدة هنا.",
     "approve": "موافقة",
     "reject": "رفض",
     "openWorkspace": "فتح مساحة العمل",
@@ -86,6 +138,34 @@
     "financialsDesc": "الأرباح والخسائر، الميزانية، التدفقات، ميزان المراجعة",
     "close": "إقفال نهاية الشهر",
     "closeDesc": "قائمة من 10 خطوات",
+    "closePage": {
+      "title": "إقفال نهاية الشهر",
+      "subtitle": "قائمة إقفال من 10 خطوات بمعونة الذكاء الاصطناعي.",
+      "noFiscalPeriod": "(لا يوجد صف فترة مالية لـ {period} — تعطيل البدء/إعادة الفحص.)",
+      "noRunTitle": "لا يوجد تشغيل إقفال لهذه الفترة",
+      "noRunBodyWithPeriod": "اضغط تشغيل الإقفال لإنشاء تشغيل الإقفال ومهامه.",
+      "noRunBodyNoPeriod": "أنشئ فترة مالية لـ {period} أولاً.",
+      "period": "الفترة",
+      "status": "الحالة",
+      "progress": "التقدّم",
+      "noTasksTitle": "لا توجد مهام إقفال",
+      "noTasksBody": "أعد الفحص للتأكد من وجود period_close_tasks لهذا التشغيل.",
+      "found": "موجود",
+      "resolved": "تم حلّه",
+      "openList": "فتح القائمة ←",
+      "steps": {
+        "reconcile_bank": "تسوية معاملات البنك",
+        "review_stale_drafts": "مراجعة القيود المسود القديمة",
+        "unbilled_deliveries": "استحقاق تسليمات غير مفوترة",
+        "missing_vendor_bills": "فحص فواتير الموردين المفقودة",
+        "uninvoiced_revenue": "فوترة إيرادات غير مفوترة",
+        "depreciation_entries": "ترحيل قيود الإهلاك",
+        "tax_validation": "التحقق من قيود الضريبة",
+        "intercompany_balances": "مراجعة أرصدة بين الشركات",
+        "review_adjustments": "مراجعة التسويات اليدوية",
+        "final_review": "مراجعة الأرباح والخسائر / الميزانية النهائية"
+      }
+    },
     "manual": {
       "newInvoice": "فاتورة جديدة",
       "dialogTitle": "إنشاء فاتورة يدويًا",
@@ -119,7 +199,7 @@
   },
   "sales": {
     "title": "المبيعات",
-    "subtitle": "عروض الأسعار والطلبات وخط الأنابيب والائتمان — معاينة واجهة (قسم المبيعات في PRD).",
+    "subtitle": "عروض الأسعار والطلبات وخط الأنابيب وائتمان العملاء.",
     "kpiQuotes": "عروض بانتظار العميل",
     "kpiOverdue": "عملاء متأخرون",
     "kpiCreditHolds": "تجميد ائتماني",
@@ -185,7 +265,7 @@
   },
   "purchasing": {
     "title": "المشتريات",
-    "subtitle": "اقتراحات أمر شراء ومطابقة فواتير المورّدين — معاينة واجهة (قسم المشتريات في PRD).",
+    "subtitle": "اقتراحات الشراء ومطابقة الفواتير ثلاثية الأطراف والمورّدون.",
     "kpiPoSuggestions": "اقتراحات أمر شراء مفتوحة",
     "kpiBillQueue": "فواتير في قائمة المطابقة",
     "kpiPriceAlerts": "تنبيهات أسعار",
@@ -283,12 +363,12 @@
   },
   "inventory": {
     "title": "المخزون",
-    "subtitle": "المستويات وتنبيهات إعادة الطلب وتنبؤ الطلب — معاينة واجهة (PRD).",
+    "subtitle": "مستويات المخزون وتنبيهات إعادة الطلب وتنبؤ الطلب.",
     "secReorder": "تنبيهات إعادة الطلب",
     "reorderShort": "أقل من المخزون الأمني بمقدار {n} وحدة",
     "secStock": "مستويات المخزون",
     "secForecast": "تنبؤ الطلب",
-    "forecastHint": "وحدات 30 / 90 يومًا (توضيحي؛ تُستبعد أوامر البيع الاستثنائية من المعدل في المنتج).",
+    "forecastHint": "الوحدات المتوقَّعة للحاجة خلال 30 و90 يومًا القادمة.",
     "secInbound": "شحنات واردة",
     "secOutbound": "تسليمات صادرة",
     "colSku": "الرمز",
@@ -412,6 +492,7 @@
       "post": "ترحيل",
       "cancel": "إلغاء",
       "reverse": "عكس",
+      "recall": "سحب",
       "close": "إغلاق",
       "edit": "تعديل",
       "save": "حفظ",
@@ -523,6 +604,10 @@
     }
   },
   "documents": {
+    "approvalPreview": {
+      "noRule": "لا يوجد قاعدة موافقة مطابقة — سيتم طلب مراجعة يدوية عند الإرسال.",
+      "routeTo": "عند الإرسال، التوجيه إلى:"
+    },
     "actions": {
       "groupLabel": "إجراءات PDF",
       "preview": "معاينة",
@@ -535,6 +620,74 @@
     "errors": {
       "generationFailed": "تعذر إنشاء ملف PDF.",
       "invalidRequest": "طلب PDF غير صالح."
+    },
+    "tabs": {
+      "lines": "البنود",
+      "match": "مطابقة ثلاثية",
+      "adoption": "التبنّي",
+      "history": "السجل",
+      "attachments": "المرفقات"
+    },
+    "bill": {
+      "unknownSupplier": "مورد غير معروف",
+      "subtitle": "فاتورة مورد {invoice} · {date} · الاستحقاق {dueDate}",
+      "threeWayMatch": "مطابقة ثلاثية",
+      "colProduct": "المنتج",
+      "colPoQty": "كمية أمر الشراء",
+      "colReceived": "المستلم",
+      "colBilled": "المفوتر",
+      "colDelta": "الفرق",
+      "total": "الإجمالي",
+      "paid": "المدفوع",
+      "balance": "الرصيد",
+      "discrepancyBlocked": "تعارض في المطابقة الثلاثية: {reason} — يتطلب تجاوز المعتمد.",
+      "discrepancyFallback": "الكمية / السعر خارج الحد المسموح",
+      "paymentLink": "دفعة"
+    },
+    "invoice": {
+      "backToInvoices": "← الفواتير",
+      "overall": "الإجمالي",
+      "supplier": "المورد",
+      "extractedFields": "الحقول المستخرجة",
+      "fieldConfidence": "ثقة الحقول",
+      "noConfidence": "لا توجد درجات ثقة.",
+      "lineItems": "بنود الفاتورة",
+      "matching": "المطابقة",
+      "extractedVendor": "المورد المستخرج",
+      "matched": "مطابق",
+      "linkedBillId": "معرّف الفاتورة المرتبطة",
+      "fields": {
+        "vendor": "المورد",
+        "vat": "الضريبة",
+        "invoiceNumber": "رقم الفاتورة",
+        "date": "التاريخ",
+        "dueDate": "تاريخ الاستحقاق",
+        "currency": "العملة",
+        "subtotal": "المجموع الفرعي",
+        "tax": "الضريبة",
+        "total": "الإجمالي",
+        "poRef": "مرجع أمر الشراء",
+        "paymentTerms": "شروط الدفع"
+      },
+      "cols": {
+        "description": "الوصف",
+        "code": "الرمز",
+        "qty": "الكمية",
+        "unitPrice": "سعر الوحدة",
+        "amount": "المبلغ"
+      }
+    },
+    "history": {
+      "empty": "لا توجد أحداث تدقيق مسجّلة بعد.",
+      "created": "إنشاء ←",
+      "by": "بواسطة",
+      "event": "حدث",
+      "fieldChange": "{field}: {old} ← {new}",
+      "valueChange": "{old} ← {new}",
+      "attachmentAdded": "تمت إضافة مرفق: {name}",
+      "attachmentRemoved": "تم حذف مرفق: {name}",
+      "attachmentAddedBadge": "إضافة مرفق",
+      "attachmentRemovedBadge": "حذف مرفق"
     }
   },
   "email": {
@@ -555,6 +708,7 @@
     "duplicate": "هذا السجل موجود مسبقاً.",
     "invariant": "التغيير يخالف قاعدة العمل.",
     "rateLimited": "محاولات كثيرة. حاول لاحقاً.",
+    "resetRateLimited": "طلبات رمز تحقق كثيرة من هذه الشبكة. يرجى الانتظار بضع دقائق قبل المحاولة مرة أخرى.",
     "unavailable": "الخدمة غير متاحة مؤقتاً.",
     "emailDeliveryFailed": "تعذر إرسال البريد.",
     "storageFailed": "تعذر حفظ الملف.",

@@ -33,6 +33,10 @@ export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJ
   const locale = useLocale();
   const [docs, setDocs] = React.useState<DocumentJob[]>(initialInvoices);
   const [modalOpen, setModalOpen] = React.useState(false);
+  // The manual "New invoice" modal fabricates a 100%-confidence / queued row
+  // indistinguishable from real OCR output and injects it into the live table
+  // (it vanishes on refresh). Demo-only — keep it out of production builds.
+  const showManualModal = process.env.NODE_ENV === "development";
 
   const rows = docs.map((doc) => {
     const isManual = doc.file_name.startsWith("Manual ·");
@@ -65,7 +69,7 @@ export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJ
       ) : (
         <span key="a" className="flex items-center justify-end gap-2 text-xs">
           <Link
-            href={`/accounting/invoices/${doc.job_id}`}
+            href={`/accounting/invoices/${doc.public_id}`}
             className="font-medium text-primary hover:underline"
           >
             Review
@@ -90,13 +94,15 @@ export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJ
           <h1 className="text-2xl font-semibold text-foreground">Invoices</h1>
           <p className="text-sm text-foreground">Upload PDFs for AI extraction, then review and approve.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => setModalOpen(true)}
-          className="shrink-0 cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary"
-        >
-          {t("newInvoice")}
-        </button>
+        {showManualModal ? (
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="shrink-0 cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary"
+          >
+            {t("newInvoice")}
+          </button>
+        ) : null}
       </header>
 
       <DemoUpload />
@@ -107,11 +113,13 @@ export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJ
         emptyMessage="No invoices yet. Upload a PDF to get started."
       />
 
-      <ManualInvoiceModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        onCreated={(doc) => setDocs((prev) => [doc, ...prev])}
-      />
+      {showManualModal ? (
+        <ManualInvoiceModal
+          open={modalOpen}
+          onOpenChange={setModalOpen}
+          onCreated={(doc) => setDocs((prev) => [doc, ...prev])}
+        />
+      ) : null}
     </div>
   );
 }

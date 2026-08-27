@@ -8,12 +8,15 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getPurchasingOverview } from "@/lib/api/purchasing-overview";
 import { formatKwd } from "@/lib/utils";
+import { pageMetadata } from "@/lib/metadata";
 import {
   BillMatchActions,
   PoSuggestionActions,
   ReceivingDemoActions,
 } from "./purchasing-demo-actions";
 import { PurchaseHistoryWithNewPo } from "./purchase-history-with-new-po";
+
+export const generateMetadata = pageMetadata("nav", "purchasing");
 
 function Kpi({ label, value }: { label: string; value: string | number }) {
   return (

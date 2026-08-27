@@ -1,7 +1,10 @@
 import { listOcrJobs } from "@/lib/actions/invoices";
 import { parseOcrExtraction } from "@/lib/ocr/vendor-bill-extraction";
 import { InvoicesClient } from "./invoices-client";
+import { pageMetadata } from "@/lib/metadata";
 import type { DocumentJob } from "@/lib/demo-data";
+
+export const generateMetadata = pageMetadata("accounting", "invoices");
 
 export default async function InvoicesPage() {
   const jobs = await listOcrJobs();
@@ -11,6 +14,7 @@ export default async function InvoicesPage() {
     const ext = parseOcrExtraction(j.extraction);
     return {
       job_id: j.id,
+      public_id: j.publicId,
       file_name: j.fileName,
       document_type: "invoice",
       status: j.status,

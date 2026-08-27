@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { DocumentLayout } from "@/components/doc/DocumentLayout";
 import { RelatedDocs } from "@/components/doc/RelatedDocs";
 import { HistoryTab } from "@/components/doc/HistoryTab";
@@ -38,6 +39,7 @@ export default async function Page({
   const { id, locale } = await params;
   const bill = await getVendorBill(id);
   if (!bill) notFound();
+  const t = await getTranslations("documents");
   const [supplier, po, grn, taxCodes, related, history, ancestry, descendants, ai] =
     await Promise.all([
       getSupplier(bill.supplierId),
@@ -56,7 +58,7 @@ export default async function Page({
   const matchPanel = (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <span className="text-sm font-semibold text-foreground">3-way match</span>
+        <span className="text-sm font-semibold text-foreground">{t("bill.threeWayMatch")}</span>
         <StateBadge state={bill.threeWayMatch} />
       </div>
       {bill.discrepancyReason ? (
@@ -68,11 +70,11 @@ export default async function Page({
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-foreground uppercase">
             <tr>
-              <th className="px-4 py-3">Product</th>
-              <th className="px-4 py-3 text-right">PO qty</th>
-              <th className="px-4 py-3 text-right">Received</th>
-              <th className="px-4 py-3 text-right">Billed</th>
-              <th className="px-4 py-3 text-right">Delta</th>
+              <th className="px-4 py-3">{t("bill.colProduct")}</th>
+              <th className="px-4 py-3 text-right">{t("bill.colPoQty")}</th>
+              <th className="px-4 py-3 text-right">{t("bill.colReceived")}</th>
+              <th className="px-4 py-3 text-right">{t("bill.colBilled")}</th>
+              <th className="px-4 py-3 text-right">{t("bill.colDelta")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -109,22 +111,22 @@ export default async function Page({
   return (
     <DocumentLayout
       number={bill.number}
-      title={supplier?.name ?? "Unknown supplier"}
-      subtitle={`Vendor inv ${bill.invoiceNumber} · ${bill.date} · due ${bill.dueDate}`}
+      title={supplier?.name ?? t("bill.unknownSupplier")}
+      subtitle={t("bill.subtitle", { invoice: bill.invoiceNumber, date: bill.date, dueDate: bill.dueDate })}
       states={STATES}
       currentState={bill.state}
       actions={<DocPdfActions docType="vendor_bill" docId={bill.id} locale={locale} />}
       totals={
         <div className="space-y-1">
           <div>
-            <div className="text-xs text-muted-foreground">Total</div>
+            <div className="text-xs text-muted-foreground">{t("bill.total")}</div>
             <div className="text-lg font-semibold tabular-nums">
               {formatMoney(bill.total, bill.currency)}
             </div>
           </div>
           <div className="text-xs text-muted-foreground">
-            Paid <span className="tabular-nums">{formatMoney(bill.paid, bill.currency)}</span>
-            {" · "}Balance{" "}
+            {t("bill.paid")} <span className="tabular-nums">{formatMoney(bill.paid, bill.currency)}</span>
+            {" · "}{t("bill.balance")}{" "}
             <span className="tabular-nums">{formatMoney(balance, bill.currency)}</span>
           </div>
         </div>
@@ -141,7 +143,9 @@ export default async function Page({
           totalLabel={`${bill.currency} ${bill.total.toFixed(3)}`}
           blockedReason={
             bill.threeWayMatch === "discrepancy"
-              ? `3-way match discrepancy: ${bill.discrepancyReason ?? "qty / price out of tolerance"} — requires approver override.`
+              ? t("bill.discrepancyBlocked", {
+                  reason: bill.discrepancyReason ?? t("bill.discrepancyFallback"),
+                })
               : null
           }
         />
@@ -149,22 +153,22 @@ export default async function Page({
       tabs={[
         {
           id: "lines",
-          label: "Lines",
+          label: t("tabs.lines"),
           content: (
             <DocLines lines={bill.lines} currency={bill.currency} taxCodes={taxCodes} />
           ),
         },
-        { id: "match", label: "3-way match", content: matchPanel },
+        { id: "match", label: t("tabs.match"), content: matchPanel },
         {
           id: "adoption",
-          label: "Adoption",
+          label: t("tabs.adoption"),
           content: (
             <AdoptionTrail locale={locale} ancestry={ancestry} descendants={descendants} />
           ),
         },
         {
           id: "history",
-          label: "History",
+          label: t("tabs.history"),
           content: <HistoryTab events={history} />,
         },
         attachmentsTab("vendor_bill", bill.id),
@@ -189,7 +193,7 @@ export default async function Page({
               <CreateChildLinks
                 links={[
                   {
-                    label: "Payment",
+                    label: t("bill.paymentLink"),
                     href: `/${locale}/purchasing/payments/new?from=${bill.id}`,
                   },
                 ]}

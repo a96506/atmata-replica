@@ -43,9 +43,16 @@ export function ConfirmDialogProvider({
   children: React.ReactNode;
 }) {
   const [state, setState] = React.useState<DialogState | null>(null);
+  // The element that had focus when `confirm()` was called. Radix AlertDialog
+  // only restores focus to a `<AlertDialogTrigger>`; this provider drives
+  // `open` manually, so we capture the active element ourselves and restore
+  // focus to it when the dialog closes — otherwise focus drops to <body>.
+  const triggerRef = React.useRef<HTMLElement | null>(null);
 
   const confirm = React.useCallback((opts: ConfirmOptions) => {
     return new Promise<boolean>((resolve) => {
+      triggerRef.current =
+        (document.activeElement as HTMLElement | null) ?? null;
       setState({ ...opts, resolve });
     });
   }, []);
@@ -53,6 +60,12 @@ export function ConfirmDialogProvider({
   const handleResponse = (value: boolean) => {
     state?.resolve(value);
     setState(null);
+    const trigger = triggerRef.current;
+    triggerRef.current = null;
+    if (trigger && typeof trigger.focus === "function") {
+      // Defer until after Radix unmounts the dialog content.
+      requestAnimationFrame(() => trigger.focus());
+    }
   };
 
   return (
@@ -62,7 +75,17 @@ export function ConfirmDialogProvider({
         open={!!state}
         onOpenChange={(open) => !open && handleResponse(false)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent
+          onCloseAutoFocus={(event) => {
+            // Radix will move focus to the content; we override and send it
+            // back to the original trigger ourselves.
+            event.preventDefault();
+            const trigger = triggerRef.current;
+            if (trigger && typeof trigger.focus === "function") {
+              trigger.focus();
+            }
+          }}
+        >
           <AlertDialogHeader>
             <AlertDialogTitle>{state?.title}</AlertDialogTitle>
             {state?.description ? (

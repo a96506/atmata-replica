@@ -3,6 +3,9 @@ import { getTranslations } from "next-intl/server";
 import { navigation } from "@/config/navigation";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
+import { pageMetadata } from "@/lib/metadata";
+
+export const generateMetadata = pageMetadata("nav", "settings");
 
 /**
  * Tile copy keyed by route. Labels, icons, grouping, and ordering all come from

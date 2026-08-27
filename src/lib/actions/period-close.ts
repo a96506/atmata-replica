@@ -36,6 +36,17 @@ export async function startPeriodCloseAction(
     );
     if (!parsed.ok) return parsed;
 
+    // The real period close is the fiscal-calendar state transition
+    // (open → soft_closed) — the same RPC `set_fiscal_period_status` the
+    // Fiscal calendar grid uses. "Run close" must actually close the
+    // period, not just toast success.
+    await callWriteRpcJson("set_fiscal_period_status", {
+      p_idempotency_key: parsed.data.idempotencyKey,
+      p_fiscal_period_id: parsed.data.fiscalPeriodId,
+      p_status: "soft_closed",
+    });
+
+    // Then create / refresh the close run + checklist tasks.
     const data = await callWriteRpcJson("start_period_close", {
       p_idempotency_key: parsed.data.idempotencyKey,
       p_fiscal_period_id: parsed.data.fiscalPeriodId,

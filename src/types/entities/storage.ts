@@ -41,6 +41,8 @@ export type DocumentProcessingJobStatus =
 
 export type DocumentProcessingJob = {
   id: number;
+  /** Tenant-safe UUID used in public routes (unique per company). */
+  publicId: string;
   companyId: string;
   kind: DocumentProcessingJobKind;
   sourceAttachmentId: string | null;

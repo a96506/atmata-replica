@@ -4,6 +4,7 @@ import * as React from "react";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
+import { useActionToast } from "@/hooks/use-action-toast";
 import {
   deleteReconciliationRuleAction,
   listReconciliationRules,
@@ -27,6 +28,7 @@ export function RuleBuilder() {
   const locale = useLocale();
   const writeLocale = locale === "ar" ? "ar" : "en";
   const router = useRouter();
+  const actionToast = useActionToast();
   const idempotencyKeyRef = React.useRef(crypto.randomUUID());
 
   const [rules, setRules] = React.useState<RuleRow[]>([]);
@@ -93,7 +95,7 @@ export function RuleBuilder() {
         },
       });
       if (!result.ok) {
-        toast.error(result.error.messageKey || result.error.code);
+        actionToast.error(result.error);
         return;
       }
       idempotencyKeyRef.current = crypto.randomUUID();
@@ -104,6 +106,8 @@ export function RuleBuilder() {
       toast.success("Rule saved.");
       await reload();
       router.refresh();
+    } catch {
+      actionToast.network();
     } finally {
       setPending(false);
     }
@@ -118,12 +122,14 @@ export function RuleBuilder() {
         ruleId: id,
       });
       if (!result.ok) {
-        toast.error(result.error.messageKey || result.error.code);
+        actionToast.error(result.error);
         return;
       }
       toast.success("Rule removed.");
       await reload();
       router.refresh();
+    } catch {
+      actionToast.network();
     } finally {
       setPending(false);
     }

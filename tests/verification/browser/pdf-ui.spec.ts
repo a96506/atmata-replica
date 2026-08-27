@@ -12,7 +12,11 @@ test("quote detail exposes preview or download control when reachable", async ({
   page,
 }) => {
   const account = demoOwner();
-  test.skip(!account, "DEMO_OWNER_* credentials required");
+  // Credential guard: fail loudly when the harness isn't provisioned
+  // instead of skipping (a skip hides a broken verification environment).
+  if (!account) {
+    throw new Error("DEMO_OWNER_* credentials required for pdf-ui smoke");
+  }
 
   await page.goto(`${baseURL}/en/login`);
   await page.getByLabel("Email").fill(account!.email);
@@ -22,7 +26,10 @@ test("quote detail exposes preview or download control when reachable", async ({
 
   const response = await page.goto(`${baseURL}/en/sales/quotes/qt_1`);
   if (!response || response.status() >= 400) {
-    test.skip(true, "quote detail qt_1 not reachable in this environment");
+    // Quote detail unreachable → fail loudly instead of skipping.
+    throw new Error(
+      "quote detail qt_1 not reachable in this environment (non-2xx response)",
+    );
   }
   const preview = page.getByRole("button", { name: /preview|download|pdf/i });
   const count = await preview.count();

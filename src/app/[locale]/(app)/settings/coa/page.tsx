@@ -17,11 +17,25 @@ export default async function Page() {
     if (t !== 0) return t;
     return a.code.localeCompare(b.code);
   });
+
+  // The accounts table has a single `name` column. Some seeded rows (e.g. 2400)
+  // concatenated an AR translation into the same field. That is a data fix
+  // (out of scope here) — surfaced as a note so the render stays clean.
+  const bilingual = accounts.filter((a) => /[\u0600-\u06FF]/.test(a.name));
+
   return (
     <DocumentList
       title="Chart of accounts"
       subtitle="Account tree by class. Used by every posted document to write its journal entry."
     >
+      {bilingual.length > 0 ? (
+        <div className="rounded-md border border-status-pending-border bg-status-pending-muted p-2 text-xs text-status-pending-foreground">
+          Note: {bilingual.length} account name(s) contain mixed-language text
+          (EN + AR in one field): {bilingual.map((a) => a.code).join(", ")}. This
+          is a seed-data issue to be cleaned up in a separate migration; the
+          table stores a single name column.
+        </div>
+      ) : null}
       <DataTable
         columns={[
           { key: "code", label: "Code" },
@@ -29,7 +43,9 @@ export default async function Page() {
           { key: "type", label: "Type" },
         ]}
         rows={rows.map((a) => [
-          <span key="c" className="font-mono text-xs">{a.code}</span>,
+          <span key="c" className="font-mono text-xs">
+            {a.code}
+          </span>,
           a.name,
           <span
             key="t"

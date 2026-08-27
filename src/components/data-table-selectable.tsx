@@ -14,7 +14,7 @@ export type SelectableDataTableProps = {
   rows: ReactNode[][];
   /** Parallel to `rows`; identifies which doc each row represents. */
   rowIds: string[];
-  emptyMessage?: string;
+  emptyMessage?: ReactNode;
   /** Toolbar rendered above the table when any row is selected. */
   renderBulkActions?: (selectedIds: string[], clear: () => void) => ReactNode;
 };

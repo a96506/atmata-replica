@@ -39,6 +39,7 @@ export const transitionActionSchema = z.enum([
   "submit",
   "approve",
   "reject",
+  "recall",
   "post",
   "cancel",
   "reverse",

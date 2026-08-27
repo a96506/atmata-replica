@@ -1,5 +1,6 @@
 import { getReadClient, mapOne, mapRows, maybeOne, requireData } from "@/lib/db/read";
 import { INBOX_SELECTS } from "@/lib/db/selects";
+import { DOC_PATH_BY_TYPE, docPath } from "@/lib/api/doc-paths";
 
 /** Maps DocType codes to Postgres table names (mirrors document_table_name). */
 const DOCUMENT_TABLE_BY_TYPE: Record<string, string> = {
@@ -23,26 +24,9 @@ const DOCUMENT_TABLE_BY_TYPE: Record<string, string> = {
   internal_transfer: "internal_transfers",
 };
 
-const DOC_PATH_BY_TYPE: Record<string, (id: string) => string> = {
-  pr: (id) => `/purchasing/purchase-requisitions/${id}`,
-  rfq: (id) => `/purchasing/rfqs/${id}`,
-  po: (id) => `/purchasing/purchase-orders/${id}`,
-  grn: (id) => `/purchasing/goods-receipts/${id}`,
-  vendor_bill: (id) => `/purchasing/bills/${id}`,
-  vendor_payment: (id) => `/purchasing/payments/${id}`,
-  vendor_return: (id) => `/purchasing/vendor-returns/${id}`,
-  debit_note: (id) => `/purchasing/debit-notes/${id}`,
-  quote: (id) => `/sales/quotes/${id}`,
-  so: (id) => `/sales/orders/${id}`,
-  dn: (id) => `/sales/deliveries/${id}`,
-  customer_invoice: (id) => `/sales/invoices/${id}`,
-  customer_receipt: (id) => `/sales/receipts/${id}`,
-  customer_return: (id) => `/sales/returns/${id}`,
-  credit_note: (id) => `/sales/credit-notes/${id}`,
-  journal_entry: (id) => `/accounting/journal-entries/${id}`,
-  stock_adjustment: (id) => `/inventory/adjustments/${id}`,
-  internal_transfer: (id) => `/inventory/transfers/${id}`,
-};
+// Re-export so existing `inboxDocPath` importers keep working. The canonical
+// pure helper lives in `lib/api/doc-paths` (safe for client components).
+export { docPath as inboxDocPath, DOC_PATH_BY_TYPE };
 
 export type InboxNotification = {
   id: string;
@@ -66,15 +50,6 @@ type NotificationRow = {
   readAt: string | null;
   createdAt: string;
 };
-
-export function inboxDocPath(
-  docType: string | null | undefined,
-  docId: string | null | undefined,
-): string | null {
-  if (!docType || !docId) return null;
-  const build = DOC_PATH_BY_TYPE[docType];
-  return build ? build(docId) : null;
-}
 
 async function lookupDocRowVersions(
   pairs: Array<{ docType: string; docId: string }>,
@@ -145,7 +120,7 @@ export async function listInboxNotifications(): Promise<InboxNotification[]> {
   );
   const versions = await lookupDocRowVersions(versionPairs);
 
-  return rows.map((row) => {
+  const fromNotifications = rows.map((row) => {
     const key =
       row.docType && row.docId ? `${row.docType}:${row.docId}` : null;
     return {
@@ -153,6 +128,106 @@ export async function listInboxNotifications(): Promise<InboxNotification[]> {
       rowVersion: key ? (versions.get(key) ?? null) : null,
     };
   });
+
+  // Merge pending-approval documents into the feed so the inbox reflects the
+  // same "documents awaiting approval" count the dashboard shows. We
+  // synthesize an unread inbox item per pending doc that isn't already
+  // represented by a notification (dedup by `${docType}:${docId}`).
+  const pendingItems = await listPendingApprovalItems(client);
+  // Resolve row_versions for the pending docs so the inbox's approve/reject
+  // flow can drive a real state transition.
+  const pendingVersionPairs = pendingItems.map((item) => ({
+    docType: item.docType!,
+    docId: item.docId!,
+  }));
+  const pendingVersions = await lookupDocRowVersions(pendingVersionPairs);
+  for (const item of pendingItems) {
+    const key = `${item.docType}:${item.docId}`;
+    item.rowVersion = pendingVersions.get(key) ?? null;
+  }
+
+  const seen = new Set(
+    fromNotifications
+      .filter((n) => n.docType && n.docId)
+      .map((n) => `${n.docType}:${n.docId}`),
+  );
+  const merged: InboxNotification[] = [...fromNotifications];
+  for (const item of pendingItems) {
+    const key = `${item.docType}:${item.docId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    merged.push(item);
+  }
+
+  // Unread first, then newest created_at.
+  merged.sort((a, b) => {
+    const aUnread = a.readAt ? 1 : 0;
+    const bUnread = b.readAt ? 1 : 0;
+    if (aUnread !== bUnread) return aUnread - bUnread;
+    return b.createdAt.localeCompare(a.createdAt);
+  });
+
+  return merged;
+}
+
+/**
+ * Pending-approval documents across the same tables the dashboard counts.
+ * Returns synthesized InboxNotification rows (kind="approval_requested",
+ * unread) so the inbox feed surfaces them even when no notification row
+ * exists yet. Defensive: a failed read on any table degrades to an empty
+ * list for that table.
+ */
+const PENDING_APPROVAL_SOURCES: Array<{
+  table: string;
+  docType: string;
+  label: string;
+}> = [
+  { table: "purchase_orders", docType: "po", label: "Purchase order" },
+  { table: "vendor_bills", docType: "vendor_bill", label: "Vendor bill" },
+  { table: "quotes", docType: "quote", label: "Quote" },
+  { table: "sales_orders", docType: "so", label: "Sales order" },
+  { table: "journal_entries", docType: "journal_entry", label: "Journal entry" },
+];
+
+async function listPendingApprovalItems(
+  client: Awaited<ReturnType<typeof getReadClient>>,
+): Promise<InboxNotification[]> {
+  const items: InboxNotification[] = [];
+  await Promise.all(
+    PENDING_APPROVAL_SOURCES.map(async ({ table, docType, label }) => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result: any = await client.database
+          .from(table)
+          .select("id,number,created_at")
+          .eq("state", "pending")
+          .order("created_at", { ascending: false })
+          .limit(25);
+        if (result.error || !result.data) return;
+        const rows = mapRows<{
+          id: string;
+          number: string;
+          createdAt: string;
+        }>(result.data);
+        for (const row of rows) {
+          items.push({
+            id: `pending:${docType}:${row.id}`,
+            kind: "approval_requested",
+            title: `${label} awaiting approval`,
+            body: `${row.number} is pending your review.`,
+            docType,
+            docId: row.id,
+            readAt: null,
+            createdAt: row.createdAt,
+            rowVersion: null,
+          });
+        }
+      } catch {
+        /* leave this table's contribution empty */
+      }
+    }),
+  );
+  return items;
 }
 
 export async function getInboxNotification(

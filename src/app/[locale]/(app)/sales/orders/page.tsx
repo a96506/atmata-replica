@@ -6,6 +6,9 @@ import { NewDocButton } from "@/components/doc/CreateChildLinks";
 import { listSalesOrders } from "@/lib/api/q2c";
 import { listCustomers } from "@/lib/api/master";
 import { formatMoney } from "@/lib/money";
+import { pageMetadata } from "@/lib/metadata";
+
+export const generateMetadata = pageMetadata("nav", "sales_orders");
 
 export default async function Page({
   params,

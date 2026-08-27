@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 import { getAdoptableLines } from "@/lib/api/adoption.server";
+import { getAppSession } from "@/lib/insforge/session";
 import type { DocType } from "@/types";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const { session } = await getAppSession();
+  if (!session) {
+    return NextResponse.json(
+      { error: { code: "UNAUTHENTICATED", messageKey: "errors.unauthenticated" } },
+      { status: 401, headers: { "Cache-Control": "private, no-store" } },
+    );
+  }
   const { searchParams } = new URL(request.url);
   const parentType = searchParams.get("parentType") as DocType | null;
   const parentId = searchParams.get("parentId")?.trim();

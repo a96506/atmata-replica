@@ -22,6 +22,7 @@ import {
 } from "@/lib/actions/write-rpc";
 import { camelize } from "@/lib/db/case";
 import { createInsForgeServerClient } from "@/lib/insforge/server";
+import { assertAllowedAttachmentMime } from "@/lib/actions/attachment-mime";
 import {
   parseOcrExtraction,
   type OcrExtractionLine,
@@ -52,6 +53,7 @@ export async function createOcrJob(input: {
   mime: string;
   size: number;
 }): Promise<{ jobId: number; companyId: string }> {
+  assertAllowedAttachmentMime(input.mime);
   const insforge = await createInsForgeServerClient();
 
   const { data: cidRow, error: cidErr } =
@@ -84,6 +86,7 @@ export async function linkOcrJobSource(input: {
   size: number;
   filename: string;
 }): Promise<{ job: DocumentProcessingJob; attachmentId: string }> {
+  assertAllowedAttachmentMime(input.mime);
   const insforge = await createInsForgeServerClient();
 
   const { data: attRow, error: attErr } = await insforge.database
@@ -143,6 +146,28 @@ export async function getOcrJob(
     .from("document_processing_jobs")
     .select("*")
     .eq("id", jobId)
+    .eq("kind", "ocr_vendor_bill")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!data) return null;
+  return camelize<DocumentProcessingJob>(data);
+}
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Tenant-safe read by `public_id` (UUID). RLS scopes by company, so the UUID
+ * is unguessable across tenants unlike the global integer identity `id`.
+ */
+export async function getOcrJobByPublicId(
+  publicId: string,
+): Promise<DocumentProcessingJob | null> {
+  if (!UUID_RE.test(publicId)) return null;
+  const insforge = await createInsForgeServerClient();
+  const { data, error } = await insforge.database
+    .from("document_processing_jobs")
+    .select("*")
+    .eq("public_id", publicId)
     .eq("kind", "ocr_vendor_bill")
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -299,13 +324,13 @@ const ocrDecisionSchema = actionSchema({
 
 function revalidateOcrPaths(
   locale: "en" | "ar",
-  jobId: number,
+  publicId: string,
   billId?: string,
 ) {
   revalidatePath(`/${locale}/accounting/invoices`);
   revalidatePath(`/accounting/invoices`);
-  revalidatePath(`/${locale}/accounting/invoices/${jobId}`);
-  revalidatePath(`/accounting/invoices/${jobId}`);
+  revalidatePath(`/${locale}/accounting/invoices/${publicId}`);
+  revalidatePath(`/accounting/invoices/${publicId}`);
   if (billId) {
     revalidateDocumentPaths(locale, "vendor_bill", billId);
   }
@@ -414,9 +439,26 @@ export async function approveOcrJobAction(
         .update({ doc_id: data.id })
         .eq("id", job.sourceAttachmentId)
         .is("doc_id", null);
+      // Best-effort: record an attachment_added audit event now that the
+      // uploaded file is linked to a concrete vendor_bill. Defensive —
+      // survives when the change-detail migration has not landed yet.
+      try {
+        const { recordAttachmentAddedEvent } = await import(
+          "@/lib/actions/audit"
+        );
+        await recordAttachmentAddedEvent({
+          docType: "vendor_bill",
+          docId: data.id,
+          attachmentId: job.sourceAttachmentId,
+          key: job.sourceKey ?? "",
+          name: job.fileName ?? null,
+        });
+      } catch {
+        /* audit is best-effort */
+      }
     }
 
-    revalidateOcrPaths(parsed.data.locale, job.id, data.id);
+    revalidateOcrPaths(parsed.data.locale, job.publicId, data.id);
     return { ok: true, data: { ...data, jobId: job.id } };
   } catch (error) {
     return normalizeActionError(error, { requestId });
@@ -458,7 +500,7 @@ export async function rejectOcrJobAction(
       throw new KnownActionError("ILLEGAL_TRANSITION");
     }
 
-    revalidateOcrPaths(parsed.data.locale, job.id);
+    revalidateOcrPaths(parsed.data.locale, job.publicId);
     return {
       ok: true,
       data: { jobId: job.id, status: (updated as { status: string }).status },

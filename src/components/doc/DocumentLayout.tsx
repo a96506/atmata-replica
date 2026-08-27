@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { StatusTimeline, type StatusTimelineStep } from "./StatusTimeline";
 import { StaleDataPill } from "../state/StaleDataPill";
+import { useBreadcrumbDocLabel } from "@/components/app/BreadcrumbOverride";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -49,6 +50,9 @@ export function DocumentLayout({
   loadedAt,
 }: DocumentLayoutProps) {
   const [activeTabId, setActiveTabId] = useState(tabs[0]?.id);
+  // Replace the raw record id in the trailing breadcrumb crumb with the
+  // document number (the URL carries the UUID).
+  useBreadcrumbDocLabel(number);
 
   return (
     <div className="grid min-w-0 gap-4 lg:gap-6 xl:grid-cols-[minmax(0,1fr)_20rem]">

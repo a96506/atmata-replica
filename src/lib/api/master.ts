@@ -146,6 +146,39 @@ export async function listApprovalRules(): Promise<ApprovalRuleRow[]> {
   ]);
 }
 
+export type PriceListRow = {
+  id: string;
+  name: string;
+  currency: string;
+  active: boolean;
+  startsOn: string | null;
+  endsOn: string | null;
+};
+
+export async function listPriceLists(): Promise<PriceListRow[]> {
+  return listTable("price_lists", MASTER_SELECTS.price_lists, [
+    { column: "name" },
+    { column: "id" },
+  ]);
+}
+
+export type DocumentSequenceRow = {
+  id: string;
+  docType: string;
+  prefix: string;
+  year: number;
+  padding: number;
+  nextNumber: number;
+};
+
+export async function listDocumentSequences(): Promise<DocumentSequenceRow[]> {
+  return listTable("document_sequences", MASTER_SELECTS.document_sequences, [
+    { column: "doc_type" },
+    { column: "year", ascending: false },
+    { column: "id" },
+  ]);
+}
+
 export function resolveApprovalChain(
   rules: ApprovalRuleRow[],
   docType: string,

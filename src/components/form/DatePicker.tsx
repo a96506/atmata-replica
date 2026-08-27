@@ -13,6 +13,7 @@ import {
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 import { isPostingAllowed, periodStatusFor } from "@/lib/period";
+import { useFiscalPeriods } from "@/components/form/FiscalPeriodsContext";
 import type { PeriodStatus } from "@/types";
 
 export type DatePickerProps = {
@@ -62,11 +63,12 @@ export function DatePicker({
 }: DatePickerProps) {
   const id = useId();
   const [open, setOpen] = useState(false);
+  const periods = useFiscalPeriods();
   const parsed = value ? parseISO(value) : null;
   const selectedDate = parsed && isValid(parsed) ? parsed : undefined;
-  const status = periodStatusFor(value);
+  const status = periodStatusFor(value, periods);
   const hint = STATUS_HINT[status];
-  const blocked = !!value && !isPostingAllowed(value, hasAdjustRole);
+  const blocked = !!value && !isPostingAllowed(value, hasAdjustRole ?? false, periods);
 
   return (
     <Field

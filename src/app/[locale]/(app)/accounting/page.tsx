@@ -9,6 +9,9 @@ import {
 import { Link } from "@/i18n/navigation";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
+import { pageMetadata } from "@/lib/metadata";
+
+export const generateMetadata = pageMetadata("nav", "accounting");
 
 export default async function AccountingPage() {
   const t = await getTranslations("accounting");

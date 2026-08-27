@@ -4,6 +4,8 @@ import * as React from "react";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
+import { useActionToast } from "@/hooks/use-action-toast";
+import { useConfirm } from "@/components/confirm-dialog";
 import {
   completePeriodCloseTaskAction,
   rescanPeriodCloseAction,
@@ -20,6 +22,8 @@ export function CloseDemoToolbar({
   const locale = useLocale();
   const writeLocale = locale === "ar" ? "ar" : "en";
   const router = useRouter();
+  const actionToast = useActionToast();
+  const confirm = useConfirm();
   const [pending, setPending] = React.useState(false);
 
   const onStart = async () => {
@@ -27,6 +31,14 @@ export function CloseDemoToolbar({
       toast.error("No fiscal period id for this month — cannot start close.");
       return;
     }
+    const ok = await confirm({
+      title: `Start close for ${period}?`,
+      description:
+        "Soft-closes the fiscal period so posting is locked to `period_adjust` users, then creates the 10-step close checklist. Re-open it from Settings → Fiscal calendar if you need to post more.",
+      confirmLabel: "Start close",
+      tone: "default",
+    });
+    if (!ok) return;
     setPending(true);
     try {
       const result = await startPeriodCloseAction({
@@ -35,11 +47,13 @@ export function CloseDemoToolbar({
         fiscalPeriodId,
       });
       if (!result.ok) {
-        toast.error(result.error.messageKey || result.error.code);
+        actionToast.error(result.error);
         return;
       }
       toast.success(`Close started for ${period}.`);
       router.refresh();
+    } catch {
+      actionToast.network();
     } finally {
       setPending(false);
     }
@@ -89,6 +103,8 @@ export function CloseStartDemo({
   const locale = useLocale();
   const writeLocale = locale === "ar" ? "ar" : "en";
   const router = useRouter();
+  const actionToast = useActionToast();
+  const confirm = useConfirm();
   const [pending, setPending] = React.useState(false);
 
   return (
@@ -102,6 +118,13 @@ export function CloseStartDemo({
             toast.error("No fiscal period id for this month.");
             return;
           }
+          const ok = await confirm({
+            title: `Start close for ${period}?`,
+            description:
+              "Soft-closes the fiscal period so posting is locked to `period_adjust` users, then creates the 10-step close checklist.",
+            confirmLabel: "Start close",
+          });
+          if (!ok) return;
           setPending(true);
           try {
             const result = await startPeriodCloseAction({
@@ -110,11 +133,13 @@ export function CloseStartDemo({
               fiscalPeriodId,
             });
             if (!result.ok) {
-              toast.error(result.error.messageKey || result.error.code);
+              actionToast.error(result.error);
               return;
             }
             toast.success(`Close started for ${period}.`);
             router.refresh();
+          } catch {
+            actionToast.network();
           } finally {
             setPending(false);
           }
@@ -136,6 +161,7 @@ export function CloseRescanDemo({
   const locale = useLocale();
   const writeLocale = locale === "ar" ? "ar" : "en";
   const router = useRouter();
+  const actionToast = useActionToast();
   const [pending, setPending] = React.useState(false);
 
   return (
@@ -160,11 +186,13 @@ export function CloseRescanDemo({
               fiscalPeriodId,
             });
             if (!result.ok) {
-              toast.error(result.error.messageKey || result.error.code);
+              actionToast.error(result.error);
               return;
             }
             toast.success(`Re-scanned ${period}.`);
             router.refresh();
+          } catch {
+            actionToast.network();
           } finally {
             setPending(false);
           }
@@ -188,6 +216,7 @@ export function CloseStepDemo({
   const locale = useLocale();
   const writeLocale = locale === "ar" ? "ar" : "en";
   const router = useRouter();
+  const actionToast = useActionToast();
   const [pending, setPending] = React.useState(false);
 
   return (
@@ -211,11 +240,13 @@ export function CloseStepDemo({
               status: "completed",
             });
             if (!result.ok) {
-              toast.error(result.error.messageKey || result.error.code);
+              actionToast.error(result.error);
               return;
             }
             toast.success(`Step ${stepName} marked complete · ${period}`);
             router.refresh();
+          } catch {
+            actionToast.network();
           } finally {
             setPending(false);
           }

@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
+import { useActionToast } from "@/hooks/use-action-toast";
 import {
   clearAdoptionContext,
   readAdoptionContext,
@@ -35,6 +36,7 @@ export function AdoptionNewShell({
 }: AdoptionNewShellProps) {
   const router = useRouter();
   const writeLocale = locale === "ar" ? "ar" : "en";
+  const actionToast = useActionToast();
   const idempotencyKeyRef = React.useRef(crypto.randomUUID());
   const [ctx, setCtx] = React.useState<AdoptionContext | null>(null);
   const [hydrated, setHydrated] = React.useState(false);
@@ -101,7 +103,7 @@ export function AdoptionNewShell({
       });
 
       if (!result.ok) {
-        toast.error(result.error.messageKey ?? result.error.code);
+        actionToast.error(result.error);
         return;
       }
 
@@ -114,6 +116,8 @@ export function AdoptionNewShell({
           : backHref,
       );
       router.refresh();
+    } catch {
+      actionToast.network();
     } finally {
       setPending(false);
     }

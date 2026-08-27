@@ -4,6 +4,8 @@ import * as React from "react";
 import { toast } from "@/components/toast";
 import { insforge } from "@/lib/insforge/client";
 import { createOcrJob, linkOcrJobSource } from "@/lib/actions/invoices";
+import { requestVendorBillOcr } from "@/lib/actions/ai";
+import { useActionToast } from "@/hooks/use-action-toast";
 
 function safeFileName(name: string): string {
   return name.replace(/[/\\]/g, "_").replace(/[^\p{L}\p{N}._-]/gu, "_");
@@ -21,6 +23,7 @@ function safeFileName(name: string): string {
  */
 export function DemoUpload() {
   const [uploading, setUploading] = React.useState(false);
+  const actionToast = useActionToast();
 
   const onFile = async (file: File | undefined) => {
     if (!file) return;
@@ -48,6 +51,11 @@ export function DemoUpload() {
         size: file.size,
         filename: file.name,
       });
+      // Trigger the OCR edge function now that the source is linked. The job
+      // stays "queued" until the function completes; OCR runs async, so the
+      // upload success toast is shown regardless of this call's outcome.
+      const ocr = await requestVendorBillOcr(jobId);
+      if (!ocr.ok) actionToast.error(ocr.error);
       toast.success(`Uploaded ${file.name} — OCR queued.`);
       // Reload so the new job appears in the list.
       window.location.reload();

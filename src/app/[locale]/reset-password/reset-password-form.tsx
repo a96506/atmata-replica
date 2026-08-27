@@ -9,11 +9,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function ResetPasswordForm({ initialEmail }: { initialEmail?: string }) {
+const RESET_EMAIL_STORAGE_KEY = "atmata.resetPasswordEmail";
+
+export function ResetPasswordForm() {
   const t = useTranslations("auth");
+  const tErrors = useTranslations("errors");
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState("");
+
+  // Prefill from per-tab sessionStorage (written by the forgot-password
+  // form) — never from the URL, so the email isn't leaked via history/logs.
+  const [initialEmail, setInitialEmail] = React.useState("");
+  React.useEffect(() => {
+    try {
+      const stored = window.sessionStorage.getItem(RESET_EMAIL_STORAGE_KEY);
+      if (stored) setInitialEmail(stored);
+    } catch {
+      /* sessionStorage unavailable — leave blank */
+    }
+  }, []);
 
   return (
     <form
@@ -35,8 +50,17 @@ export function ResetPasswordForm({ initialEmail }: { initialEmail?: string }) {
             newPassword,
           });
           if (!result.ok) {
-            setError(result.message ?? t("genericError"));
+            setError(
+              result.messageKey
+                ? tErrors(result.messageKey.replace(/^errors\./, ""))
+                : (result.message ?? t("genericError")),
+            );
             return;
+          }
+          try {
+            window.sessionStorage.removeItem(RESET_EMAIL_STORAGE_KEY);
+          } catch {
+            /* ignore */
           }
           router.replace("/login?reset=success");
         });

@@ -9,8 +9,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
+// Per-tab stash for the email so the reset form can prefill it WITHOUT
+// leaking the address through the URL query string (history, server logs,
+// Referer). sessionStorage is scoped to this tab and never sent in requests.
+const RESET_EMAIL_STORAGE_KEY = "atmata.resetPasswordEmail";
+
 export function ForgotPasswordForm() {
   const t = useTranslations("auth");
+  const tErrors = useTranslations("errors");
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState("");
@@ -26,10 +32,19 @@ export function ForgotPasswordForm() {
         startTransition(async () => {
           const result = await sendPasswordResetAction({ email });
           if (!result.ok) {
-            setError(result.message ?? t("genericError"));
+            setError(
+              result.messageKey
+                ? tErrors(result.messageKey.replace(/^errors\./, ""))
+                : (result.message ?? t("genericError")),
+            );
             return;
           }
-          router.push(`/reset-password?email=${encodeURIComponent(email)}`);
+          try {
+            window.sessionStorage.setItem(RESET_EMAIL_STORAGE_KEY, email);
+          } catch {
+            /* sessionStorage unavailable — reset form just won't prefill */
+          }
+          router.push(`/reset-password`);
         });
       }}
     >

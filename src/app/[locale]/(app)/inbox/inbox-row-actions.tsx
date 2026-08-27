@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/toast";
+import { useActionToast } from "@/hooks/use-action-toast";
 import { transitionDocumentAction } from "@/lib/actions/documents";
 import { markInboxNotificationReadAction } from "@/lib/actions/period-close";
 import type { TransitionAction } from "@/lib/actions/validation/common";
@@ -47,6 +48,7 @@ export function InboxRowActions({
   const locale = useLocale();
   const writeLocale = locale === "ar" ? "ar" : "en";
   const router = useRouter();
+  const actionToast = useActionToast();
   const [pending, setPending] = React.useState(false);
 
   const target = sourceUrl ?? FALLBACK_ROUTES[source] ?? null;
@@ -76,7 +78,7 @@ export function InboxRowActions({
         idempotencyKey: crypto.randomUUID(),
       });
       if (!result.ok) {
-        toast.error(result.error.messageKey || result.error.code);
+        actionToast.error(result.error);
         return;
       }
       if (notificationId) {
@@ -88,6 +90,8 @@ export function InboxRowActions({
       }
       toast.success(action === "approve" ? t("approve") : t("reject"));
       router.refresh();
+    } catch {
+      actionToast.network();
     } finally {
       setPending(false);
     }
@@ -106,11 +110,13 @@ export function InboxRowActions({
         notificationId,
       });
       if (!result.ok) {
-        toast.error(result.error.messageKey || result.error.code);
+        actionToast.error(result.error);
         return;
       }
       toast.success("Marked read.");
       router.refresh();
+    } catch {
+      actionToast.network();
     } finally {
       setPending(false);
     }

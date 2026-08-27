@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "Atmata",
-    "description": "AI business platform for Kuwaiti SMBs (UI preview)"
+    "description": "AI business platform for Kuwaiti small and medium businesses."
   },
   "chrome": {
     "brand": "Atmata",
@@ -10,7 +10,8 @@
     "tenant": "Tenant",
     "role": "admin",
     "signOut": "Sign out",
-    "locale": "Language"
+    "locale": "Language",
+    "skipToContent": "Skip to content"
   },
   "nav": {
     "inbox": "AI Inbox",
@@ -19,7 +20,58 @@
     "sales": "Sales",
     "purchasing": "Purchasing",
     "inventory": "Inventory",
-    "settings": "Settings"
+    "settings": "Settings",
+    "language": "Language",
+    "overview": "Overview",
+    "quotes": "Quotes",
+    "sales_orders": "Sales orders",
+    "deliveries": "Deliveries",
+    "customer_invoices": "Customer invoices",
+    "customer_receipts": "Customer receipts",
+    "customer_returns": "Customer returns",
+    "credit_notes": "Credit notes",
+    "order_to_cash": "Order to cash",
+    "reversals": "Reversals",
+    "purchase_requisitions": "Purchase requisitions",
+    "rfqs": "RFQs",
+    "purchase_orders": "Purchase orders",
+    "goods_receipts": "Goods receipts",
+    "vendor_bills": "Vendor bills",
+    "vendor_payments": "Vendor payments",
+    "vendor_returns": "Vendor returns",
+    "debit_notes": "Debit notes",
+    "procure_to_pay": "Procure to pay",
+    "stock_moves": "Stock moves",
+    "transfers": "Transfers",
+    "adjustments": "Adjustments",
+    "ap_invoices_ocr": "AP invoices (OCR)",
+    "journal_entries": "Journal entries",
+    "reconciliation": "Reconciliation",
+    "financials": "Financials",
+    "month_end_close": "Month-end close",
+    "transactions": "Transactions",
+    "reporting": "Reporting",
+    "company": "Company",
+    "branches": "Branches",
+    "warehouses": "Warehouses",
+    "fiscal_calendar": "Fiscal calendar",
+    "coa": "Chart of accounts",
+    "tax_codes": "Tax codes",
+    "currencies": "Currencies",
+    "fx_rates": "FX rates",
+    "payment_terms": "Payment terms",
+    "bank_accounts": "Bank accounts",
+    "customers": "Customers",
+    "suppliers": "Suppliers",
+    "products": "Products",
+    "price_lists": "Price lists",
+    "sequences": "Sequences",
+    "users": "Users",
+    "approval_rules": "Approval rules",
+    "organization": "Organization",
+    "finance": "Finance",
+    "master_data": "Master data",
+    "access": "Access"
   },
   "auth": {
     "signInTitle": "Sign in",
@@ -55,7 +107,7 @@
   },
   "dashboard": {
     "title": "Executive Dashboard",
-    "subtitle": "Real-time view across cash, revenue, AR/AP and AI activity.",
+    "subtitle": "Snapshot across cash, revenue, AR/AP and AI activity. Refresh for the latest figures.",
     "kpiCash": "Cash position",
     "kpiRevenue": "Revenue MTD",
     "kpiPending": "Pending approvals",
@@ -68,7 +120,7 @@
     "title": "AI Inbox",
     "subtitle": "Everything that needs your attention, in one place.",
     "empty": "All caught up.",
-    "emptyHint": "Nothing in the inbox right now — sample data can be toggled in code.",
+    "emptyHint": "You're all caught up — new approvals and alerts will show here.",
     "approve": "Approve",
     "reject": "Reject",
     "openWorkspace": "Open workspace",
@@ -86,6 +138,34 @@
     "financialsDesc": "P&L, BS, CF, Trial Balance",
     "close": "Month-end close",
     "closeDesc": "10-step checklist",
+    "closePage": {
+      "title": "Month-End Close",
+      "subtitle": "10-step AI-assisted closing checklist.",
+      "noFiscalPeriod": "(No fiscal period row for {period} — start/rescan disabled.)",
+      "noRunTitle": "No close run for this period",
+      "noRunBodyWithPeriod": "Click Run close to create the period close run and tasks.",
+      "noRunBodyNoPeriod": "Create a fiscal period for {period} first.",
+      "period": "Period",
+      "status": "Status",
+      "progress": "Progress",
+      "noTasksTitle": "No close tasks",
+      "noTasksBody": "Re-scan to ensure canonical period_close_tasks exist for this run.",
+      "found": "found",
+      "resolved": "resolved",
+      "openList": "Open list →",
+      "steps": {
+        "reconcile_bank": "Reconcile Bank Transactions",
+        "review_stale_drafts": "Review Stale Draft Entries",
+        "unbilled_deliveries": "Accrue Unbilled Deliveries",
+        "missing_vendor_bills": "Check Missing Vendor Bills",
+        "uninvoiced_revenue": "Invoice Unbilled Revenue",
+        "depreciation_entries": "Post Depreciation Entries",
+        "tax_validation": "Validate Tax Entries",
+        "intercompany_balances": "Review Inter-Company Balances",
+        "review_adjustments": "Review Manual Adjustments",
+        "final_review": "Final P&L / Balance Sheet Review"
+      }
+    },
     "manual": {
       "newInvoice": "New invoice",
       "dialogTitle": "Create invoice manually",
@@ -119,7 +199,7 @@
   },
   "sales": {
     "title": "Sales",
-    "subtitle": "Quotations, orders, pipeline, and credit — UI preview (PRD Sales View).",
+    "subtitle": "Quotations, orders, pipeline, and customer credit.",
     "kpiQuotes": "Quotes pending customer",
     "kpiOverdue": "Customers overdue",
     "kpiCreditHolds": "Credit holds",
@@ -185,7 +265,7 @@
   },
   "purchasing": {
     "title": "Purchasing",
-    "subtitle": "PO suggestions, 3-way bill match, vendors — UI preview (PRD Procurement View).",
+    "subtitle": "Purchase suggestions, 3-way bill matching, and vendors.",
     "kpiPoSuggestions": "Open PO suggestions",
     "kpiBillQueue": "Bills in match queue",
     "kpiPriceAlerts": "Price alerts",
@@ -283,12 +363,12 @@
   },
   "inventory": {
     "title": "Inventory",
-    "subtitle": "Stock, reorder alerts, demand forecast — UI preview (PRD inventory).",
+    "subtitle": "Stock levels, reorder alerts, and demand forecast.",
     "secReorder": "Reorder alerts",
     "reorderShort": "{n} units below safety stock",
     "secStock": "Stock levels",
     "secForecast": "Demand forecast",
-    "forecastHint": "30 / 90 day units (illustrative; exceptional SOs excluded from run-rate in product).",
+    "forecastHint": "Projected units needed over the next 30 and 90 days.",
     "secInbound": "Inbound shipments",
     "secOutbound": "Outbound deliveries",
     "colSku": "SKU",
@@ -412,6 +492,7 @@
       "post": "Post",
       "cancel": "Cancel",
       "reverse": "Reverse",
+      "recall": "Recall",
       "close": "Close",
       "edit": "Edit",
       "save": "Save",
@@ -523,6 +604,10 @@
     }
   },
   "documents": {
+    "approvalPreview": {
+      "noRule": "No approval rule matches — submit will request manual review.",
+      "routeTo": "On submit, route to:"
+    },
     "actions": {
       "groupLabel": "PDF actions",
       "preview": "Preview",
@@ -535,6 +620,74 @@
     "errors": {
       "generationFailed": "PDF generation failed.",
       "invalidRequest": "The PDF request is invalid."
+    },
+    "tabs": {
+      "lines": "Lines",
+      "match": "3-way match",
+      "adoption": "Adoption",
+      "history": "History",
+      "attachments": "Attachments"
+    },
+    "bill": {
+      "unknownSupplier": "Unknown supplier",
+      "subtitle": "Vendor inv {invoice} · {date} · due {dueDate}",
+      "threeWayMatch": "3-way match",
+      "colProduct": "Product",
+      "colPoQty": "PO qty",
+      "colReceived": "Received",
+      "colBilled": "Billed",
+      "colDelta": "Delta",
+      "total": "Total",
+      "paid": "Paid",
+      "balance": "Balance",
+      "discrepancyBlocked": "3-way match discrepancy: {reason} — requires approver override.",
+      "discrepancyFallback": "qty / price out of tolerance",
+      "paymentLink": "Payment"
+    },
+    "invoice": {
+      "backToInvoices": "← Invoices",
+      "overall": "Overall",
+      "supplier": "Supplier",
+      "extractedFields": "Extracted fields",
+      "fieldConfidence": "Field confidence",
+      "noConfidence": "No confidence scores.",
+      "lineItems": "Line items",
+      "matching": "Matching",
+      "extractedVendor": "Extracted vendor",
+      "matched": "matched",
+      "linkedBillId": "Linked bill id",
+      "fields": {
+        "vendor": "Vendor",
+        "vat": "VAT",
+        "invoiceNumber": "Invoice #",
+        "date": "Date",
+        "dueDate": "Due date",
+        "currency": "Currency",
+        "subtotal": "Subtotal",
+        "tax": "Tax",
+        "total": "Total",
+        "poRef": "PO ref",
+        "paymentTerms": "Payment terms"
+      },
+      "cols": {
+        "description": "Description",
+        "code": "Code",
+        "qty": "Qty",
+        "unitPrice": "Unit price",
+        "amount": "Amount"
+      }
+    },
+    "history": {
+      "empty": "No audit events recorded yet.",
+      "created": "created →",
+      "by": "by",
+      "event": "Event",
+      "fieldChange": "{field}: {old} → {new}",
+      "valueChange": "{old} → {new}",
+      "attachmentAdded": "Attachment added: {name}",
+      "attachmentRemoved": "Attachment removed: {name}",
+      "attachmentAddedBadge": "Attachment added",
+      "attachmentRemovedBadge": "Attachment removed"
     }
   },
   "email": {
@@ -555,6 +708,7 @@
     "duplicate": "That record already exists.",
     "invariant": "The change violates a business rule.",
     "rateLimited": "Too many attempts. Try again later.",
+    "resetRateLimited": "Too many reset-code requests from this network. Please wait a few minutes before trying again.",
     "unavailable": "The service is temporarily unavailable.",
     "emailDeliveryFailed": "Email delivery failed.",
     "storageFailed": "File storage failed.",

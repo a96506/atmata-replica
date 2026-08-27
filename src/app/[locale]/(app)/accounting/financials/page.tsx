@@ -2,10 +2,14 @@ import { Link } from "@/i18n/navigation";
 import { DocPdfActions } from "@/components/doc/DocPdfActions";
 import {
   getFinancialStatement,
-  pickLatestPeriodId,
+  pickCurrentPeriodId,
 } from "@/lib/api/reports";
 import { listFiscalPeriods } from "@/lib/api/master";
+import { pageMetadata } from "@/lib/metadata";
 import type { FinancialPdfType } from "@/types/functions";
+import { FinancialPeriodSelect } from "./FinancialPeriodSelect";
+
+export const generateMetadata = pageMetadata("nav", "financials");
 
 export default async function FinancialsPage({
   params,
@@ -19,7 +23,7 @@ export default async function FinancialsPage({
   const type = query.type ?? "pl";
   const lk = locale === "ar" ? "ar" : "en";
   const periods = await listFiscalPeriods();
-  const periodId = query.period ?? pickLatestPeriodId(periods);
+  const periodId = query.period ?? pickCurrentPeriodId(periods);
   const financialType: FinancialPdfType =
     type === "balance-sheet"
       ? "balance_sheet"
@@ -67,6 +71,12 @@ export default async function FinancialsPage({
             locale={locale}
           />
         ) : null}
+        <FinancialPeriodSelect
+          locale={locale}
+          type={type}
+          periods={periods}
+          currentPeriodId={periodId}
+        />
         <nav className="flex flex-wrap gap-2" aria-label="Statement type">
           {types.map((t) => (
             <Link

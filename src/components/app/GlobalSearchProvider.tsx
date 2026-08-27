@@ -50,7 +50,9 @@ export function GlobalSearchTrigger() {
       >
         <Search />
         <span>Search</span>
-        <Kbd className="ms-auto">⌘K</Kbd>
+        <Kbd className="ms-auto" dir="ltr">
+          <bdi>⌘K</bdi>
+        </Kbd>
       </Button>
       {/* Narrow screens: icon only. */}
       <Button

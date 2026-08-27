@@ -113,6 +113,56 @@ function bounded(value: unknown): unknown {
   }
   return typeof value === 'string' ? value.slice(0, 500) : value;
 }
+
+const CURRENCY_FRACTION_DIGITS: Record<string, number> = {
+  KWD: 3,
+  SAR: 2,
+  AED: 2,
+  USD: 2,
+};
+
+/** Format an amount with its currency code BEFORE it reaches the model, e.g. "KWD 100.000". */
+function formatAmount(amount: number, currency: string): string {
+  const fraction = CURRENCY_FRACTION_DIGITS[currency] ?? 2;
+  const safe = Number.isFinite(amount) ? amount : 0;
+  return `${currency} ${safe.toFixed(fraction)}`;
+}
+
+type ReportPayload = {
+  lineItems?: Array<{ label?: string; amount?: number }>;
+  totals?: Record<string, number>;
+};
+
+/** Pre-format every amount in a report payload so the model never invents a currency. */
+function formatReport(
+  payload: unknown,
+  currency: string,
+): {
+  lineItems: Array<{ label: string; amount: string }>;
+  totals: Record<string, string>;
+} {
+  const report = (payload && typeof payload === 'object' ? payload : {}) as ReportPayload;
+  const lineItems = (report.lineItems ?? []).map((row) => ({
+    label: String(row.label ?? ''),
+    amount: formatAmount(Number(row.amount ?? 0), currency),
+  }));
+  const totals: Record<string, string> = {};
+  for (const [key, value] of Object.entries(report.totals ?? {})) {
+    totals[key] = formatAmount(Number(value ?? 0), currency);
+  }
+  return { lineItems, totals };
+}
+
+/** Resolve the company's base currency code, defaulting to KWD if unavailable. */
+async function resolveBaseCurrency(client: Client, companyId: string): Promise<string> {
+  const { data } = await client.database
+    .from('companies')
+    .select('base_currency')
+    .eq('id', companyId)
+    .single();
+  const code = (data as { base_currency?: string } | null)?.base_currency;
+  return code && CURRENCY_FRACTION_DIGITS[code] !== undefined ? code : 'KWD';
+}
 function validateSuggestion(value: unknown): SuggestionDraft | null {
   if (!value || typeof value !== 'object') return null;
   const row = value as Record<string, any>;
@@ -336,6 +386,7 @@ export default async function (req: Request): Promise<Response> {
     if (operation === 'cfo_narrative') {
       const periodId = clean(body.periodId, 160);
       if (!periodId) return fail(400, 'VALIDATION', requestId);
+      const currency = await resolveBaseCurrency(client, companyId);
       const [pnl, balance, cash, aging] = await Promise.all([
         client.database.rpc('report_pnl', { p_period_id: periodId }),
         client.database.rpc('report_balance_sheet', { p_period_id: periodId }),
@@ -343,6 +394,22 @@ export default async function (req: Request): Promise<Response> {
         summarizeAging(client),
       ]);
       if (pnl.error || balance.error || cash.error) throw new Error('REPORT_FAILED');
+      // Pre-format every amount with the real currency code so the model cannot
+      // hallucinate a currency or vary it between runs (F-035). The balance sheet
+      // totals come straight from the live report_balance_sheet RPC, so the
+      // corrected positive-equity totals flow through unchanged (F-024).
+      const formattedAging = {
+        ar: {
+          count: aging.ar.count,
+          outstanding: formatAmount(aging.ar.outstanding, currency),
+          overdue: formatAmount(aging.ar.overdue, currency),
+        },
+        ap: {
+          count: aging.ap.count,
+          outstanding: formatAmount(aging.ap.outstanding, currency),
+          overdue: formatAmount(aging.ap.overdue, currency),
+        },
+      };
       const openai = model();
       const completion = await openai.chat.completions.create({
         model: modelName(),
@@ -350,17 +417,18 @@ export default async function (req: Request): Promise<Response> {
           {
             role: 'system',
             content: requestedLocale === 'ar'
-              ? 'اكتب ملخصاً مالياً تنفيذياً موجزاً بالعربية. استخدم الأرقام المجمعة فقط، اذكر المخاطر دون اختلاق، ولا تقترح تنفيذ قيود.'
-              : 'Write a concise executive CFO narrative from aggregates only. Quantify trends and risks, do not invent facts, and do not propose executing entries.',
+              ? `أنت كاتب الملخص المالي التنفيذي. العملة الأساسية للشركة هي ${currency}، وكل المبالغ في البيانات مُنسَّقة مسبقاً بالصيغة "${currency} X.XXX". استخدم المبالغ المُنسَّقة كما هي حرفياً ولا تختلق عملة أخرى ولا تقترح تنفيذ قيود. لا تذكر أي عملة سوى ${currency}.`
+              : `You are the executive CFO narrative writer. The company's base currency is ${currency}; every amount in the data is pre-formatted as "${currency} X.XXX". Use those pre-formatted amounts verbatim, do not invent or swap currencies, and do not propose executing entries. Never reference any currency other than ${currency}.`,
           },
           {
             role: 'user',
             content: JSON.stringify({
               periodId,
-              pnl: bounded(pnl.data),
-              balanceSheet: bounded(balance.data),
-              cashFlow: bounded(cash.data),
-              aging,
+              currency,
+              pnl: formatReport(pnl.data, currency),
+              balanceSheet: formatReport(balance.data, currency),
+              cashFlow: formatReport(cash.data, currency),
+              aging: formattedAging,
             }),
           },
         ],

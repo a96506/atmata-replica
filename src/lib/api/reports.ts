@@ -262,13 +262,30 @@ export function pickLatestPeriodId(
   return periods.find((p) => p.status === "open")?.id ?? periods[0]?.id;
 }
 
+/**
+ * The fiscal period that contains today's date. Falls back to `pickLatestPeriodId`
+ * when today isn't covered by any period (e.g. calendar not yet seeded). Used as the
+ * default for financial statements so they open on the current month, not a future
+ * one.
+ */
+export function pickCurrentPeriodId(
+  periods: Array<{ id: string; start: string; end: string; status: string }>,
+): string | undefined {
+  const now = Date.now();
+  const current = periods.find(
+    (p) =>
+      new Date(p.start).getTime() <= now && new Date(p.end).getTime() >= now,
+  );
+  return current?.id ?? pickLatestPeriodId(periods);
+}
+
 export async function getDashboardOverview(): Promise<{
   cfo: DashboardCfoView;
   stats: DashboardStatsView;
   periodId: string | undefined;
 }> {
   const periods = await listFiscalPeriods();
-  const periodId = pickLatestPeriodId(periods);
+  const periodId = pickCurrentPeriodId(periods);
   const prevPeriod = periods.find((p) => p.id !== periodId);
 
   const emptyCfo: DashboardCfoView = {

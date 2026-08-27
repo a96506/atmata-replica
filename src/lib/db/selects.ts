@@ -13,12 +13,14 @@ export const MASTER_SELECTS = {
   locations: "id,warehouse_id,code,name",
   tax_codes: "id,jurisdiction,code,name_en,name_ar,rate,is_input,is_output",
   payment_terms: "id,code,name_en,name_ar,net_days",
-  bank_accounts: "id,company_id,name,iban,currency",
+  bank_accounts: "id,company_id,name,iban,currency,account_id",
   fiscal_periods: "id,company_id,year,month,start,end,status",
   fx_rates:
     "id,base_currency,quote_currency,rate,rate_date,source",
   approval_rules:
     "id,doc_type,min_amount,max_amount,approver_roles,sequence,active",
+  price_lists: "id,name,currency,active,starts_on,ends_on",
+  document_sequences: "id,doc_type,prefix,year,padding,next_number",
 } as const;
 
 export const P2P_SELECTS = {

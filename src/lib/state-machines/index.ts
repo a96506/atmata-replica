@@ -39,6 +39,12 @@ const DEFAULT: Transitions = {
       toState: "draft",
       roles: ["approver", "admin"],
     },
+    {
+      id: "recall",
+      label: "common.actions.recall",
+      toState: "draft",
+      roles: [],
+    },
   ],
   confirmed: [
     {
@@ -116,6 +122,7 @@ const RETURN_DOC: Transitions = {
   pending: [
     { id: "approve", label: "common.actions.approve", toState: "confirmed", roles: ["approver", "admin"] },
     { id: "reject", label: "common.actions.reject", toState: "draft", roles: ["approver", "admin"] },
+    { id: "recall", label: "common.actions.recall", toState: "draft", roles: [] },
   ],
   confirmed: [
     { id: "post", label: "common.actions.post", toState: "posted", roles: ["warehouse", "accountant", "admin"] },

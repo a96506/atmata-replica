@@ -4,6 +4,7 @@ import * as React from "react";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
+import { useActionToast } from "@/hooks/use-action-toast";
 import { useConfirm } from "@/components/confirm-dialog";
 import {
   closeFiscalYearAction,
@@ -25,6 +26,7 @@ export function FiscalCalendarGrid({
   const writeLocale = locale === "ar" ? "ar" : "en";
   const router = useRouter();
   const confirm = useConfirm();
+  const actionToast = useActionToast();
   const [pending, setPending] = React.useState(false);
   const [periods, setPeriods] = React.useState(initialPeriods);
 
@@ -64,7 +66,7 @@ export function FiscalCalendarGrid({
         status,
       });
       if (!result.ok) {
-        toast.error(result.error.messageKey || result.error.code);
+        actionToast.error(result.error);
         return;
       }
       setPeriods((prev) =>
@@ -74,6 +76,8 @@ export function FiscalCalendarGrid({
         `${label} ${p.year}-${String(p.month).padStart(2, "0")}.`,
       );
       router.refresh();
+    } catch {
+      actionToast.network();
     } finally {
       setPending(false);
     }
@@ -117,7 +121,7 @@ export function FiscalCalendarGrid({
         year,
       });
       if (!result.ok) {
-        toast.error(result.error.messageKey || result.error.code);
+        actionToast.error(result.error);
         return;
       }
       setPeriods((prev) =>
@@ -127,6 +131,8 @@ export function FiscalCalendarGrid({
       );
       toast.success(`Year ${year} closed.`);
       router.refresh();
+    } catch {
+      actionToast.network();
     } finally {
       setPending(false);
     }

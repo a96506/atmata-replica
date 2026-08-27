@@ -28,9 +28,11 @@ export default async function proxy(request: NextRequest) {
   const localePath = localeMatch[2] || "/";
   if (!accessToken && !PUBLIC_ROUTES.has(localePath)) {
     const loginUrl = new URL(`/${locale}/login`, request.url);
+    // Preserve the full locale-prefixed path so the post-login redirect lands
+    // back on the same locale the user requested (not the cookie locale).
     loginUrl.searchParams.set(
       "next",
-      `${localePath}${request.nextUrl.search}`,
+      `/${locale}${localePath}${request.nextUrl.search}`,
     );
     const redirect = NextResponse.redirect(loginUrl);
     for (const cookie of response.cookies.getAll()) {

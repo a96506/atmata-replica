@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/toast";
+import { useActionToast } from "@/hooks/use-action-toast";
 import { useConfirm } from "@/components/confirm-dialog";
 import { DocForm } from "@/components/form/DocForm";
 import { DatePicker } from "@/components/form/DatePicker";
@@ -15,6 +16,7 @@ import {
   PostedWatermarkBanner,
 } from "@/components/banners";
 import { StateBadge } from "@/components/doc/StateBadge";
+import { useBreadcrumbDocLabel } from "@/components/app/BreadcrumbOverride";
 import {
   reverseDocumentAction,
   updateDocumentHeaderAction,
@@ -39,13 +41,6 @@ export type DocEditShellProps = {
 
 const POSTED: DocState[] = ["posted", "locked", "archived"];
 
-function actionErrorMessage(error: {
-  messageKey?: string;
-  code: string;
-}): string {
-  return error.messageKey ?? error.code;
-}
-
 export function DocEditShell({
   locale,
   docType,
@@ -61,7 +56,11 @@ export function DocEditShell({
 }: DocEditShellProps) {
   const router = useRouter();
   const confirm = useConfirm();
+  const actionToast = useActionToast();
   const isPosted = POSTED.includes(state);
+  // Replace the raw record id in the trailing breadcrumb crumb with the
+  // document number (the URL carries the UUID).
+  useBreadcrumbDocLabel(docNumber);
   const idempotencyKeyRef = React.useRef(crypto.randomUUID());
   const [pending, setPending] = React.useState(false);
   const [rowVersion, setRowVersion] = React.useState(expectedRowVersion);
@@ -118,7 +117,7 @@ export function DocEditShell({
             setRowVersion(result.error.currentRowVersion);
           }
         }
-        toast.error(actionErrorMessage(result.error));
+        actionToast.error(result.error);
         return;
       }
       idempotencyKeyRef.current = crypto.randomUUID();
@@ -127,6 +126,8 @@ export function DocEditShell({
       toast.success(`Saved · ${docNumber}`);
       router.push(backHref);
       router.refresh();
+    } catch {
+      actionToast.network();
     } finally {
       setPending(false);
     }
@@ -175,13 +176,15 @@ export function DocEditShell({
         ) {
           setStaleConflict(true);
         }
-        toast.error(actionErrorMessage(result.error));
+        actionToast.error(result.error);
         return;
       }
       idempotencyKeyRef.current = crypto.randomUUID();
       toast.success(`Reversed · ${docNumber}`);
       router.push(backHref);
       router.refresh();
+    } catch {
+      actionToast.network();
     } finally {
       setPending(false);
     }

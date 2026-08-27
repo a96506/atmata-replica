@@ -8,7 +8,10 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getSalesOverview } from "@/lib/api/sales-overview";
 import { formatKwd } from "@/lib/utils";
+import { pageMetadata } from "@/lib/metadata";
 import { SalesQuickQuoteDemo } from "./sales-quick-quote-demo";
+
+export const generateMetadata = pageMetadata("nav", "sales");
 
 function Kpi({ label, value }: { label: string; value: string | number }) {
   return (

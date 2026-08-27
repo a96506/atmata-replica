@@ -202,12 +202,17 @@ async function loadLocaleFonts(locale: PdfLocale): Promise<FontEntry[]> {
   ensureFontsRegistered();
   const latin = await loadFontData('latin');
   if (!latin) throw new Error('latin font failed to load');
-  if (locale === 'en') return [{ fontData: latin, fontRef: 'F1', lang: 'latin' }];
+  // /F1 and /F2 are reserved by pdfnative (base-14 fonts). Custom CIDFont
+  // entries must use /F3+ with a leading slash, otherwise the resource name
+  // is malformed and the content-stream Tf operator resolves to the reserved
+  // base Helvetica (WinAnsi) — the 2-byte Identity-H GIDs are then read as
+  // single-byte WinAnsi chars, shifting every ASCII glyph by −29.
+  if (locale === 'en') return [{ fontData: latin, fontRef: '/F3', lang: 'latin' }];
   const ar = await loadFontData('ar');
   if (!ar) throw new Error('arabic font failed to load');
   return [
-    { fontData: ar, fontRef: 'F2', lang: 'ar' },
-    { fontData: latin, fontRef: 'F1', lang: 'latin' },
+    { fontData: ar, fontRef: '/F4', lang: 'ar' },
+    { fontData: latin, fontRef: '/F3', lang: 'latin' },
   ];
 }
 

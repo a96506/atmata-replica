@@ -3,6 +3,9 @@ import { NewDocButton } from "@/components/doc/CreateChildLinks";
 import { listPurchaseOrders } from "@/lib/api/p2p";
 import { listSuppliers } from "@/lib/api/master";
 import { PoListClient } from "./po-list-client";
+import { pageMetadata } from "@/lib/metadata";
+
+export const generateMetadata = pageMetadata("nav", "purchase_orders");
 
 export default async function Page({
   params,

@@ -4,6 +4,7 @@ import * as React from "react";
 import { useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
+import { useActionToast } from "@/hooks/use-action-toast";
 import { insforge } from "@/lib/insforge/client";
 import {
   getMyCompanyId,
@@ -72,6 +73,7 @@ export function StatementImporter() {
   const locale = useLocale();
   const writeLocale = locale === "ar" ? "ar" : "en";
   const router = useRouter();
+  const actionToast = useActionToast();
   const idempotencyKeyRef = React.useRef(crypto.randomUUID());
 
   const [bankAccounts, setBankAccounts] = React.useState<
@@ -172,7 +174,7 @@ export function StatementImporter() {
       });
 
       if (!result.ok) {
-        toast.error(result.error.messageKey || result.error.code);
+        actionToast.error(result.error);
         return;
       }
 

@@ -16,7 +16,11 @@ export function formatMoney(
   locale: LocaleCode = "en",
 ): string {
   const cfg = CURRENCY_LOCALE[currency];
+  // The repo standard is Western (Latin) numerals in Arabic. Force the `latn`
+  // numbering system so ar-* locales keep the Arabic currency symbol but
+  // render digits as 0-9 — consistent with the rest of the Arabic UI.
   return new Intl.NumberFormat(cfg[locale], {
+    numberingSystem: "latn",
     style: "currency",
     currency,
     minimumFractionDigits: cfg.fractionDigits,

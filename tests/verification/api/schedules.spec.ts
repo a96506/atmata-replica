@@ -41,7 +41,11 @@ test("seven schedules match verification manifest", () => {
           ? payload.data
           : [];
   } catch (error) {
-    test.skip(true, `schedules list unavailable: ${String(error)}`);
+    // Backend unavailable → fail loudly instead of skipping. A skip hides
+    // a broken/missing schedules backend.
+    throw new Error(
+      `schedules list unavailable (backend unreachable): ${String(error)}`,
+    );
   }
 
   const byName = new Map(

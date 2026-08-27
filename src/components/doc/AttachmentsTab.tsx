@@ -3,6 +3,7 @@
 import * as React from "react";
 import { FileDrop, type DroppedFile } from "./FileDrop";
 import { toast } from "@/components/toast";
+import { useConfirm } from "@/components/confirm-dialog";
 import {
   deleteAttachment,
   insertAttachment,
@@ -40,6 +41,8 @@ export function AttachmentsTab({ docType, docId }: AttachmentsTabProps) {
   const [attachments, setAttachments] = React.useState<Attachment[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [companyId, setCompanyId] = React.useState<string | null>(null);
+  const confirm = useConfirm();
+  const [pendingDelete, setPendingDelete] = React.useState<string | null>(null);
 
   const refresh = React.useCallback(async () => {
     const list = await listAttachments({ docType, docId });
@@ -104,16 +107,28 @@ export function AttachmentsTab({ docType, docId }: AttachmentsTabProps) {
   );
 
   const onDelete = React.useCallback(
-    async (id: string) => {
+    async (attachment: Attachment) => {
+      const ok = await confirm({
+        title: "Delete attachment?",
+        description:
+          "This removes the file from storage and records an audit event. This cannot be undone.",
+        confirmLabel: "Delete",
+        cancelLabel: "Keep",
+        tone: "destructive",
+      });
+      if (!ok) return;
+      setPendingDelete(attachment.id);
       try {
-        await deleteAttachment({ id });
-        setAttachments((prev) => prev.filter((a) => a.id !== id));
+        await deleteAttachment({ id: attachment.id });
+        setAttachments((prev) => prev.filter((a) => a.id !== attachment.id));
         toast.success("Attachment deleted.");
       } catch (e) {
         toast.error(e instanceof Error ? e.message : String(e));
+      } finally {
+        setPendingDelete(null);
       }
     },
-    [],
+    [confirm],
   );
 
   const onDownload = React.useCallback(async (id: string) => {
@@ -160,10 +175,11 @@ export function AttachmentsTab({ docType, docId }: AttachmentsTabProps) {
                 </div>
                 <button
                   type="button"
-                  onClick={() => onDelete(a.id)}
-                  className="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-muted"
+                  onClick={() => onDelete(a)}
+                  disabled={pendingDelete === a.id}
+                  className="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-muted disabled:opacity-50"
                 >
-                  Delete
+                  {pendingDelete === a.id ? "Deleting…" : "Delete"}
                 </button>
               </li>
             ))}

@@ -4,6 +4,11 @@ import { revalidatePath } from "next/cache";
 
 import { camelize } from "@/lib/db/case";
 import { createInsForgeServerClient } from "@/lib/insforge/server";
+import { assertAllowedAttachmentMime } from "@/lib/actions/attachment-mime";
+import {
+  recordAttachmentAddedEvent,
+  recordAttachmentRemovedEvent,
+} from "@/lib/actions/audit";
 import type { Attachment } from "@/types/entities";
 
 /**
@@ -60,6 +65,7 @@ export async function insertAttachment(input: {
   const companyId = cidRow as unknown as string;
   if (!companyId) throw new Error("no active company membership");
   assertCompanyPrefix(input.key, companyId);
+  assertAllowedAttachmentMime(input.mime);
 
   const { data, error } = await insforge.database
     .from("attachments")
@@ -78,20 +84,51 @@ export async function insertAttachment(input: {
     .select("*")
     .single();
   if (error) throw new Error(error.message);
-  return camelize<Attachment>(data);
+  const attachment = camelize<Attachment>(data);
+
+  // Best-effort audit event for the upload. Only when the attachment is
+  // linked to a concrete document (doc_id != null) — OCR job uploads link
+  // the attachment row before a vendor_bill exists, so they have no doc_id
+  // yet; the bill-creation flow writes its own audit trail.
+  if (input.docId) {
+    try {
+      await recordAttachmentAddedEvent({
+        docType: input.docType,
+        docId: input.docId,
+        attachmentId: attachment.id,
+        key: input.key,
+        name: input.filename,
+      });
+    } catch {
+      /* audit is best-effort; never block the upload */
+    }
+  }
+  return attachment;
 }
 
 export async function deleteAttachment(input: { id: string }): Promise<void> {
   const insforge = await createInsForgeServerClient();
   const { data: row, error: fetchErr } = await insforge.database
     .from("attachments")
-    .select("id, bucket, key")
+    .select("id, bucket, key, doc_type, doc_id, filename")
     .eq("id", input.id)
     .single();
   if (fetchErr) throw new Error(fetchErr.message);
   if (!row) return;
 
-  const { bucket, key } = row as { bucket: string; key: string };
+  const {
+    bucket,
+    key,
+    doc_type: docType,
+    doc_id: docId,
+    filename,
+  } = row as {
+    bucket: string;
+    key: string;
+    doc_type: string | null;
+    doc_id: string | null;
+    filename: string | null;
+  };
   const { error: rmErr } = await insforge.storage
     .from(bucket)
     .remove(key);
@@ -102,6 +139,23 @@ export async function deleteAttachment(input: { id: string }): Promise<void> {
     .delete()
     .eq("id", input.id);
   if (delErr) throw new Error(delErr.message);
+
+  // Best-effort audit event — only when the attachment was linked to a
+  // concrete document. Defensive: survives even if the change-detail
+  // migration has not landed yet.
+  if (docType && docId) {
+    try {
+      await recordAttachmentRemovedEvent({
+        docType,
+        docId,
+        attachmentId: input.id,
+        key,
+        name: filename,
+      });
+    } catch {
+      /* audit is best-effort; never block the delete */
+    }
+  }
 }
 
 /**

@@ -3,10 +3,11 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
+import { useActionToast } from "@/hooks/use-action-toast";
 import { useConfirm } from "@/components/confirm-dialog";
 import { DocForm } from "@/components/form/DocForm";
 import { DatePicker } from "@/components/form/DatePicker";
-import { SearchSelect } from "@/components/form/SearchSelect";
+import { SearchSelect, strictPrefixFilter } from "@/components/form/SearchSelect";
 import { MoneyInput } from "@/components/form/MoneyInput";
 import { ApprovalRoutePreview } from "@/components/form/ApprovalRoutePreview";
 import { createJournalEntryAction } from "@/lib/actions/gl";
@@ -33,6 +34,7 @@ export function NewJeForm({
 }) {
   const router = useRouter();
   const confirm = useConfirm();
+  const actionToast = useActionToast();
   const today = new Date().toISOString().slice(0, 10);
   const writeLocale = locale === "ar" ? "ar" : "en";
   const idempotencyKeyRef = React.useRef(crypto.randomUUID());
@@ -126,7 +128,7 @@ export function NewJeForm({
         })),
       });
       if (!result.ok) {
-        toast.error(result.error.messageKey || result.error.code);
+        actionToast.error(result.error);
         return;
       }
       const verb =
@@ -137,6 +139,8 @@ export function NewJeForm({
       idempotencyKeyRef.current = crypto.randomUUID();
       setDirty(false);
       router.push(`/${locale}/accounting/journal-entries/${result.data.id}`);
+    } catch {
+      actionToast.network();
     } finally {
       setPending(false);
     }
@@ -203,6 +207,7 @@ export function NewJeForm({
                 required
                 value={l.accountId || null}
                 onChange={(v) => setLine(l.id, { accountId: v })}
+                filter={strictPrefixFilter}
                 options={accounts.map((a) => ({
                   value: a.id,
                   label: `${a.code} · ${a.name}`,

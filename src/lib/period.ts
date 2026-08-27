@@ -1,4 +1,3 @@
-import { FISCAL_PERIODS } from "@/mocks/seed/master";
 import type { ISO8601, PeriodStatus } from "@/types";
 
 /**
@@ -21,10 +20,14 @@ export type FiscalCalendar = {
  * Single source of truth for fiscal-period resolution. This logic was previously
  * copy-pasted into DatePicker, DocActionBar, and PeriodGate, so a rule change
  * had to be made in four places to take effect.
+ *
+ * Callers MUST pass the real fiscal periods (DB-backed via `listFiscalPeriods()`).
+ * There is no mock fallback — a missing calendar would otherwise mask closed
+ * periods as open and let the form post into a hard-closed period.
  */
 export function periodStatusFor(
   date: ISO8601 | Date | undefined,
-  periods: readonly PeriodLike[] = FISCAL_PERIODS,
+  periods: readonly PeriodLike[],
 ): PeriodStatus {
   if (!date) return "no_period";
   const ts = typeof date === "string" ? new Date(date).getTime() : date.getTime();
@@ -43,8 +46,8 @@ export function periodStatusFor(
  */
 export function isPostingAllowed(
   date: ISO8601 | Date | undefined,
-  hasAdjustRole = false,
-  periods: readonly PeriodLike[] = FISCAL_PERIODS,
+  hasAdjustRole: boolean,
+  periods: readonly PeriodLike[],
 ): boolean {
   const status = periodStatusFor(date, periods);
   if (status === "open") return true;

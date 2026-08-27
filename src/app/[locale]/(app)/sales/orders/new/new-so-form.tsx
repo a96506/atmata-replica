@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
+import { useActionToast } from "@/hooks/use-action-toast";
 import { useConfirm } from "@/components/confirm-dialog";
 import { DocForm } from "@/components/form/DocForm";
 import { DatePicker } from "@/components/form/DatePicker";
@@ -47,6 +48,7 @@ export function NewSoForm({
 }) {
   const router = useRouter();
   const confirm = useConfirm();
+  const actionToast = useActionToast();
   const today = new Date().toISOString().slice(0, 10);
   const writeLocale = locale === "ar" ? "ar" : "en";
   const idempotencyKeyRef = React.useRef(crypto.randomUUID());
@@ -150,7 +152,7 @@ export function NewSoForm({
           : {}),
       });
       if (!result.ok) {
-        toast.error(result.error.messageKey || result.error.code);
+        actionToast.error(result.error);
         return;
       }
       const verb =
@@ -161,6 +163,8 @@ export function NewSoForm({
       idempotencyKeyRef.current = crypto.randomUUID();
       setDirty(false);
       router.push(`/${locale}/sales/orders/${result.data.id}`);
+    } catch {
+      actionToast.network();
     } finally {
       setPending(false);
     }

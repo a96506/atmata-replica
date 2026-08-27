@@ -3,27 +3,57 @@ import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
 import { NewDocButton } from "@/components/doc/CreateChildLinks";
+import { ExportCsvButton } from "@/components/export/ExportCsvButton";
+import {
+  ListStateFilter,
+  normalizeListState,
+} from "@/components/list/ListStateFilter";
 import { listCustomerInvoices } from "@/lib/api/q2c";
 import { listCustomers } from "@/lib/api/master";
 import { formatMoney } from "@/lib/money";
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ state?: string }>;
 }) {
   const { locale } = await params;
-  const [invs, customers] = await Promise.all([
+  const { state: stateParam } = await searchParams;
+  const [allInvs, customers] = await Promise.all([
     listCustomerInvoices(),
     listCustomers(),
   ]);
+  const stateFilter = normalizeListState(stateParam);
+  const invs = stateFilter ? allInvs.filter((i) => i.state === stateFilter) : allInvs;
+  const customerName = (id: string) =>
+    customers.find((c) => c.id === id)?.name ?? "—";
 
   return (
     <DocumentList
       title="Customer invoices"
       subtitle="AR invoices. Saudi-jurisdiction invoices render FATOORA QR."
       primaryAction={
-        <NewDocButton href={`/${locale}/sales/invoices/new`} label="New Invoice" />
+        <div className="flex flex-wrap items-center gap-2">
+          <ListStateFilter current={stateFilter} />
+          <ExportCsvButton
+            rows={invs}
+            filename="customer-invoices"
+            columns={[
+              { label: "Number", value: (i) => i.number },
+              { label: "Customer", value: (i) => customerName(i.customerId) },
+              { label: "Date", value: (i) => i.date },
+              { label: "Due date", value: (i) => i.dueDate },
+              { label: "Currency", value: (i) => i.currency },
+              { label: "Total", value: (i) => i.total },
+              { label: "Paid", value: (i) => i.paid },
+              { label: "Balance", value: (i) => i.total - i.paid },
+              { label: "State", value: (i) => i.state },
+            ]}
+          />
+          <NewDocButton href={`/${locale}/sales/invoices/new`} label="New Invoice" />
+        </div>
       }
     >
       <DataTable

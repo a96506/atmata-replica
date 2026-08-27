@@ -1,12 +1,15 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
+import { useActionToast } from "@/hooks/use-action-toast";
 import { useConfirm } from "@/components/confirm-dialog";
 import { AlertCircle } from "lucide-react";
 import { ActionBar } from "@/components/doc/ActionBar";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
   PeriodLockBanner,
   PostedWatermarkBanner,
@@ -15,6 +18,8 @@ import { StateBadge } from "@/components/doc/StateBadge";
 import { useSession } from "@/lib/session";
 import { legalActions, type Action } from "@/lib/state-machines";
 import { periodStatusFor } from "@/lib/period";
+import { useFiscalPeriods } from "@/components/form/FiscalPeriodsContext";
+import { docPath } from "@/lib/api/doc-paths";
 import {
   postDocumentAction,
   reverseDocumentAction,
@@ -22,10 +27,30 @@ import {
 } from "@/lib/actions/documents";
 import type { DocState, DocType } from "@/types";
 
+/**
+ * Doc types that ship an `/edit` route (DocEditShell). Drafts of other types
+ * only expose Submit/Cancel until their edit page is added.
+ */
+const EDITABLE_DOC_TYPES: ReadonlySet<DocType> = new Set<DocType>([
+  "journal_entry",
+  "stock_adjustment",
+  "internal_transfer",
+  "customer_receipt",
+  "customer_invoice",
+  "quote",
+  "so",
+  "dn",
+  "vendor_payment",
+  "po",
+  "vendor_bill",
+  "grn",
+]);
+
 const ACTION_LABEL: Record<string, string> = {
   submit: "Submit",
   approve: "Approve",
   reject: "Reject",
+  recall: "Recall",
   post: "Post",
   cancel: "Cancel",
   reverse: "Reverse",
@@ -62,6 +87,12 @@ const ACTION_PREVIEW: Record<
     confirmLabel: "Reject",
     tone: "destructive",
   }),
+  recall: (c) => ({
+    title: `Recall ${c.number}?`,
+    description: `Pulls the document back to "${c.nextState}" so you can edit it before resubmitting. The pending approval request is withdrawn.`,
+    confirmLabel: "Recall",
+    tone: "default",
+  }),
   post: (c) => ({
     title: `Post ${c.number}?`,
     description: `${c.total ? `Total ${c.total}. ` : ""}This generates a journal entry, updates linked balances (stock/AR/AP) and freezes the document. Corrections after posting must use a counter-document.`,
@@ -95,13 +126,6 @@ export type DocActionBarProps = {
   docDate?: string;
 };
 
-function actionErrorMessage(error: {
-  messageKey?: string;
-  code: string;
-}): string {
-  return error.messageKey ?? error.code;
-}
-
 export function DocActionBar({
   locale,
   docType,
@@ -116,6 +140,8 @@ export function DocActionBar({
   const router = useRouter();
   const { role } = useSession();
   const confirm = useConfirm();
+  const actionToast = useActionToast();
+  const periods = useFiscalPeriods();
   const idempotencyKeyRef = React.useRef(crypto.randomUUID());
   const [pending, setPending] = React.useState(false);
   const [rowVersion, setRowVersion] = React.useState(expectedRowVersion);
@@ -125,7 +151,7 @@ export function DocActionBar({
   }, [expectedRowVersion]);
 
   const actions = legalActions(docType, currentState, role);
-  const periodStatus = periodStatusFor(docDate);
+  const periodStatus = periodStatusFor(docDate, periods);
   const periodBlocked =
     periodStatus === "hard_closed" ||
     (periodStatus === "soft_closed" &&
@@ -179,6 +205,7 @@ export function DocActionBar({
               | "submit"
               | "approve"
               | "reject"
+              | "recall"
               | "cancel"
               | "send"
               | "record_quotes"
@@ -194,7 +221,7 @@ export function DocActionBar({
           if (result.error.code === "ILLEGAL_TRANSITION") {
             router.refresh();
           }
-          toast.error(actionErrorMessage(result.error));
+          actionToast.error(result.error);
           return;
         }
 
@@ -216,6 +243,8 @@ export function DocActionBar({
           );
         }
         router.refresh();
+      } catch {
+        actionToast.network();
       } finally {
         setPending(false);
       }
@@ -247,7 +276,14 @@ export function DocActionBar({
           <StateBadge state={currentState} />
         </div>
 
-        <div className="ms-auto">
+        <div className="ms-auto flex items-center gap-2">
+          {currentState === "draft" && EDITABLE_DOC_TYPES.has(docType) ? (
+            <Button asChild type="button" size="sm" variant="outline">
+              <Link href={`${locale}${docPath(docType, docId)}/edit`}>
+                Edit
+              </Link>
+            </Button>
+          ) : null}
           <ActionBar
             actions={actions}
             onAction={handle}

@@ -46,7 +46,7 @@ export function PoListClient({
           <StateBadge key="s" state={po.state} />,
         ];
       })}
-      emptyMessage="No purchase orders yet."
+      emptyMessage={<bdi>No purchase orders yet.</bdi>}
       renderBulkActions={(ids, clear) => {
         // Use the first selected row's state as the gating state.
         const first = pos.find((p) => p.id === ids[0]);

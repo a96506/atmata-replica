@@ -1,28 +1,68 @@
-import { DocumentList } from "@/components/doc/DocumentList";
-import { DataTable } from "@/components/data-table";
+import { DataTable, type Column } from "@/components/data-table";
+import { MasterCrud, type MasterField } from "@/components/master/MasterCrud";
+import { listPriceLists } from "@/lib/api/master";
+import {
+  createPriceListAction,
+  deletePriceListAction,
+  updatePriceListAction,
+} from "@/lib/actions/master";
 
-const PRICE_LISTS = [
-  { id: "pl_default", name: "Default sale price list", currency: "KWD", customers: "All", validFrom: "2026-01-01", validUntil: "—" },
-  { id: "pl_alpha", name: "Project Alpha annual supply", currency: "KWD", customers: "Project Alpha JV", validFrom: "2026-04-15", validUntil: "2027-04-14" },
+const COLUMNS: Column[] = [
+  { key: "name", label: "Name" },
+  { key: "currency", label: "Currency" },
+  { key: "active", label: "Active" },
+  { key: "from", label: "Valid from" },
+  { key: "until", label: "Valid until" },
 ];
 
-export default async function Page() {
+const CURRENCIES = ["KWD", "SAR", "AED", "USD"].map((c) => ({ value: c, label: c }));
+
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  const rows = await listPriceLists();
+
+  const fields: MasterField[] = [
+    { name: "name", label: "Name", type: "text", required: true },
+    { name: "currency", label: "Currency", type: "select", required: true, options: CURRENCIES },
+    { name: "active", label: "Active", type: "boolean" },
+    { name: "startsOn", label: "Valid from", type: "date" },
+    { name: "endsOn", label: "Valid until", type: "date" },
+  ];
+
+  const entities = rows.map((p) => ({
+    id: p.id,
+    name: p.name,
+    currency: p.currency,
+    active: p.active,
+    startsOn: p.startsOn ?? "",
+    endsOn: p.endsOn ?? "",
+  }));
+
+  const tableRows = rows.map((p) => [
+    p.name,
+    p.currency,
+    p.active ? "yes" : "no",
+    p.startsOn ?? "—",
+    p.endsOn ?? "—",
+  ]);
+
   return (
-    <DocumentList
+    <MasterCrud
+      locale={locale}
+      entityLabel="Price list"
       title="Price lists"
       subtitle="Customer-specific or default pricing. Each line on a quote/SO resolves the active list at line-add time."
-    >
-      <DataTable
-        columns={[
-          { key: "id", label: "ID" },
-          { key: "name", label: "Name" },
-          { key: "currency", label: "Currency" },
-          { key: "customers", label: "Scope" },
-          { key: "from", label: "Valid from" },
-          { key: "until", label: "Valid until" },
-        ]}
-        rows={PRICE_LISTS.map((p) => [p.id, p.name, p.currency, p.customers, p.validFrom, p.validUntil])}
-      />
-    </DocumentList>
+      columns={COLUMNS}
+      tableRows={tableRows}
+      entities={entities}
+      fields={fields}
+      onCreate={createPriceListAction}
+      onUpdate={updatePriceListAction}
+      onDelete={deletePriceListAction}
+    />
   );
 }

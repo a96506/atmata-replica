@@ -12,9 +12,17 @@ loadLocalEnv();
 test("search_all does not return foreign tenant sentinel", async () => {
   const a = tenantAOwner();
   const b = tenantBOwner();
-  test.skip(!a || !b, "VERIFY_A/B_OWNER credentials required");
+  // Credential/run-id guards: fail loudly when the harness isn't provisioned
+  // instead of skipping (a skip hides a broken verification environment).
+  if (!a || !b) {
+    throw new Error(
+      "VERIFY_A_OWNER / VERIFY_B_OWNER credentials required for search isolation",
+    );
+  }
   const runId = verifyRunId();
-  test.skip(!runId, "VERIFY_RUN_ID required");
+  if (!runId) {
+    throw new Error("VERIFY_RUN_ID required for search isolation");
+  }
 
   const clientA = await sdkFor(a!.email, a!.password);
   const sentinel = `TENANT_B_SECRET_${runId}`;
@@ -22,7 +30,10 @@ test("search_all does not return foreign tenant sentinel", async () => {
     p_query: sentinel,
   });
   if (result.error) {
-    test.skip(true, `search_all unavailable: ${String(result.error)}`);
+    // search_all RPC unavailable → fail loudly instead of skipping.
+    throw new Error(
+      `search_all unavailable (backend error): ${String(result.error)}`,
+    );
   }
   const text = JSON.stringify(result.data ?? {}).toLowerCase();
   expect(text.includes(sentinel.toLowerCase())).toBe(false);

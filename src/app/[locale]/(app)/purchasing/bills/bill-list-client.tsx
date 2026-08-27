@@ -4,6 +4,7 @@ import Link from "next/link";
 import { SelectableDataTable } from "@/components/data-table-selectable";
 import { StateBadge } from "@/components/doc/StateBadge";
 import { BulkAdoptButton } from "@/components/doc/BulkAdoptButton";
+import { ExportCsvButton } from "@/components/export/ExportCsvButton";
 import { formatMoney } from "@/lib/money";
 import type { Supplier, VendorBill } from "@/types";
 
@@ -16,8 +17,33 @@ export function BillListClient({
   bills: VendorBill[];
   suppliers: Supplier[];
 }) {
+  const supplierName = (id: string) =>
+    suppliers.find((s) => s.id === id)?.name ?? "—";
   return (
-    <SelectableDataTable
+    <div className="space-y-3">
+      <div className="flex justify-end">
+        <ExportCsvButton
+          rows={bills}
+          filename="vendor-bills"
+          columns={[
+            { label: "Number", value: (b) => b.number },
+            { label: "Supplier", value: (b) => supplierName(b.supplierId) },
+            { label: "Invoice number", value: (b) => b.invoiceNumber },
+            { label: "PO ref", value: (b) => b.poId ?? "" },
+            { label: "GRN ref", value: (b) => b.grnId ?? "" },
+            { label: "Date", value: (b) => b.date },
+            { label: "Due date", value: (b) => b.dueDate },
+            { label: "Currency", value: (b) => b.currency },
+            { label: "Subtotal", value: (b) => b.subtotal },
+            { label: "Tax total", value: (b) => b.taxTotal },
+            { label: "Total", value: (b) => b.total },
+            { label: "Paid", value: (b) => b.paid },
+            { label: "3-way match", value: (b) => b.threeWayMatch },
+            { label: "State", value: (b) => b.state },
+          ]}
+        />
+      </div>
+      <SelectableDataTable
       columns={[
         { key: "number", label: "Number" },
         { key: "supplier", label: "Supplier" },
@@ -79,6 +105,7 @@ export function BillListClient({
           />
         );
       }}
-    />
+      />
+    </div>
   );
 }

@@ -1,16 +1,17 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { Info } from "lucide-react";
 import { ConfirmDialogProvider } from "@/components/confirm-dialog";
 import { ToastFromQuery } from "@/components/toast-from-query";
 import { SessionProvider } from "@/lib/session";
 import { GlobalSearchProvider } from "@/components/app/GlobalSearchProvider";
+import { BreadcrumbOverrideProvider } from "@/components/app/BreadcrumbOverride";
+import { FiscalPeriodsProvider } from "@/components/form/FiscalPeriodsContext";
 import { AppSidebar } from "@/components/app/AppSidebar";
 import { AppTopBar } from "@/components/app/AppTopBar";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { getAppSession, getPlatformAdminGate } from "@/lib/insforge/session";
+import { listFiscalPeriods } from "@/lib/api/master";
 
 export default async function AppLayout({
   children,
@@ -34,36 +35,44 @@ export default async function AppLayout({
 
   const tc = await getTranslations("chrome");
 
+  // Real fiscal calendar so every form's period lock reflects the live DB
+  // rather than a mock. Failures degrade to an empty calendar (everything
+  // resolves to `no_period`) instead of blocking the whole app.
+  const fiscalPeriods = await listFiscalPeriods().catch(() => []);
+
   return (
     <SessionProvider session={session}>
-      <ConfirmDialogProvider>
-        <GlobalSearchProvider>
+      <FiscalPeriodsProvider periods={fiscalPeriods}>
+        <ConfirmDialogProvider>
+          <GlobalSearchProvider>
+          <BreadcrumbOverrideProvider>
           <SidebarProvider>
+            <a
+              href="#main-content"
+              className="sr-only focus:not-sr-only focus:fixed focus:start-2 focus:top-2 focus:z-[100] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-sm focus:shadow-md focus:outline focus:outline-2 focus:outline-primary"
+            >
+              {tc("skipToContent")}
+            </a>
             <AppSidebar brand={tc("brand")} />
-            <SidebarInset className="min-w-0">
+            <SidebarInset id="main-content" className="min-w-0">
               <AppTopBar
                 signOutLabel={tc("signOut")}
                 localeLabel={tc("locale")}
               />
 
-              <main className="flex min-w-0 flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
-                {/* Demo notice: previously a full-bleed ribbon above the header,
-                    now an inline alert so it scrolls away with the content. */}
-                <Alert>
-                  <Info />
-                  <AlertDescription>{tc("demoRibbon")}</AlertDescription>
-                </Alert>
-
+              <div className="flex min-w-0 flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
                 {children}
-              </main>
+              </div>
 
               <Suspense fallback={null}>
                 <ToastFromQuery />
               </Suspense>
             </SidebarInset>
           </SidebarProvider>
-        </GlobalSearchProvider>
-      </ConfirmDialogProvider>
+          </BreadcrumbOverrideProvider>
+          </GlobalSearchProvider>
+        </ConfirmDialogProvider>
+      </FiscalPeriodsProvider>
     </SessionProvider>
   );
 }

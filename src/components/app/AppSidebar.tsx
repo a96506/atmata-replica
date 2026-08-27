@@ -3,8 +3,10 @@
 import * as React from "react";
 import { ChevronRight } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { navigation, stripLocale, type NavModule } from "@/config/navigation";
+import { LocaleSwitcher } from "@/components/locale-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -37,12 +39,24 @@ import {
 export function AppSidebar({ brand }: { brand: string }) {
   const pathname = usePathname();
   const path = stripLocale(pathname);
+  const t = useTranslations("nav");
 
   const isActiveLeaf = (href: string) =>
     path === href || path.startsWith(`${href}/`);
 
   const isActiveModule = (module: NavModule) =>
     path === module.href || path.startsWith(`${module.href}/`);
+
+  const moduleLabel = (module: NavModule) =>
+    t.has(module.labelKey ?? module.key)
+      ? t(module.labelKey ?? module.key)
+      : module.label;
+
+  const leafLabel = (item: { label: string; labelKey?: string }) =>
+    item.labelKey && t.has(item.labelKey) ? t(item.labelKey) : item.label;
+
+  const groupLabel = (group: { label?: string; labelKey?: string }) =>
+    group.labelKey && t.has(group.labelKey) ? t(group.labelKey) : group.label;
 
   return (
     <Sidebar collapsible="icon">
@@ -87,11 +101,11 @@ export function AppSidebar({ brand }: { brand: string }) {
                         <SidebarMenuButton
                           asChild
                           isActive={isActiveLeaf(item.href)}
-                          tooltip={item.label}
+                          tooltip={leafLabel(item)}
                         >
                           <Link href={item.href as never}>
                             {item.icon ? <item.icon /> : null}
-                            <span>{item.label}</span>
+                            <span>{leafLabel(item)}</span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -112,9 +126,9 @@ export function AppSidebar({ brand }: { brand: string }) {
                   >
                     <SidebarMenuItem>
                       <CollapsibleTrigger asChild>
-                        <SidebarMenuButton tooltip={module.label}>
+                        <SidebarMenuButton tooltip={moduleLabel(module)}>
                           <module.icon />
-                          <span>{module.label}</span>
+                          <span>{moduleLabel(module)}</span>
                           <ChevronRight className="ms-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 rtl:rotate-180 rtl:group-data-[state=open]/collapsible:rotate-90" />
                         </SidebarMenuButton>
                       </CollapsibleTrigger>
@@ -123,7 +137,7 @@ export function AppSidebar({ brand }: { brand: string }) {
                           <React.Fragment key={group.label ?? groupIndex}>
                             {group.label ? (
                               <SidebarGroupLabel className="mt-1 h-6 text-[10px] tracking-wide uppercase">
-                                {group.label}
+                                {groupLabel(group)}
                               </SidebarGroupLabel>
                             ) : null}
                             <SidebarMenuSub>
@@ -135,7 +149,7 @@ export function AppSidebar({ brand }: { brand: string }) {
                                   >
                                     <Link href={item.href as never}>
                                       {item.icon ? <item.icon /> : null}
-                                      <span>{item.label}</span>
+                                      <span>{leafLabel(item)}</span>
                                     </Link>
                                   </SidebarMenuSubButton>
                                 </SidebarMenuSubItem>
@@ -153,7 +167,13 @@ export function AppSidebar({ brand }: { brand: string }) {
         })}
       </SidebarContent>
 
-      <SidebarFooter />
+      <SidebarFooter>
+        {/* Visible only in the mobile off-canvas sheet so Arabic phone users
+            can switch language without the (hidden) header control. */}
+        <div className="md:hidden">
+          <LocaleSwitcher label={t("language")} />
+        </div>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

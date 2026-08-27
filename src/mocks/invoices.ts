@@ -1,5 +1,7 @@
 export type DocumentJob = {
   job_id: number;
+  /** Tenant-safe UUID used in the public invoice detail route. */
+  public_id?: string;
   file_name: string;
   document_type: string;
   status: string;

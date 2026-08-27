@@ -41,7 +41,35 @@ export type SearchSelectProps = {
   error?: string | null;
   /** Field tip rendered under the label (e.g. "Defaulted from supplier"). */
   hint?: string;
+  /**
+   * Optional cmdk filter override. When omitted, cmdk's default fuzzy
+   * subsequence filter is used. Pass {@link strictPrefixFilter} (or a custom
+   * scorer) to require prefix/substring relevance — e.g. account pickers where
+   * "Retained" must not match "Depreciation expense" and "1000" must not match
+   * "2000".
+   */
+  filter?: (value: string, search: string) => number;
 };
+
+/**
+ * Relevance-threshold filter for SearchSelect: rejects low-relevance fuzzy
+ * subsequence matches. A row matches when:
+ *  - the query is a substring of the rendered value (text searches), OR
+ *  - a whitespace/`·`/`/`-delimited token starts with the query (numeric code
+ *    searches — so "1000" matches "1000 · Cash" but not "21000 · …").
+ * Empty query matches everything. Returns a rank (1 = match, 0 = exclude);
+ * cmdk treats 0 as filtered out.
+ */
+export function strictPrefixFilter(value: string, search: string): number {
+  const q = search.trim().toLowerCase();
+  if (!q) return 1;
+  const v = value.toLowerCase();
+  if (/^\d+$/.test(q)) {
+    const tokens = v.split(/[\s·/]+/);
+    return tokens.some((t) => t.startsWith(q)) ? 1 : 0;
+  }
+  return v.includes(q) ? 1 : 0;
+}
 
 /** Badge tones resolve to the shared status tokens so they theme correctly. */
 const BADGE_TONE: Record<string, string> = {
@@ -85,6 +113,7 @@ export function SearchSelect({
   disabled,
   error,
   hint,
+  filter,
 }: SearchSelectProps) {
   const id = useId();
   const [open, setOpen] = useState(false);
@@ -130,7 +159,7 @@ export function SearchSelect({
           align="start"
           className="w-(--radix-popover-trigger-width) p-0"
         >
-          <Command>
+          <Command filter={filter}>
             <CommandInput placeholder={placeholder} />
             <CommandList>
               <CommandEmpty>No results.</CommandEmpty>

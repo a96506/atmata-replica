@@ -28,8 +28,8 @@ export function Empty({
         <EmptyMedia variant="icon">
           <Inbox />
         </EmptyMedia>
-        <EmptyTitle>{title}</EmptyTitle>
-        {description ? <EmptyDescription>{description}</EmptyDescription> : null}
+        <EmptyTitle><bdi>{title}</bdi></EmptyTitle>
+        {description ? <EmptyDescription><bdi>{description}</bdi></EmptyDescription> : null}
       </EmptyHeader>
       {action ? <EmptyContent>{action}</EmptyContent> : null}
     </EmptyPrimitive>
