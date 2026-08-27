@@ -1,0 +1,141 @@
+-- Drop unused indexes — batch D (info performance advisor).
+--
+-- Source: /tmp/idx_batch_d.txt (118 candidate indexes, public schema).
+--
+-- CRITICAL: 117 of the 118 candidates are FK-covering indexes created by
+-- migrations 20260820212431_fk-covering-indexes.sql and
+-- 20260820212705_email-log-requested-by-fk-index.sql. Per task policy these
+-- are KEPT (dropping them would regress FK join/update performance and
+-- re-trigger the missing-fk-index advisor). They are listed below as
+-- skipped for auditability but no DROP is emitted for them.
+--
+-- Only 1 candidate is a non-FK-covering unused index and is dropped here:
+--   products_search_simple_gin_idx  (public.products, GIN search index)
+--
+-- GOTCHA: InsForge wraps each migration in a transaction, so
+-- DROP INDEX CONCURRENTLY cannot be used (it cannot run inside a
+-- transaction block). Use plain DROP INDEX IF EXISTS, which takes a
+-- brief ACCESS EXCLUSIVE lock. See:
+--   https://www.postgresql.org/docs/current/sql-dropindex.html
+--
+-- Skipped (kept — FK covering), 117 indexes:
+--   vendor_payments_company_id_supplier_id_idx
+--   products_company_id_tax_code_id_idx
+--   sales_orders_company_id_customer_id_idx
+--   rfq_invited_suppliers_company_id_supplier_id_idx
+--   customer_receipts_company_id_currency_idx
+--   rfqs_company_id_awarded_quote_id_idx
+--   goods_receipt_lines_company_id_product_id_idx
+--   vendor_bill_lines_company_id_tax_code_id_idx
+--   customer_return_lines_company_id_dn_line_id_idx
+--   vendor_returns_company_id_grn_id_idx
+--   email_log_requested_by_fkey_idx
+--   customer_invoice_lines_company_id_dn_line_id_idx
+--   audit_events_by_idx
+--   write_commands_actor_user_id_idx
+--   period_close_runs_completed_by_idx
+--   notifications_company_id_approval_step_id_idx
+--   goods_receipts_company_id_supplier_id_idx
+--   journal_entries_company_id_currency_idx
+--   bank_accounts_company_id_account_id_idx
+--   vendor_bills_company_id_grn_id_idx
+--   vendor_return_lines_company_id_product_id_idx
+--   customer_returns_company_id_warehouse_id_idx
+--   debit_notes_company_id_vendor_return_id_idx
+--   customer_return_lines_company_id_tax_code_id_idx
+--   purchase_orders_company_id_supplier_id_idx
+--   quote_lines_company_id_tax_code_id_idx
+--   credit_notes_company_id_currency_idx
+--   vendor_payments_company_id_bank_account_id_idx
+--   delivery_notes_company_id_customer_id_idx
+--   customer_receipt_allocations_company_id_invoice_id_idx
+--   inventory_lots_company_id_warehouse_id_idx
+--   period_close_tasks_assigned_to_idx
+--   opportunities_company_id_customer_id_idx
+--   sales_order_lines_company_id_tax_code_id_idx
+--   stock_adjustment_lines_company_id_product_id_idx
+--   rfq_sources_company_id_purchase_requisition_id_idx
+--   customer_invoices_company_id_customer_id_idx
+--   credit_notes_company_id_customer_id_idx
+--   vendor_bill_lines_company_id_grn_line_id_idx
+--   purchase_requisition_lines_company_id_product_id_idx
+--   period_close_runs_started_by_idx
+--   credit_notes_company_id_invoice_id_idx
+--   credit_notes_company_id_customer_return_id_idx
+--   vendor_returns_company_id_debit_note_id_idx
+--   sales_orders_company_id_warehouse_id_idx
+--   invitations_accepted_by_idx
+--   goods_receipt_lines_company_id_tax_code_id_idx
+--   document_processing_jobs_created_by_idx
+--   email_log_requested_by_idx
+--   quote_lines_company_id_product_id_idx
+--   customer_returns_company_id_customer_id_idx
+--   vendor_returns_company_id_warehouse_id_idx
+--   goods_receipts_company_id_warehouse_id_idx
+--   platform_provisioning_operations_invitation_id_idx
+--   purchase_orders_company_id_pr_id_idx
+--   sales_orders_company_id_currency_idx
+--   debit_notes_company_id_bill_id_idx
+--   customer_invoices_company_id_so_id_idx
+--   notifications_company_id_operational_alert_id_idx
+--   rfq_quotes_company_id_currency_idx
+--   debit_notes_company_id_supplier_id_idx
+--   warehouses_company_id_branch_id_idx
+--   quotes_company_id_customer_id_idx
+--   delivery_note_lines_company_id_tax_code_id_idx
+--   account_mappings_company_id_account_id_idx
+--   vendor_bill_lines_company_id_product_id_idx
+--   delivery_note_lines_company_id_so_line_id_idx
+--   customer_receipts_company_id_customer_id_idx
+--   quotes_company_id_currency_idx
+--   vendor_bills_company_id_po_id_idx
+--   customer_returns_company_id_credit_note_id_idx
+--   quotes_company_id_opportunity_id_idx
+--   purchase_orders_company_id_payment_term_id_idx
+--   vendor_bill_lines_company_id_po_line_id_idx
+--   customer_invoice_lines_company_id_tax_code_id_idx
+--   customer_invoice_lines_company_id_so_line_id_idx
+--   delivery_notes_company_id_so_id_idx
+--   ai_suggestions_created_by_idx
+--   delivery_notes_company_id_warehouse_id_idx
+--   purchase_orders_company_id_warehouse_id_idx
+--   vendor_return_lines_company_id_grn_line_id_idx
+--   customer_invoices_company_id_dn_id_idx
+--   purchase_requisition_lines_company_id_tax_code_id_idx
+--   rfq_lines_company_id_product_id_idx
+--   rfq_quote_lines_company_id_rfq_line_id_idx
+--   customer_invoices_company_id_currency_idx
+--   customer_return_lines_company_id_product_id_idx
+--   suppliers_company_id_payment_term_id_idx
+--   bank_accounts_company_id_currency_idx
+--   accounts_company_id_parent_idx
+--   goods_receipts_company_id_po_id_idx
+--   stock_moves_company_id_warehouse_id_idx
+--   journal_entry_lines_company_id_account_id_idx
+--   delivery_note_lines_company_id_product_id_idx
+--   platform_provisioning_operations_actor_id_idx
+--   purchase_order_lines_company_id_tax_code_id_idx
+--   vendor_returns_company_id_supplier_id_idx
+--   goods_receipt_lines_company_id_po_line_id_idx
+--   vendor_payment_allocations_company_id_bill_id_idx
+--   internal_transfers_company_id_from_warehouse_id_idx
+--   rfq_quotes_company_id_vendor_id_idx
+--   stock_adjustment_lines_company_id_warehouse_id_idx
+--   vendor_bills_company_id_currency_idx
+--   sales_orders_company_id_quote_id_idx
+--   fx_rates_company_id_quote_currency_idx
+--   vendor_return_lines_company_id_tax_code_id_idx
+--   customer_receipts_company_id_bank_account_id_idx
+--   attachments_uploaded_by_idx
+--   internal_transfer_lines_company_id_product_id_idx
+--   internal_transfers_company_id_to_warehouse_id_idx
+--   vendor_payments_company_id_currency_idx
+--   rfqs_company_id_awarded_vendor_id_idx
+--   debit_notes_company_id_currency_idx
+--   purchase_orders_company_id_currency_idx
+--   invitations_invited_by_idx
+--   customer_returns_company_id_dn_id_idx
+--   rfqs_company_id_award_po_id_idx
+
+-- public.products: unused GIN full-text search index
+DROP INDEX IF EXISTS public.products_search_simple_gin_idx;
