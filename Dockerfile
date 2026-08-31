@@ -22,6 +22,9 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Ensure public/ exists even if the repo has none yet, so the runner stage
+# can COPY it unconditionally. Forward-compatible when a public/ dir is added.
+RUN mkdir -p public
 # NEXT_PUBLIC_* vars are inlined at build time. Railway passes service
 # variables to the build step, so set them as Railway service variables.
 RUN npm run build
