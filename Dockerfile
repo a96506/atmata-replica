@@ -10,7 +10,7 @@ ARG NODE_VERSION=22-slim
 FROM node:${NODE_VERSION} AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
-RUN --mount=type=cache,target=/root/.npm \
+RUN --mount=type=cache,id=npm-cache,target=/root/.npm \
     npm ci --include=dev
 
 # ---- builder: build the standalone server ----
@@ -21,7 +21,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # NEXT_PUBLIC_* vars are inlined at build time. Railway passes service
 # variables to the build step, so set them as Railway service variables.
-RUN --mount=type=cache,target=/root/.npm \
+RUN --mount=type=cache,id=npm-cache,target=/root/.npm \
     npm run build
 
 # ---- runner: minimal runtime image ----
