@@ -90,5 +90,11 @@ export const SCHEDULER_HEADERS = {
   "Content-Type": "application/json",
 } as const;
 
-export const DEFAULT_SCHEDULER_URL =
-  "https://yfmw4i43-9rc.function2.insforge.app/erp-scheduler";
+/** In-app HTTP kick (Railway). InsForge edge erp-scheduler was deleted in Phase 2. */
+export const IN_APP_SCHEDULER_PATH = "/api/cron/erp";
+
+/** @deprecated Use IN_APP_SCHEDULER_PATH; edge function deploy removed. */
+export const DEFAULT_SCHEDULER_URL = IN_APP_SCHEDULER_PATH;
+
+export const SCHEDULER_OWNERSHIP =
+  "in-app node-cron + public.schedules; InsForge edge erp-scheduler undeployed";

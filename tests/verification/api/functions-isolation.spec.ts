@@ -1,26 +1,35 @@
 import { expect, test } from "@playwright/test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { insforgeBaseUrl, loadLocalEnv } from "../fixtures/accounts";
+import { loadLocalEnv } from "../fixtures/accounts";
 
 loadLocalEnv();
 
-test("anonymous function invoke returns 401", async () => {
-  const baseUrl = insforgeBaseUrl();
-  test.skip(!baseUrl, "InsForge URL missing");
+/**
+ * Phase 2: edge functions deleted. Manifest lists in-app paths only.
+ * Do not hit InsForge /functions/{slug}.
+ */
+test("functions manifest has no required edge deploys", async () => {
   const manifest = JSON.parse(
     readFileSync(
       resolve(process.cwd(), "tests/verification/manifests/functions.json"),
       "utf8",
     ),
-  ) as { functions: { slug: string }[] };
+  ) as {
+    edgeFunctions: unknown[];
+    inApp: { formerSlug: string; path: string }[];
+  };
 
-  for (const fn of manifest.functions) {
-    const response = await fetch(`${baseUrl}/functions/${fn.slug}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({}),
-    });
-    expect(response.status, fn.slug).toBe(401);
-  }
+  expect(manifest.edgeFunctions).toEqual([]);
+  expect(manifest.inApp.length).toBe(6);
+  expect(manifest.inApp.map((row) => row.formerSlug).sort()).toEqual(
+    [
+      "ai-assistant",
+      "email-send",
+      "erp-scheduler",
+      "ocr-vendor-bill",
+      "pdf-gen",
+      "reconciliation-suggest",
+    ].sort(),
+  );
 });

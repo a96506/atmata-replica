@@ -1,6 +1,7 @@
 {
-  "functionSlug": "erp-scheduler",
-  "url": "https://yfmw4i43-9rc.function2.insforge.app/erp-scheduler",
+  "note": "Phase 2: cadence owned by in-app node-cron + public.schedules. InsForge platform schedules should stay inactive. Emergency HTTP kick: POST {APP_URL}/api/cron/erp",
+  "functionSlug": null,
+  "url": "/api/cron/erp",
   "method": "POST",
   "headers": {
     "Authorization": "Bearer ${{secrets.SCHEDULE_CRON_TOKEN}}",

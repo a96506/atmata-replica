@@ -1,11 +1,23 @@
 "use server";
 
 import { z } from "zod";
+import { enqueueJob } from "@/lib/jobs";
+import {
+  ReconSuggestError,
+  runReconciliationSuggest,
+} from "@/lib/jobs/handlers/recon";
 import { createInsForgeServerClient } from "@/lib/insforge/server";
+import { getAppSession } from "@/lib/insforge/session";
 import { actionFailure, createRequestId } from "./errors";
 import type { ActionResult } from "./result";
+import {
+  AiServiceError,
+  requireAiAuth,
+  runChat,
+  runCfoNarrative,
+  runSuggest,
+} from "@/lib/services/ai-assistant";
 import type {
-  AiAssistantInput,
   AiChatResult,
   CfoNarrativeResult,
   ReconciliationSuggestion,
@@ -35,27 +47,16 @@ const scopeSchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
-async function invoke<T>(
-  slug: string,
-  body: unknown,
-  validate: (value: unknown) => value is T,
-): Promise<ActionResult<T>> {
-  const requestId = createRequestId();
-  try {
-    const client = await createInsForgeServerClient();
-    const { data, error } = await client.functions.invoke(slug, { body });
-    if (error) {
-      return actionFailure("MODEL_FAILED", {
-        messageKey: "ai.errors.modelFailed",
-        retryable: true,
-        requestId,
-      });
-    }
-    if (!validate(data)) return actionFailure("INTERNAL", { requestId });
-    return { ok: true, data };
-  } catch {
-    return actionFailure("INTERNAL", { requestId });
+function mapAiError(error: unknown, requestId: string): ActionResult<never> {
+  if (error instanceof AiServiceError) {
+    return actionFailure(error.code, {
+      messageKey:
+        error.code === "MODEL_FAILED" ? "ai.errors.modelFailed" : undefined,
+      retryable: error.retryable,
+      requestId,
+    });
   }
+  return actionFailure("INTERNAL", { requestId });
 }
 
 function isSuggestions(value: unknown): value is AiSuggestion[] {
@@ -65,10 +66,10 @@ function isSuggestions(value: unknown): value is AiSuggestion[] {
       (item) =>
         item &&
         typeof item === "object" &&
-        typeof item.id === "string" &&
-        typeof item.title === "string" &&
-        typeof item.rationale === "string" &&
-        typeof item.confidence === "number",
+        typeof (item as AiSuggestion).id === "string" &&
+        typeof (item as AiSuggestion).title === "string" &&
+        typeof (item as AiSuggestion).rationale === "string" &&
+        typeof (item as AiSuggestion).confidence === "number",
     )
   );
 }
@@ -82,11 +83,15 @@ export async function requestAiSuggestions(
     locale,
   });
   if (!parsed.success) return actionFailure("VALIDATION");
-  return invoke(
-    "ai-assistant",
-    { operation: "suggest", ...parsed.data } satisfies AiAssistantInput,
-    isSuggestions,
-  );
+  const requestId = createRequestId();
+  try {
+    const auth = await requireAiAuth();
+    const data = await runSuggest(auth, parsed.data.scope, parsed.data.locale);
+    if (!isSuggestions(data)) return actionFailure("INTERNAL", { requestId });
+    return { ok: true, data };
+  } catch (error) {
+    return mapAiError(error, requestId);
+  }
 }
 
 export async function requestCfoNarrative(input: {
@@ -100,19 +105,24 @@ export async function requestCfoNarrative(input: {
     })
     .safeParse(input);
   if (!parsed.success) return actionFailure("VALIDATION");
-  return invoke(
-    "ai-assistant",
-    { operation: "cfo_narrative", ...parsed.data } satisfies AiAssistantInput,
-    (value): value is CfoNarrativeResult =>
-      Boolean(
-        value &&
-          typeof value === "object" &&
-          typeof (value as CfoNarrativeResult).narrative === "string" &&
-          typeof (value as CfoNarrativeResult).model === "string",
-      ),
-  );
+  const requestId = createRequestId();
+  try {
+    const auth = await requireAiAuth();
+    const data = await runCfoNarrative(
+      auth,
+      parsed.data.periodId,
+      parsed.data.locale,
+    );
+    return { ok: true, data };
+  } catch (error) {
+    return mapAiError(error, requestId);
+  }
 }
 
+/**
+ * Non-streaming chat (JSON). Prefer `/api/ai` with Accept: text/event-stream
+ * from the client for streamed replies (see AiChatPanel).
+ */
 export async function sendAiChat(input: {
   message: string;
   locale: "en" | "ar";
@@ -131,17 +141,19 @@ export async function sendAiChat(input: {
     })
     .safeParse(input);
   if (!parsed.success) return actionFailure("VALIDATION");
-  return invoke(
-    "ai-assistant",
-    { operation: "chat", ...parsed.data } satisfies AiAssistantInput,
-    (value): value is AiChatResult =>
-      Boolean(
-        value &&
-          typeof value === "object" &&
-          typeof (value as AiChatResult).reply === "string" &&
-          isSuggestions((value as AiChatResult).suggestions),
-      ),
-  );
+  const requestId = createRequestId();
+  try {
+    const auth = await requireAiAuth();
+    const data = await runChat(
+      auth,
+      parsed.data.message,
+      parsed.data.locale,
+      parsed.data.context,
+    );
+    return { ok: true, data };
+  } catch (error) {
+    return mapAiError(error, requestId);
+  }
 }
 
 export async function queueAiSuggestion(input: {
@@ -189,19 +201,29 @@ export async function dismissAiSuggestion(
 
 export async function requestVendorBillOcr(
   jobId: number,
-): Promise<ActionResult<{ jobId: number; status: string }>> {
+): Promise<ActionResult<{ jobId: number; status: string; queueJobId?: string }>> {
   if (!Number.isSafeInteger(jobId) || jobId <= 0) return actionFailure("VALIDATION");
-  return invoke(
-    "ocr-vendor-bill",
-    { jobId },
-    (value): value is { jobId: number; status: string } =>
-      Boolean(
-        value &&
-          typeof value === "object" &&
-          typeof (value as { jobId?: unknown }).jobId === "number" &&
-          typeof (value as { status?: unknown }).status === "string",
-      ),
-  );
+  const requestId = createRequestId();
+  try {
+    const { session } = await getAppSession();
+    if (!session) return actionFailure("UNAUTHENTICATED", { requestId });
+
+    const { id: queueJobId } = await enqueueJob(
+      "ocr",
+      {
+        jobId,
+        companyId: session.companyId,
+        actorUserId: session.user.id,
+      },
+      { companyId: session.companyId },
+    );
+    return {
+      ok: true,
+      data: { jobId, status: "queued", queueJobId },
+    };
+  } catch {
+    return actionFailure("INTERNAL", { requestId });
+  }
 }
 
 export async function requestReconciliationSuggestions(input: {
@@ -215,9 +237,34 @@ export async function requestReconciliationSuggestions(input: {
     })
     .safeParse(input);
   if (!parsed.success) return actionFailure("VALIDATION");
-  return invoke(
-    "reconciliation-suggest",
-    parsed.data,
-    (value): value is ReconciliationSuggestion[] => Array.isArray(value),
-  );
+  const requestId = createRequestId();
+  try {
+    const { session } = await getAppSession();
+    if (!session) return actionFailure("UNAUTHENTICATED", { requestId });
+
+    const client = await createInsForgeServerClient();
+    // Day-one: run sync so UI gets suggestions; worker handler remains for enqueue path.
+    const data = await runReconciliationSuggest(
+      client,
+      parsed.data,
+      {
+        companyId: session.companyId,
+        actorUserId: session.user.id,
+        persistMode: "rpc",
+      },
+    );
+    return { ok: true, data };
+  } catch (error) {
+    if (error instanceof ReconSuggestError) {
+      return actionFailure(
+        error.code === "MODEL_FAILED" ? "MODEL_FAILED" : error.code === "NOT_FOUND" ? "NOT_FOUND" : "INTERNAL",
+        {
+          messageKey: "ai.errors.modelFailed",
+          retryable: error.retryable,
+          requestId,
+        },
+      );
+    }
+    return actionFailure("INTERNAL", { requestId });
+  }
 }

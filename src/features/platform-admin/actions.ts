@@ -101,7 +101,7 @@ async function deliverOwnerInvitation(input: {
     locale: input.locale,
     idempotencyKey: `platform-owner:${input.invitationId}:${input.requestId}`,
   });
-  return { emailDelivered: sent.ok, invitationLink: sent.ok && sent.data.invitationLink ? sent.data.invitationLink : link };
+  return { emailDelivered: sent.ok, invitationLink: sent.ok && "invitationLink" in sent.data && sent.data.invitationLink ? sent.data.invitationLink : link };
 }
 
 export async function provisionCompanyAction(

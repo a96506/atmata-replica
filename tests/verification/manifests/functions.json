@@ -1,11 +1,13 @@
 {
-  "version": 1,
-  "functions": [
-    { "slug": "pdf-gen", "required": true },
-    { "slug": "email-send", "required": true },
-    { "slug": "ocr-vendor-bill", "required": true },
-    { "slug": "reconciliation-suggest", "required": true },
-    { "slug": "ai-assistant", "required": true },
-    { "slug": "erp-scheduler", "required": true }
+  "version": 2,
+  "note": "Phase 2: six edge functions folded into the Next app. No live InsForge function deploys required.",
+  "edgeFunctions": [],
+  "inApp": [
+    { "formerSlug": "pdf-gen", "path": "/api/pdf", "kind": "route" },
+    { "formerSlug": "ai-assistant", "path": "/api/ai", "kind": "route" },
+    { "formerSlug": "email-send", "path": "jobs/handlers/email", "kind": "worker" },
+    { "formerSlug": "ocr-vendor-bill", "path": "jobs/handlers/ocr", "kind": "worker" },
+    { "formerSlug": "reconciliation-suggest", "path": "jobs/handlers/recon", "kind": "worker" },
+    { "formerSlug": "erp-scheduler", "path": "/api/cron/erp", "kind": "cron+route" }
   ]
 }

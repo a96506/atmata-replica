@@ -37,7 +37,8 @@ import type { DocumentProcessingJob } from "@/types/entities";
  *   2. Browser uploads PDF to imports bucket
  *   3. linkOcrJobSource → source_url/key + attachments row
  *
- * OCR extract is functions-owned (`ocr-vendor-bill`). Approve/reject is this
+ * OCR extract is worker-owned (`runOcrVendorBill` / job type `ocr`).
+ * Approve/reject is this
  * write-path Server Action: single guarded transition (ILLEGAL_TRANSITION on
  * bad status), then create_vendor_bill (with source_ocr_job_id) + matched_doc_id
  * (or failed/REJECTED).

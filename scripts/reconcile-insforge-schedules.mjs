@@ -1,4 +1,18 @@
 #!/usr/bin/env node
+/**
+ * Reconcile InsForge *platform* schedules against ops/insforge/schedules.json.
+ *
+ * Phase 2 fold complete: ERP cadence lives in-app (public.schedules + node-cron).
+ * Edge erp-scheduler was deleted. Default this script with active=false.
+ * Prefer leaving InsForge schedules inactive so they do not double-fire.
+ *
+ * If using --activate for emergency HTTP kick, set ops url to an absolute
+ * Railway URL: https://…/api/cron/erp (manifest path alone is not enough).
+ *
+ * Usage:
+ *   node scripts/reconcile-insforge-schedules.mjs          # create/update, active=false
+ *   node scripts/reconcile-insforge-schedules.mjs --activate  # active=true (transition only)
+ */
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -9,6 +23,12 @@ const manifest = JSON.parse(
 );
 const activate = process.argv.includes("--activate");
 const desiredActive = activate;
+
+if (manifest._fold?.retireInsForgePlatformSchedules && activate) {
+  console.warn(
+    "[reconcile-insforge-schedules] WARNING: activating InsForge platform schedules after Phase 2 fold may double-fire with in-app node-cron. Prefer --activate only while pointing url at Railway /api/cron/erp and SCHEDULES_CRON_ENABLED=false.",
+  );
+}
 
 function cli(args, extra = {}) {
   return execFileSync("npx", ["@insforge/cli", ...args], {
@@ -41,6 +61,19 @@ const byName = new Map(
 );
 
 const headers = JSON.stringify(manifest.headers);
+const scheduleUrl =
+  process.env.INSFORGE_SCHEDULE_KICK_URL ??
+  (typeof manifest.url === "string" && manifest.url.startsWith("http")
+    ? manifest.url
+    : null);
+
+if (!scheduleUrl) {
+  console.warn(
+    "[reconcile-insforge-schedules] Skipping create/update: set INSFORGE_SCHEDULE_KICK_URL to an absolute Railway URL (…/api/cron/erp). Edge erp-scheduler is deleted; relative manifest.url is not deployable to InsForge schedules.",
+  );
+  process.exit(0);
+}
+
 for (const entry of manifest.schedules) {
   const body = JSON.stringify(entry.body);
   const existing = byName.get(entry.name);
@@ -53,7 +86,7 @@ for (const entry of manifest.schedules) {
       "--cron",
       entry.cron,
       "--url",
-      manifest.url,
+      scheduleUrl,
       "--method",
       manifest.method,
       "--headers",
@@ -88,7 +121,7 @@ for (const entry of manifest.schedules) {
     "--cron",
     entry.cron,
     "--url",
-    manifest.url,
+    scheduleUrl,
     "--method",
     manifest.method,
     "--headers",

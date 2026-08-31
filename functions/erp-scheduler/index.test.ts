@@ -9,7 +9,8 @@ import {
 } from "@/lib/schedules/manifest";
 
 describe("erp-scheduler contract", () => {
-  it("keeps the edge dispatcher aligned with the seven-schedule manifest", () => {
+  // Reference-only edge source; live path is /api/cron/erp + in-app node-cron.
+  it("keeps the schedule manifest aligned with in-app cron ownership", () => {
     expect(SCHEDULE_MANIFEST).toHaveLength(7);
     expect(SCHEDULER_JOBS).toEqual([
       "fx_ingest",
@@ -19,7 +20,7 @@ describe("erp-scheduler contract", () => {
       "inventory_alerts",
       "depreciation",
     ]);
-    expect(DEFAULT_SCHEDULER_URL.endsWith("/erp-scheduler")).toBe(true);
+    expect(DEFAULT_SCHEDULER_URL).toBe("/api/cron/erp");
     expect(isSchedulerJob("fx_ingest")).toBe(true);
     expect(kuwaitBusinessDate(new Date("2026-08-20T21:00:00Z"))).toBe(
       "2026-08-21",

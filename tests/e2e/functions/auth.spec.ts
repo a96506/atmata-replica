@@ -1,30 +1,12 @@
-import { expect, test } from "@playwright/test";
+import { test } from "@playwright/test";
 
-const slugs = [
-  "pdf-gen",
-  "email-send",
-  "ocr-vendor-bill",
-  "reconciliation-suggest",
-  "ai-assistant",
-  "erp-scheduler",
-] as const;
-
-for (const slug of slugs) {
-  test(`${slug} requires caller authentication`, async () => {
-    const baseUrl =
-      process.env.INSFORGE_URL ?? process.env.NEXT_PUBLIC_INSFORGE_URL;
-    test.skip(!baseUrl, "InsForge URL is not configured.");
-    const response = await fetch(`${baseUrl}/functions/${slug}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({}),
-    });
-    expect(response.status).toBe(401);
-    const body = (await response.json()) as {
-      error?: { code?: string; requestId?: string; retryable?: boolean };
-    };
-    expect(body.error?.code).toBe("UNAUTHENTICATED");
-    expect(body.error?.requestId).toEqual(expect.any(String));
-    expect(body.error?.retryable).toBe(false);
+/**
+ * Phase 2 cleanup: InsForge edge functions were deleted.
+ * Auth coverage moved to Next routes (cookie session), not /functions/{slug}.
+ * See: /api/pdf, /api/ai, /api/cron/erp; workers email/ocr/recon.
+ */
+test.describe.skip("edge function auth (undeployed)", () => {
+  test("placeholder — use in-app route auth instead of /functions/{slug}", async () => {
+    // intentionally empty
   });
-}
+});

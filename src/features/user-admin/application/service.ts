@@ -69,7 +69,12 @@ export async function inviteUser(input: {
   return {
     invitationId: invited.id,
     email: invited.email,
-    invitationLink: sent.ok && sent.data.invitationLink ? sent.data.invitationLink : link,
+    invitationLink:
+      sent.ok &&
+      "invitationLink" in sent.data &&
+      sent.data.invitationLink
+        ? sent.data.invitationLink
+        : link,
     emailDelivered: sent.ok,
     requestId: parsed.requestId,
   };

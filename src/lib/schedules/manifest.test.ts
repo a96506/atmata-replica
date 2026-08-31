@@ -38,9 +38,8 @@ describe("schedule manifest", () => {
     expect(JSON.stringify(SCHEDULER_HEADERS)).not.toContain("API_KEY");
   });
 
-  it("pins the function2 scheduler URL", () => {
-    expect(DEFAULT_SCHEDULER_URL).toMatch(/\/erp-scheduler$/);
-    expect(DEFAULT_SCHEDULER_URL).toContain("function2.insforge.app");
+  it("pins the in-app cron kick path", () => {
+    expect(DEFAULT_SCHEDULER_URL).toBe("/api/cron/erp");
   });
 
   it("accepts only known jobs", () => {

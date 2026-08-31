@@ -1,6 +1,14 @@
 {
-  "functionSlug": "erp-scheduler",
-  "url": "https://yfmw4i43-9rc.function2.insforge.app/erp-scheduler",
+  "_fold": {
+    "status": "phase2-complete",
+    "owner": "Next app node-cron + public.schedules (Railway)",
+    "retireInsForgePlatformSchedules": true,
+    "edgeFunctionsDeleted": true,
+    "transitionHttpKick": "POST {RAILWAY_APP_URL}/api/cron/erp with Authorization: Bearer SCHEDULE_CRON_TOKEN",
+    "note": "InsForge edge function erp-scheduler was deleted. Keep platform schedules inactive so jobs are not double-fired. Source under functions/erp-scheduler is reference only."
+  },
+  "functionSlug": null,
+  "url": "/api/cron/erp",
   "method": "POST",
   "headers": {
     "Authorization": "Bearer ${{secrets.SCHEDULE_CRON_TOKEN}}",

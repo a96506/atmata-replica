@@ -51,9 +51,7 @@ export function DemoUpload() {
         size: file.size,
         filename: file.name,
       });
-      // Trigger the OCR edge function now that the source is linked. The job
-      // stays "queued" until the function completes; OCR runs async, so the
-      // upload success toast is shown regardless of this call's outcome.
+      // Enqueue OCR worker job (document_processing_jobs stays queued until handled).
       const ocr = await requestVendorBillOcr(jobId);
       if (!ocr.ok) actionToast.error(ocr.error);
       toast.success(`Uploaded ${file.name} — OCR queued.`);

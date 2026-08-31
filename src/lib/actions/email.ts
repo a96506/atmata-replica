@@ -1,7 +1,13 @@
 "use server";
 
 import { z } from "zod";
+import { enqueueJob } from "@/lib/jobs";
+import {
+  EmailSendError,
+  runEmailSend,
+} from "@/lib/jobs/handlers/email";
 import { createInsForgeServerClient } from "@/lib/insforge/server";
+import { getAppSession, getPlatformAdminGate } from "@/lib/insforge/session";
 import { actionFailure, createRequestId } from "./errors";
 import type { ActionResult } from "./result";
 import type { EmailSendInput, EmailSendResult } from "@/types/functions";
@@ -34,20 +40,39 @@ const schema = z
     }
   });
 
-function isEmailResult(value: unknown): value is EmailSendResult {
-  if (!value || typeof value !== "object") return false;
-  const result = value as Record<string, unknown>;
-  return (
-    typeof result.deliveryId === "string" &&
-    (result.status === "sent" || result.status === "skipped") &&
-    typeof result.duplicate === "boolean" &&
-    (result.invitationLink === undefined || typeof result.invitationLink === "string")
-  );
+export type QueuedEmailResult = {
+  jobId: string;
+  status: "queued";
+};
+
+function mapEmailError(
+  error: unknown,
+  requestId: string,
+): ActionResult<never> {
+  if (error instanceof EmailSendError) {
+    return actionFailure(error.code, {
+      messageKey:
+        error.code === "EMAIL_DELIVERY_FAILED"
+          ? "email.errors.deliveryFailed"
+          : error.code === "VALIDATION"
+            ? "email.errors.invalidRequest"
+            : undefined,
+      retryable: error.retryable,
+      requestId,
+    });
+  }
+  return actionFailure("INTERNAL", { requestId });
 }
 
+/**
+ * Send a transactional email.
+ *
+ * Invitations stay sync (hybrid A) so callers receive `invitationLink`.
+ * Other events enqueue a worker job and return `{ jobId, status: 'queued' }`.
+ */
 export async function sendTransactionalEmail(
   input: EmailSendInput,
-): Promise<ActionResult<EmailSendResult>> {
+): Promise<ActionResult<EmailSendResult | QueuedEmailResult>> {
   const parsed = schema.safeParse(input);
   if (!parsed.success) {
     return actionFailure("VALIDATION", {
@@ -55,23 +80,75 @@ export async function sendTransactionalEmail(
     });
   }
   const requestId = createRequestId();
+  const data = parsed.data;
+
   try {
-    const client = await createInsForgeServerClient();
-    const { data, error } = await client.functions.invoke("email-send", {
-      body: parsed.data,
-    });
-    if (error) {
-      return actionFailure("EMAIL_DELIVERY_FAILED", {
-        messageKey: "email.errors.deliveryFailed",
-        retryable: true,
-        requestId,
+    if (data.event === "user_invitation") {
+      const client = await createInsForgeServerClient();
+      const platform = await getPlatformAdminGate();
+      const { session } = await getAppSession();
+
+      let companyId: string;
+      let companyName: string;
+      let actorUserId: string;
+      let roles: string[];
+      let isPlatformAdmin = false;
+
+      if (platform.reason === null && data.invitationToken) {
+        isPlatformAdmin = true;
+        actorUserId = platform.user.id;
+        const { data: invitation } = await client.database
+          .from("invitations")
+          .select("company_id")
+          .eq("id", data.invitationId!)
+          .eq("status", "pending")
+          .maybeSingle();
+        if (!invitation) {
+          return actionFailure("NOT_FOUND", { requestId });
+        }
+        companyId = String(invitation.company_id);
+        const { data: company } = await client.database
+          .from("companies")
+          .select("id, name")
+          .eq("id", companyId)
+          .maybeSingle();
+        if (!company) return actionFailure("NOT_FOUND", { requestId });
+        companyName = String(company.name);
+        roles = ["admin"];
+      } else if (session) {
+        companyId = session.companyId;
+        companyName = session.company.name;
+        actorUserId = session.user.id;
+        roles = session.roles;
+      } else {
+        return actionFailure("UNAUTHENTICATED", { requestId });
+      }
+
+      const result = await runEmailSend(client, data, {
+        companyId,
+        companyName,
+        actorUserId,
+        roles,
+        isPlatformAdmin,
+        claimMode: "rpc",
       });
+      return { ok: true, data: result };
     }
-    if (!isEmailResult(data)) {
-      return actionFailure("INTERNAL", { requestId });
-    }
-    return { ok: true, data };
-  } catch {
-    return actionFailure("INTERNAL", { requestId });
+
+    const { session } = await getAppSession();
+    if (!session) return actionFailure("UNAUTHENTICATED", { requestId });
+
+    const { id: jobId } = await enqueueJob(
+      "email",
+      {
+        ...data,
+        companyId: session.companyId,
+        actorUserId: session.user.id,
+      },
+      { companyId: session.companyId },
+    );
+    return { ok: true, data: { jobId, status: "queued" } };
+  } catch (error) {
+    return mapEmailError(error, requestId);
   }
 }

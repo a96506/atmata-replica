@@ -20,7 +20,10 @@ test("storage isolation A vs B", async () => {
 
   const companyA = await clientA.database.rpc("my_company_id", {});
   const companyId = companyA.data as string | null;
-  test.skip(!companyId || companyA.error, "Tenant A my_company_id unavailable");
+  test.skip(
+    !companyId || Boolean(companyA.error),
+    "Tenant A my_company_id unavailable",
+  );
   test.skip(companyId === "co_1", "refusing storage probe on co_1");
 
   // Storage RLS: first path segment must equal my_company_id().

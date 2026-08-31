@@ -2,9 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { createInsForgeServerClient } from "@/lib/insforge/server";
 import { actionFailure, createRequestId } from "./errors";
 import type { ActionResult } from "./result";
+import {
+  generatePdf,
+  PdfServiceError,
+  type DocPdfInput,
+} from "@/lib/services/pdf-gen";
 import type {
   FinancialPdfType,
   PdfDocType,
@@ -31,44 +35,23 @@ const financialInputSchema = z.object({
   mode: z.enum(["preview", "save"]),
 });
 
-function isPdfResult(value: unknown): value is PdfResult {
-  if (!value || typeof value !== "object") return false;
-  const result = value as Record<string, unknown>;
-  if (result.mode === "preview") {
-    return (
-      result.contentType === "application/pdf" &&
-      typeof result.base64 === "string" &&
-      result.base64.length > 100
-    );
+function mapPdfError(error: unknown, requestId: string): ActionResult<never> {
+  if (error instanceof PdfServiceError) {
+    const messageKey =
+      error.code === "STORAGE_FAILED"
+        ? "documents.errors.generationFailed"
+        : error.code === "NOT_FOUND"
+          ? "errors.notFound"
+          : error.code === "UNAVAILABLE"
+            ? "documents.errors.generationFailed"
+            : undefined;
+    return actionFailure(error.code, {
+      messageKey,
+      retryable: error.retryable,
+      requestId,
+    });
   }
-  return (
-    result.mode === "save" &&
-    typeof result.attachmentId === "string" &&
-    typeof result.url === "string" &&
-    typeof result.key === "string" &&
-    typeof result.cached === "boolean"
-  );
-}
-
-async function invokePdf(body: unknown): Promise<ActionResult<PdfResult>> {
-  const requestId = createRequestId();
-  try {
-    const client = await createInsForgeServerClient();
-    const { data, error } = await client.functions.invoke("pdf-gen", { body });
-    if (error) {
-      return actionFailure("UNAVAILABLE", {
-        messageKey: "documents.errors.generationFailed",
-        retryable: true,
-        requestId,
-      });
-    }
-    if (!isPdfResult(data)) {
-      return actionFailure("INTERNAL", { requestId });
-    }
-    return { ok: true, data };
-  } catch {
-    return actionFailure("INTERNAL", { requestId });
-  }
+  return actionFailure("INTERNAL", { requestId });
 }
 
 export async function generateDocPdf(input: {
@@ -83,11 +66,16 @@ export async function generateDocPdf(input: {
       messageKey: "documents.errors.invalidRequest",
     });
   }
-  const result = await invokePdf(parsed.data);
-  if (result.ok && parsed.data.mode === "save") {
-    revalidatePath("/");
+  const requestId = createRequestId();
+  try {
+    const data = await generatePdf(parsed.data as DocPdfInput);
+    if (parsed.data.mode === "save") {
+      revalidatePath("/");
+    }
+    return { ok: true, data };
+  } catch (error) {
+    return mapPdfError(error, requestId);
   }
-  return result;
 }
 
 export async function generateFinancialPdf(input: {
@@ -102,5 +90,14 @@ export async function generateFinancialPdf(input: {
       messageKey: "documents.errors.invalidRequest",
     });
   }
-  return invokePdf({ docType: "financial", ...parsed.data });
+  const requestId = createRequestId();
+  try {
+    const data = await generatePdf({
+      docType: "financial",
+      ...parsed.data,
+    });
+    return { ok: true, data };
+  } catch (error) {
+    return mapPdfError(error, requestId);
+  }
 }

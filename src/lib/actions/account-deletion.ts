@@ -19,7 +19,7 @@ import { getAppSession } from "@/lib/insforge/session";
  * Defensive: a `deletion_requests` table may not exist yet (added by a
  * parallel migration). When it exists, we insert a row so the platform
  * operator can pick it up from the DB. When it does not exist, we cannot
- * fall back to the `email-send` function because that function is locked to
+ * fall back to the email job handler because that path is locked to
  * a fixed enum of business events and cannot send an arbitrary message to
  * the platform admin — so we surface a clear "request sent to operator"
  * state to the user instead of crashing.
@@ -40,7 +40,7 @@ export type AccountDeletionResult =
       /**
        * Table not provisioned yet. The request could not be persisted; the
        * user is told an operator will be in touch (no email actually sent —
-       * the email function is locked to specific business events).
+       * the email handler is locked to specific business events).
        */
       channel: "operator";
       requestId: string;

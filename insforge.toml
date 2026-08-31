@@ -1,3 +1,8 @@
+# Edge functions: none. Phase 2 folded pdf-gen, email-send, ocr-vendor-bill,
+# reconciliation-suggest, ai-assistant, erp-scheduler into the Next app.
+# Do not `functions deploy` those slugs. Source under functions/ is reference only.
+# TOML does not manage function code; this comment documents the contract.
+
 [auth]
 allowed_redirect_urls = [
   "http://localhost:3000",

@@ -16,6 +16,11 @@ export function loadLocalEnv() {
 
 loadLocalEnv();
 
+/**
+ * Legacy helper for InsForge /functions/{slug} e2e.
+ * Phase 2: those six edge deploys were deleted — prefer Next /api/* routes
+ * and skip edge specs under tests/e2e/functions (except scheduler → /api/cron/erp).
+ */
 export async function authenticatedClient() {
   const baseUrl =
     process.env.INSFORGE_URL ?? process.env.NEXT_PUBLIC_INSFORGE_URL;
