@@ -1,0 +1,31 @@
+# Build context exclusions — keep the Docker build lean and avoid leaking
+# local secrets / test artifacts into the image.
+# https://github.com/vercel/next.js/blob/canary/examples/with-docker/.dockerignore
+
+node_modules
+.next
+.git
+.gitignore
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+.env*
+!.env.example
+
+Dockerfile
+.dockerignore
+railway.json
+railway.toml
+
+tests
+playwright-report
+playwright/.cache
+test-results
+coverage
+*.log
+
+.DS_Store
+.vscode
+.idea

@@ -37,6 +37,10 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // Standalone output: produces a self-contained `.next/standalone` server
+  // for the Railway Docker image. No node_modules at runtime.
+  // https://nextjs.org/docs/app/api-reference/config/next-config-js/output
+  output: "standalone",
   // Playwright (and some browsers) hit 127.0.0.1 while `next dev` binds as
   // localhost — without this, Next 16 blocks /_next/* and client JS never
   // hydrates, so login forms fall through to native GET submits.
