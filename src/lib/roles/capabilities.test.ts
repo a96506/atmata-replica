@@ -74,6 +74,59 @@ describe("can() matrix", () => {
   });
 });
 
+/** Phase 1 acceptance matrix (docs/role-ux-plan.md) — gate-level smoke. */
+function roleMay(role: string, operation: keyof typeof OPERATIONS): boolean {
+  if (role === "admin") return true;
+  return rolesForOperation(operation).includes(role as never);
+}
+
+describe("Phase 1 acceptance matrix (PermissionGate smoke)", () => {
+  it("sales_rep: quote/SO yes; invoice/receipt/adjustment no", () => {
+    expect(roleMay("sales_rep", "create_quote")).toBe(true);
+    expect(roleMay("sales_rep", "create_sales_order")).toBe(true);
+    expect(roleMay("sales_rep", "create_customer_invoice")).toBe(false);
+    expect(roleMay("sales_rep", "create_customer_receipt")).toBe(false);
+    expect(roleMay("sales_rep", "create_stock_adjustment")).toBe(false);
+  });
+
+  it("ar_clerk: quote/SO/invoice/receipt yes; PO/bill/adjustment no", () => {
+    expect(roleMay("ar_clerk", "create_quote")).toBe(true);
+    expect(roleMay("ar_clerk", "create_sales_order")).toBe(true);
+    expect(roleMay("ar_clerk", "create_customer_invoice")).toBe(true);
+    expect(roleMay("ar_clerk", "create_customer_receipt")).toBe(true);
+    expect(roleMay("ar_clerk", "create_purchase_order")).toBe(false);
+    expect(roleMay("ar_clerk", "create_vendor_bill")).toBe(false);
+    expect(roleMay("ar_clerk", "create_stock_adjustment")).toBe(false);
+  });
+
+  it("accountant: JE yes; receipt/adjustment no", () => {
+    expect(roleMay("accountant", "create_journal_entry")).toBe(true);
+    expect(roleMay("accountant", "create_customer_receipt")).toBe(false);
+    expect(roleMay("accountant", "create_stock_adjustment")).toBe(false);
+  });
+
+  it("warehouse: adjustment/transfer/GRN yes; quote/bill no", () => {
+    expect(roleMay("warehouse", "create_stock_adjustment")).toBe(true);
+    expect(roleMay("warehouse", "create_internal_transfer")).toBe(true);
+    expect(roleMay("warehouse", "create_goods_receipt")).toBe(true);
+    expect(roleMay("warehouse", "create_delivery_note")).toBe(true);
+    expect(roleMay("warehouse", "create_quote")).toBe(false);
+    expect(roleMay("warehouse", "create_vendor_bill")).toBe(false);
+  });
+
+  it("viewer: denied on all create operations", () => {
+    for (const op of Object.keys(OPERATIONS) as (keyof typeof OPERATIONS)[]) {
+      expect(roleMay("viewer", op)).toBe(false);
+    }
+  });
+
+  it("admin: allowed on all create operations", () => {
+    for (const op of Object.keys(OPERATIONS) as (keyof typeof OPERATIONS)[]) {
+      expect(roleMay("admin", op)).toBe(true);
+    }
+  });
+});
+
 describe("WRITE_CAPABILITIES ↔ SQL WHEN arms", () => {
   it("matches write_capability_roles CASE arms (TS may lead with sales_rep)", () => {
     const sqlArms = loadSqlWhenArms();
