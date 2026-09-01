@@ -11,8 +11,8 @@ export default async function Page({
   const accounts = await listAccounts();
   return (
     <PermissionGate
-      allow={["accountant", "admin"]}
-      rationale="Creating manual journal entries requires the `accountant` or `admin` role."
+      operation="create_journal_entry"
+      rationale="Creating journal entries requires a role permitted for create_journal_entry (accountant or admin)."
     >
       <NewJeForm locale={locale} accounts={accounts} />
     </PermissionGate>

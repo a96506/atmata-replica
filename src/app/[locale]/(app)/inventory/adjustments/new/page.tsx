@@ -11,8 +11,8 @@ export default async function Page({
   const [products, warehouses] = await Promise.all([listProducts(), listWarehouses()]);
   return (
     <PermissionGate
-      allow={["warehouse", "accountant", "admin"]}
-      rationale="Creating stock adjustments requires the `warehouse`, `accountant`, or `admin` role."
+      operation="create_stock_adjustment"
+      rationale="Creating stock adjustments requires a role permitted for create_stock_adjustment (warehouse or admin)."
     >
       <NewAdjustmentForm
         locale={locale}

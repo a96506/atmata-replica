@@ -24,8 +24,8 @@ export default async function Page({
 
   return (
     <PermissionGate
-      allow={["buyer", "admin"]}
-      rationale="Creating Purchase Orders requires the `buyer` or `admin` role."
+      operation="create_purchase_order"
+      rationale="Creating purchase orders requires a role permitted for create_purchase_order (buyer or admin)."
     >
       <NewPoForm
         locale={locale}

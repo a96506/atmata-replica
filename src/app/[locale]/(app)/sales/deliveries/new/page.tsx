@@ -22,8 +22,8 @@ export default async function Page({
 
   return (
     <PermissionGate
-      allow={["warehouse", "admin"]}
-      rationale="Posting delivery notes requires the `warehouse` or `admin` role."
+      operation="create_delivery_note"
+      rationale="Creating delivery notes requires a role permitted for create_delivery_note (warehouse or admin)."
     >
       <NewDnForm
         locale={locale}

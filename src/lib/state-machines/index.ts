@@ -1,3 +1,8 @@
+import {
+  can,
+  rolesForOperation,
+  type WriteCapability,
+} from "@/lib/roles/capabilities";
 import type { DocState, DocType, Role } from "@/types";
 
 export type Action = {
@@ -5,6 +10,8 @@ export type Action = {
   label: string;
   toState: DocState;
   roles: Role[];
+  /** When set, legalActions filters via can(role, capability). */
+  capability?: WriteCapability;
   destructive?: boolean;
 };
 
@@ -96,6 +103,47 @@ const CUSTOMER_INVOICE: Transitions = {
   ],
 };
 
+/** Quote/SO draft submit: sales_rep OR ar_clerk (dual create capability). */
+const QUOTE_SO_DRAFT_ROLES = rolesForOperation("create_quote");
+
+const QUOTE: Transitions = {
+  ...DEFAULT,
+  draft: [
+    {
+      id: "submit",
+      label: "common.actions.submit",
+      toState: "pending",
+      roles: QUOTE_SO_DRAFT_ROLES,
+    },
+    {
+      id: "cancel",
+      label: "common.actions.cancel",
+      toState: "cancelled",
+      roles: QUOTE_SO_DRAFT_ROLES,
+      destructive: true,
+    },
+  ],
+};
+
+const SO: Transitions = {
+  ...DEFAULT,
+  draft: [
+    {
+      id: "submit",
+      label: "common.actions.submit",
+      toState: "pending",
+      roles: QUOTE_SO_DRAFT_ROLES,
+    },
+    {
+      id: "cancel",
+      label: "common.actions.cancel",
+      toState: "cancelled",
+      roles: QUOTE_SO_DRAFT_ROLES,
+      destructive: true,
+    },
+  ],
+};
+
 const RFQ: Transitions = {
   draft: [
     { id: "send", label: "common.actions.send", toState: "sent", roles: ["buyer", "admin"] },
@@ -137,6 +185,8 @@ const TRANSITIONS: Partial<Record<DocType, Transitions>> = {
   po: PO,
   vendor_bill: VENDOR_BILL,
   customer_invoice: CUSTOMER_INVOICE,
+  quote: QUOTE,
+  so: SO,
   rfq: RFQ,
   vendor_return: RETURN_DOC,
   customer_return: RETURN_DOC,
@@ -149,9 +199,11 @@ export function legalActions(
 ): Action[] {
   const t = TRANSITIONS[docType] ?? DEFAULT;
   const actions = t[state] ?? [];
-  return actions.filter(
-    (a) => a.roles.length === 0 || a.roles.includes(role) || role === "admin",
-  );
+  return actions.filter((a) => {
+    if (role === "admin") return true;
+    if (a.capability) return can(role, a.capability);
+    return a.roles.length === 0 || a.roles.includes(role);
+  });
 }
 
 export const TERMINAL_STATES: DocState[] = ["posted", "locked", "archived", "cancelled"];

@@ -1,24 +1,39 @@
 "use client";
 
 import type { ReactNode } from "react";
+import {
+  rolesForOperation,
+  type OperationKey,
+} from "@/lib/roles/capabilities";
 import { useSession } from "@/lib/session";
 import type { Role } from "@/types";
 
+type PermissionGateBase = {
+  rationale: string;
+  children: ReactNode;
+};
+
+type PermissionGateProps = PermissionGateBase &
+  (
+    | { operation: OperationKey; allow?: Role[] }
+    | { allow: Role[]; operation?: OperationKey }
+  );
+
 /**
- * Renders `children` only when the current session role is in `allow`. Otherwise
- * shows a "permission denied" empty state with a role-explanation card.
+ * Renders `children` only when the current session role is allowed.
+ * Prefer `operation` (derives roles from capabilities); `allow` remains an
+ * escape hatch for read-only / non-RPC pages.
  */
 export function PermissionGate({
   allow,
+  operation,
   rationale,
   children,
-}: {
-  allow: Role[];
-  rationale: string;
-  children: ReactNode;
-}) {
+}: PermissionGateProps) {
   const { role } = useSession();
-  if (role === "admin" || allow.includes(role)) {
+  const allowedRoles = operation ? rolesForOperation(operation) : (allow ?? []);
+
+  if (role === "admin" || allowedRoles.includes(role)) {
     return <>{children}</>;
   }
   return (
@@ -32,8 +47,11 @@ export function PermissionGate({
         </div>
         <div className="mt-2 font-medium">Roles that can access:</div>
         <div className="mt-1 flex flex-wrap gap-1">
-          {allow.map((r) => (
-            <span key={r} className="rounded bg-status-success-muted px-2 py-0.5 font-mono text-status-success-foreground">
+          {allowedRoles.map((r) => (
+            <span
+              key={r}
+              className="rounded bg-status-success-muted px-2 py-0.5 font-mono text-status-success-foreground"
+            >
               {r}
             </span>
           ))}

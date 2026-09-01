@@ -22,8 +22,8 @@ export default async function Page({
 
   return (
     <PermissionGate
-      allow={["warehouse", "admin"]}
-      rationale="Recording goods receipts requires the `warehouse` or `admin` role."
+      operation="create_goods_receipt"
+      rationale="Recording goods receipts requires a role permitted for create_goods_receipt (warehouse or admin)."
     >
       <NewGrnForm
         locale={locale}

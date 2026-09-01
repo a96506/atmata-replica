@@ -27,8 +27,8 @@ export default async function Page({
 
   return (
     <PermissionGate
-      allow={["sales_rep", "admin"]}
-      rationale="Creating sales orders requires the `sales_rep` or `admin` role."
+      operation="create_sales_order"
+      rationale="Creating sales orders requires a role permitted for create_sales_order (sales_rep, ar_clerk, or admin)."
     >
       <NewSoForm
         locale={locale}

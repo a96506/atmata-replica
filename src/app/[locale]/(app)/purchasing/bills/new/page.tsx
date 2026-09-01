@@ -34,8 +34,8 @@ export default async function Page({
 
   return (
     <PermissionGate
-      allow={["ap_clerk", "admin"]}
-      rationale="Creating vendor bills requires the `ap_clerk` or `admin` role."
+      operation="create_vendor_bill"
+      rationale="Creating vendor bills requires a role permitted for create_vendor_bill (ap_clerk or admin)."
     >
       <NewBillForm
         locale={locale}

@@ -21,8 +21,8 @@ export default async function Page({
 
   return (
     <PermissionGate
-      allow={["ar_clerk", "accountant", "admin"]}
-      rationale="Creating customer receipts requires the `ar_clerk`, `accountant`, or `admin` role."
+      operation="create_customer_receipt"
+      rationale="Creating customer receipts requires a role permitted for create_customer_receipt (ar_clerk or admin)."
     >
       <NewReceiptForm
         locale={locale}

@@ -11,8 +11,8 @@ export default async function Page({
   const [products, warehouses] = await Promise.all([listProducts(), listWarehouses()]);
   return (
     <PermissionGate
-      allow={["warehouse", "admin"]}
-      rationale="Creating internal transfers requires the `warehouse` or `admin` role."
+      operation="create_internal_transfer"
+      rationale="Creating internal transfers requires a role permitted for create_internal_transfer (warehouse or admin)."
     >
       <NewTransferForm
         locale={locale}

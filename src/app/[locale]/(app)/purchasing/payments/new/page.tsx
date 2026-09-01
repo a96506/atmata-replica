@@ -21,8 +21,8 @@ export default async function Page({
 
   return (
     <PermissionGate
-      allow={["ap_clerk", "accountant", "admin"]}
-      rationale="Creating vendor payments requires the `ap_clerk`, `accountant`, or `admin` role."
+      operation="create_vendor_payment"
+      rationale="Creating vendor payments requires a role permitted for create_vendor_payment (ap_clerk or admin)."
     >
       <NewPaymentForm
         locale={locale}

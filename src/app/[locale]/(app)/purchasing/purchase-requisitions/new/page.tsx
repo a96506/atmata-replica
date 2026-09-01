@@ -16,8 +16,8 @@ export default async function Page({
 
   return (
     <PermissionGate
-      allow={["warehouse", "buyer", "admin"]}
-      rationale="Creating purchase requisitions requires the `warehouse`, `buyer`, or `admin` role."
+      operation="create_purchase_requisition"
+      rationale="Creating purchase requisitions requires a role permitted for create_purchase_requisition (buyer or admin)."
     >
       <NewPrForm
         locale={locale}

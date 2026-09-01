@@ -28,8 +28,8 @@ export default async function Page({
 
   return (
     <PermissionGate
-      allow={["ar_clerk", "admin"]}
-      rationale="Creating customer invoices requires the `ar_clerk` or `admin` role."
+      operation="create_customer_invoice"
+      rationale="Creating customer invoices requires a role permitted for create_customer_invoice (ar_clerk or admin)."
     >
       <NewInvoiceForm
         locale={locale}

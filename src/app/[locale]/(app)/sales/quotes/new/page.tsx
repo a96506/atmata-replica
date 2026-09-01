@@ -16,8 +16,8 @@ export default async function Page({
 
   return (
     <PermissionGate
-      allow={["sales_rep", "admin"]}
-      rationale="Creating quotes requires the `sales_rep` or `admin` role."
+      operation="create_quote"
+      rationale="Creating quotes requires a role permitted for create_quote (sales_rep, ar_clerk, or admin)."
     >
       <NewQuoteForm
         locale={locale}
