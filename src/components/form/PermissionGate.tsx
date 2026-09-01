@@ -57,8 +57,8 @@ export function PermissionGate({
           ))}
         </div>
         <div className="mt-3 text-muted-foreground">
-          Use the dev role switcher (bottom-right) to test other roles, or ask
-          your admin to grant access.
+          Ask your admin to grant one of the roles above, or sign in with an
+          account that already has access.
         </div>
       </div>
     </div>
