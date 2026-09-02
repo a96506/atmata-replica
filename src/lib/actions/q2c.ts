@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
+import { recordChangedFields } from "@/lib/actions/audit";
 import { createRequestId, KnownActionError, normalizeActionError } from "@/lib/actions/errors";
 import type { ActionResult } from "@/lib/actions/result";
 import { validateActionInput } from "@/lib/actions/validation";
@@ -276,11 +277,20 @@ export async function updateOpportunityAction(
     if (value !== undefined) patch.value = value;
 
     const client = await createInsForgeServerClient();
+    const { data: beforeRow } = await client.database
+      .from("opportunities")
+      .select("stage,value")
+      .eq("id", id)
+      .maybeSingle();
+    const before = beforeRow
+      ? camelize<Record<string, unknown>>(beforeRow)
+      : {};
+
     const { data, error } = await client.database
       .from("opportunities")
       .update(snakelize(patch))
       .eq("id", id)
-      .select("id")
+      .select("id,stage,value")
       .maybeSingle();
 
     if (error) {
@@ -292,9 +302,18 @@ export async function updateOpportunityAction(
     }
     if (data == null) throw new KnownActionError("NOT_FOUND");
 
+    const after = camelize<Record<string, unknown>>(data);
+    await recordChangedFields({
+      docType: "opportunity",
+      docId: id,
+      before,
+      patch,
+      after,
+      reason: "opportunity updated",
+    });
+
     revalidateSales(locale);
-    const row = camelize<{ id: string }>(data);
-    return { ok: true, data: row };
+    return { ok: true, data: { id: String(after.id) } };
   } catch (error) {
     return normalizeActionError(error, { requestId });
   }

@@ -86,7 +86,7 @@ export const INVENTORY_SELECTS = {
 } as const;
 
 export const GL_SELECTS = {
-  accounts: "id,code,name,type,parent,active",
+  accounts: "id,code,name,name_en,name_ar,type,parent,active",
   journalEntries:
     "id,row_version,number,company_id,date,currency,state,source_type,source_id,description,lines:journal_entry_lines(id,account_id,description,debit,credit,line_order)",
 } as const;

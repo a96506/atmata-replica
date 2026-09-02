@@ -56,6 +56,7 @@ import {
   updateTaxCodeSchema,
   updateWarehouseSchema,
 } from "@/lib/actions/validation/master";
+import { recordChangedFields } from "@/lib/actions/audit";
 import {
   resolvePriceListItem,
   type ResolvedPriceListItem,
@@ -116,6 +117,23 @@ async function updateRow<T>(
     .maybeSingle();
   if (error) throwDb(error, table);
   if (data == null) throw new KnownActionError("NOT_FOUND");
+  return camelize<T>(data);
+}
+
+
+/** Fetch one row by id (camelized). Used for field_change before/after diffs. */
+async function getRow<T extends Record<string, unknown>>(
+  table: string,
+  id: string,
+): Promise<T | null> {
+  const client = await createInsForgeServerClient();
+  const { data, error } = await client.database
+    .from(table)
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throwDb(error, table);
+  if (data == null) return null;
   return camelize<T>(data);
 }
 
@@ -519,7 +537,21 @@ export async function updateTaxCodeAction(
     const parsed = validateActionInput(updateTaxCodeSchema, input, requestId);
     if (!parsed.ok) return parsed;
     const { locale, id, ...patch } = parsed.data;
-    const row = await updateRow<MasterRow>("tax_codes", id, patch);
+    const before =
+      (await getRow<Record<string, unknown>>("tax_codes", id)) ?? {};
+    const row = await updateRow<MasterRow & Record<string, unknown>>(
+      "tax_codes",
+      id,
+      patch,
+    );
+    await recordChangedFields({
+      docType: "tax_code",
+      docId: id,
+      before,
+      patch,
+      after: row,
+      reason: "tax code updated",
+    });
     revalidateSettings(locale, "tax-codes");
     return { ok: true, data: row };
   } catch (error) {
@@ -662,8 +694,14 @@ export async function createAccountAction(
   try {
     const parsed = validateActionInput(createAccountSchema, input, requestId);
     if (!parsed.ok) return parsed;
-    const { locale, ...payload } = parsed.data;
-    const row = await insertRow<MasterRow>("accounts", payload);
+    const { locale, nameEn, nameAr, ...rest } = parsed.data;
+    // Keep legacy `name` NOT NULL in sync with EN; snakelize maps nameEn/nameAr.
+    const row = await insertRow<MasterRow>("accounts", {
+      ...rest,
+      nameEn,
+      nameAr,
+      name: nameEn,
+    });
     revalidateSettings(locale, "coa");
     return { ok: true, data: row };
   } catch (error) {
@@ -679,7 +717,26 @@ export async function updateAccountAction(
     const parsed = validateActionInput(updateAccountSchema, input, requestId);
     if (!parsed.ok) return parsed;
     const { locale, id, ...patch } = parsed.data;
-    const row = await updateRow<MasterRow>("accounts", id, patch);
+    const before =
+      (await getRow<Record<string, unknown>>("accounts", id)) ?? {};
+    // Keep legacy `name` NOT NULL in sync when EN name changes.
+    const row = await updateRow<MasterRow & Record<string, unknown>>(
+      "accounts",
+      id,
+      {
+        ...patch,
+        ...(patch.nameEn !== undefined ? { name: patch.nameEn } : {}),
+      },
+    );
+    // Audit caller-facing patch keys only (skip synthetic legacy `name` sync).
+    await recordChangedFields({
+      docType: "account",
+      docId: id,
+      before,
+      patch,
+      after: row,
+      reason: "account updated",
+    });
     revalidateSettings(locale, "coa");
     return { ok: true, data: row };
   } catch (error) {

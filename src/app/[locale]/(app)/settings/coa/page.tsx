@@ -1,3 +1,5 @@
+import { getTranslations } from "next-intl/server";
+
 import { type Column } from "@/components/data-table";
 import { MasterCrud, type MasterField } from "@/components/master/MasterCrud";
 import { listAccounts } from "@/lib/api/gl";
@@ -15,23 +17,15 @@ const TYPE_ORDER: Record<string, number> = {
   expense: 5,
 };
 
-const ACCOUNT_TYPES = [
-  { value: "asset", label: "Asset" },
-  { value: "liability", label: "Liability" },
-  { value: "equity", label: "Equity" },
-  { value: "revenue", label: "Revenue" },
-  { value: "expense", label: "Expense" },
-];
+const ACCOUNT_TYPE_KEYS = [
+  "asset",
+  "liability",
+  "equity",
+  "revenue",
+  "expense",
+] as const;
 
-const COLUMNS: Column[] = [
-  { key: "code", label: "Code" },
-  { key: "name", label: "Name" },
-  { key: "type", label: "Type" },
-  { key: "parent", label: "Parent" },
-  { key: "active", label: "Active" },
-];
-
-function typeBadge(type: string) {
+function typeBadge(type: string, label: string) {
   const cls =
     type === "asset"
       ? "bg-status-success-muted text-status-success-foreground"
@@ -44,9 +38,13 @@ function typeBadge(type: string) {
             : "bg-status-pending-muted text-status-pending-foreground";
   return (
     <span className={"rounded-full px-2 py-0.5 text-xs font-medium " + cls}>
-      {type}
+      {label}
     </span>
   );
+}
+
+function displayName(a: { name: string; nameEn?: string | null; nameAr?: string | null }) {
+  return a.nameEn?.trim() || a.name;
 }
 
 export default async function Page({
@@ -55,40 +53,73 @@ export default async function Page({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  const t = await getTranslations("settings.coa");
   const accounts = await listAccounts();
   const rows = accounts.slice().sort((a, b) => {
-    const t = (TYPE_ORDER[a.type] ?? 99) - (TYPE_ORDER[b.type] ?? 99);
-    if (t !== 0) return t;
+    const order = (TYPE_ORDER[a.type] ?? 99) - (TYPE_ORDER[b.type] ?? 99);
+    if (order !== 0) return order;
     return a.code.localeCompare(b.code);
   });
 
   const byId = new Map(rows.map((a) => [a.id, a]));
-  const bilingual = accounts.filter((a) => /[\u0600-\u06FF]/.test(a.name));
+
+  const typeLabel = (type: string) =>
+    ACCOUNT_TYPE_KEYS.includes(type as (typeof ACCOUNT_TYPE_KEYS)[number])
+      ? t(`types.${type}` as "types.asset")
+      : type;
+
+  const accountTypes = ACCOUNT_TYPE_KEYS.map((value) => ({
+    value,
+    label: t(`types.${value}`),
+  }));
 
   const parentOptions = rows.map((a) => ({
     value: a.id,
-    label: `${a.code} · ${a.name}`,
-    hint: a.type,
+    label: `${a.code} · ${displayName(a)}`,
+    hint: typeLabel(a.type),
   }));
 
+  const columns: Column[] = [
+    { key: "code", label: t("code") },
+    { key: "nameEn", label: t("nameEn") },
+    { key: "nameAr", label: t("nameAr") },
+    { key: "type", label: t("type") },
+    { key: "parent", label: t("parent") },
+    { key: "active", label: t("active") },
+  ];
+
   const fields: MasterField[] = [
-    { name: "code", label: "Code", type: "text", required: true, placeholder: "e.g. 1200" },
-    { name: "name", label: "Name", type: "text", required: true },
-    { name: "type", label: "Type", type: "select", required: true, options: ACCOUNT_TYPES },
+    {
+      name: "code",
+      label: t("code"),
+      type: "text",
+      required: true,
+      placeholder: t("codePlaceholder"),
+    },
+    { name: "nameEn", label: t("nameEn"), type: "text", required: true },
+    { name: "nameAr", label: t("nameAr"), type: "text", required: true },
+    {
+      name: "type",
+      label: t("type"),
+      type: "select",
+      required: true,
+      options: accountTypes,
+    },
     {
       name: "parent",
-      label: "Parent account",
+      label: t("parentAccount"),
       type: "searchSelect",
       options: parentOptions,
-      help: "Optional — groups this account under a parent in the tree.",
+      help: t("parentHelp"),
     },
-    { name: "active", label: "Active", type: "boolean" },
+    { name: "active", label: t("active"), type: "boolean" },
   ];
 
   const entities = rows.map((a) => ({
     id: a.id,
     code: a.code,
-    name: a.name,
+    nameEn: a.nameEn ?? "",
+    nameAr: a.nameAr ?? "",
     type: a.type,
     parent: a.parent ?? "",
     active: a.active ?? true,
@@ -98,30 +129,21 @@ export default async function Page({
     const parent = a.parent ? byId.get(a.parent) : undefined;
     return [
       <span key="c" className="font-mono text-xs">{a.code}</span>,
-      a.name,
-      typeBadge(a.type),
-      parent ? `${parent.code} · ${parent.name}` : "—",
-      a.active === false ? "no" : "yes",
+      a.nameEn ?? a.name,
+      a.nameAr ?? "—",
+      typeBadge(a.type, typeLabel(a.type)),
+      parent ? `${parent.code} · ${displayName(parent)}` : "—",
+      a.active === false ? t("no") : t("yes"),
     ];
   });
-
-  const formBanner =
-    bilingual.length > 0 ? (
-      <div className="rounded-md border border-status-pending-border bg-status-pending-muted p-2 text-xs text-status-pending-foreground">
-        Note: {bilingual.length} account name(s) contain mixed-language text
-        (EN + AR in one field): {bilingual.map((a) => a.code).join(", ")}. This
-        is a seed-data issue to be cleaned up in a separate migration; the
-        table stores a single name column.
-      </div>
-    ) : undefined;
 
   return (
     <MasterCrud
       locale={locale}
-      entityLabel="Account"
-      title="Chart of accounts"
-      subtitle="Account tree by class. Used by every posted document to write its journal entry."
-      columns={COLUMNS}
+      entityLabel={t("entity")}
+      title={t("title")}
+      subtitle={t("subtitle")}
+      columns={columns}
       tableRows={tableRows}
       entities={entities}
       fields={fields}
@@ -129,7 +151,6 @@ export default async function Page({
       onUpdate={updateAccountAction}
       onDelete={deleteAccountAction}
       writeOperation="create_account"
-      formBanner={formBanner}
     />
   );
 }

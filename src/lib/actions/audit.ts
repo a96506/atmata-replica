@@ -68,3 +68,59 @@ export async function recordAttachmentRemovedEvent(input: {
     },
   });
 }
+
+/**
+ * Field-level change event. `changeDetail` keys (`field` / `old` / `new`) match
+ * `HistoryTab` `changeDetailLabel` for `event_type = field_change`.
+ */
+export async function recordFieldChangeEvent(input: {
+  docType: DocType | string;
+  docId: string;
+  field: string;
+  old?: unknown;
+  new?: unknown;
+  reason?: string | null;
+}): Promise<void> {
+  const by = await currentUserId();
+  await writeAuditEvent({
+    docType: input.docType as DocType,
+    docId: input.docId,
+    fromState: null,
+    toState: null,
+    by,
+    reason: input.reason ?? "field changed",
+    eventType: "field_change",
+    changeDetail: {
+      field: input.field,
+      old: input.old ?? null,
+      new: input.new ?? null,
+    },
+  });
+}
+
+/** Emit one `field_change` per key that actually changed (string compare). */
+export async function recordChangedFields(input: {
+  docType: DocType | string;
+  docId: string;
+  before: Record<string, unknown>;
+  patch: Record<string, unknown>;
+  after?: Record<string, unknown>;
+  reason?: string | null;
+}): Promise<void> {
+  for (const field of Object.keys(input.patch)) {
+    const oldVal = input.before[field] ?? null;
+    const newVal =
+      (input.after ? input.after[field] : undefined) ??
+      input.patch[field] ??
+      null;
+    if (String(oldVal ?? "") === String(newVal ?? "")) continue;
+    await recordFieldChangeEvent({
+      docType: input.docType,
+      docId: input.docId,
+      field,
+      old: oldVal,
+      new: newVal,
+      reason: input.reason,
+    });
+  }
+}

@@ -56,7 +56,7 @@ export async function HistoryTab({ events }: { events: AuditEvent[] }) {
           (e.fromState || e.toState);
         const detailLabel = changeDetailLabel(e, t);
         return (
-          <li key={e.id} className="flex items-start gap-3 border-l-2 border-primary/30 pl-3">
+          <li key={e.id} className="flex items-start gap-3 border-s-2 border-primary/30 ps-3">
             <div className="min-w-0 flex-1">
               <div className="text-sm text-foreground">
                 {isTransition ? (
@@ -83,7 +83,7 @@ export async function HistoryTab({ events }: { events: AuditEvent[] }) {
                   minute: "2-digit",
                 })}
                 {" · "}
-                <span dir="ltr">{t("by")}</span> {actorLabel(e)}
+                {t("by")} {actorLabel(e)}
               </div>
               {detailLabel ? (
                 <div className="mt-0.5 text-xs text-foreground">{detailLabel}</div>

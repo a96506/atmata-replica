@@ -4,6 +4,8 @@ export type Account = {
   id: string;
   code: string;
   name: string;
+  nameEn?: string | null;
+  nameAr?: string | null;
   type: "asset" | "liability" | "equity" | "revenue" | "expense";
   parent?: string | null;
   active?: boolean;

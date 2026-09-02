@@ -1,5 +1,6 @@
 "use server";
 
+import { recordChangedFields } from "@/lib/actions/audit";
 import {
   createRequestId,
   normalizeActionError,
@@ -23,6 +24,47 @@ import {
 
 export type { DocumentWriteResult } from "@/lib/actions/write-rpc";
 
+
+/** Maps DocType → table for header before-reads (mirrors inbox DOCUMENT_TABLE_BY_TYPE). */
+const DOCUMENT_TABLE_BY_TYPE: Record<string, string> = {
+  pr: "purchase_requisitions",
+  rfq: "rfqs",
+  po: "purchase_orders",
+  grn: "goods_receipts",
+  vendor_bill: "vendor_bills",
+  vendor_payment: "vendor_payments",
+  vendor_return: "vendor_returns",
+  debit_note: "debit_notes",
+  quote: "quotes",
+  so: "sales_orders",
+  dn: "delivery_notes",
+  customer_invoice: "customer_invoices",
+  customer_receipt: "customer_receipts",
+  customer_return: "customer_returns",
+  credit_note: "credit_notes",
+  journal_entry: "journal_entries",
+  stock_adjustment: "stock_adjustments",
+  internal_transfer: "internal_transfers",
+};
+
+async function fetchDocumentHeaderFields(
+  docType: string,
+  docId: string,
+): Promise<Record<string, unknown>> {
+  const table = DOCUMENT_TABLE_BY_TYPE[docType];
+  if (!table) return {};
+  const { createInsForgeServerClient } = await import("@/lib/insforge/server");
+  const { camelize } = await import("@/lib/db/case");
+  const client = await createInsForgeServerClient();
+  const { data } = await client.database
+    .from(table)
+    .select("date,notes")
+    .eq("id", docId)
+    .maybeSingle();
+  if (!data) return {};
+  return camelize<Record<string, unknown>>(data);
+}
+
 export async function updateDocumentHeaderAction(
   input: unknown,
 ): Promise<ActionResult<DocumentWriteResult>> {
@@ -35,6 +77,19 @@ export async function updateDocumentHeaderAction(
     );
     if (!parsed.ok) return parsed;
 
+    const patch: Record<string, unknown> = {};
+    if (parsed.data.patch.date !== undefined) {
+      patch.date = parsed.data.patch.date;
+    }
+    if (parsed.data.patch.notes !== undefined) {
+      patch.notes = parsed.data.patch.notes;
+    }
+
+    const before = await fetchDocumentHeaderFields(
+      parsed.data.docType,
+      parsed.data.docId,
+    );
+
     const data = await callWriteRpc("update_document_header", {
       p_doc_type: parsed.data.docType,
       p_doc_id: parsed.data.docId,
@@ -44,6 +99,14 @@ export async function updateDocumentHeaderAction(
         date: parsed.data.patch.date,
         notes: parsed.data.patch.notes,
       },
+    });
+
+    await recordChangedFields({
+      docType: parsed.data.docType,
+      docId: parsed.data.docId,
+      before,
+      patch,
+      reason: "document header updated",
     });
 
     revalidateDocumentPaths(

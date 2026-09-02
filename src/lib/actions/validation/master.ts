@@ -230,7 +230,8 @@ const optionalParentSchema = z
 
 export const createAccountSchema = base.extend({
   code: z.string().trim().min(1).max(40),
-  name: z.string().trim().min(1).max(200),
+  nameEn: z.string().trim().min(1).max(200),
+  nameAr: z.string().trim().min(1).max(200),
   type: accountTypeSchema,
   parent: optionalParentSchema,
   active: z.boolean().default(true),
