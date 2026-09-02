@@ -123,8 +123,15 @@ export async function listInboxNotifications(): Promise<InboxNotification[]> {
   const fromNotifications = rows.map((row) => {
     const key =
       row.docType && row.docId ? `${row.docType}:${row.docId}` : null;
+    // Fanout uses kind=system + title=schedule_failure|fx_stale with raw summary bodies.
+    // Keep machine title for UI detection; replace body with human English.
+    const human =
+      row.title === "schedule_failure" || row.title === "fx_stale"
+        ? humanizeOpsBody(row.title, { summary: row.body })
+        : null;
     return {
       ...row,
+      body: human ?? row.body,
       rowVersion: key ? (versions.get(key) ?? null) : null,
     };
   });
@@ -156,6 +163,27 @@ export async function listInboxNotifications(): Promise<InboxNotification[]> {
     const key = `${item.docType}:${item.docId}`;
     if (seen.has(key)) continue;
     seen.add(key);
+    merged.push(item);
+  }
+
+  // Open operational alerts (reorder, FX stale, etc.) — company-scoped SELECT.
+  // Dedup against notifications that already reference the same alert id via
+  // synthesized id `ops:{alertId}` or matching title/body is imperfect; we
+  // skip when a notification kind already equals the alert kind and body
+  // contains the same subject (lightweight). Primary dedup: ops: id prefix.
+  const opsItems = await listOpenOperationalAlertItems(client);
+  const seenOps = new Set(
+    merged.filter((n) => n.id.startsWith("ops:")).map((n) => n.id),
+  );
+  // Also skip when a real notification already carries operational_alert kind
+  // with identical title (fanout may have created one for this user).
+  const notifTitles = new Set(
+    fromNotifications.map((n) => `${n.kind}|${n.title}`),
+  );
+  for (const item of opsItems) {
+    if (seenOps.has(item.id)) continue;
+    if (notifTitles.has(`${item.kind}|${item.title}`)) continue;
+    seenOps.add(item.id);
     merged.push(item);
   }
 
@@ -228,6 +256,101 @@ async function listPendingApprovalItems(
     }),
   );
   return items;
+}
+
+
+type OperationalAlertRow = {
+  id: string;
+  kind: string;
+  subjectType: string | null;
+  subjectId: string | null;
+  severity: string;
+  status: string;
+  payload: Record<string, unknown> | null;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  createdAt: string;
+};
+
+const OPS_KIND_TITLE: Record<string, string> = {
+  reorder: "Reorder alert",
+  stale_draft: "Stale draft",
+  abc: "ABC class change",
+  schedule_failure: "Schedule failure",
+  fx_stale: "FX rates need attention",
+  depreciation_blocked: "Depreciation blocked",
+};
+
+/** Map technical schedule/FX payload summaries to human English (UI i18n overlays EN+AR). */
+function humanizeOpsBody(
+  kind: string,
+  payload: Record<string, unknown> | null,
+): string | null {
+  if (kind === "schedule_failure") {
+    const job = typeof payload?.job === "string" ? payload.job.trim() : "";
+    if (job) {
+      return `Scheduled job "${job}" failed. Review ops health in Settings.`;
+    }
+    return "A scheduled job failed. Review ops health in Settings — rates were not marked successful.";
+  }
+  if (kind === "fx_stale") {
+    const summary =
+      typeof payload?.summary === "string" ? payload.summary.toLowerCase() : "";
+    if (summary.includes("provider") || summary.includes("fetch failed")) {
+      return "FX rate provider fetch failed. Rates were not updated — check FX rates in Settings.";
+    }
+    if (summary.includes("older than") || summary.includes("three days")) {
+      return "FX rates are older than three days. Refresh rates in Settings.";
+    }
+    return "FX rates need attention. Check Settings → FX rates (ops health is unchanged).";
+  }
+  return null;
+}
+
+/**
+ * Open operational_alerts for the caller's company (RLS). Synthesized as
+ * unread inbox items (id `ops:{alertId}`) so the feed surfaces them even
+ * when fanout did not create a personal notification.
+ */
+async function listOpenOperationalAlertItems(
+  client: Awaited<ReturnType<typeof getReadClient>>,
+): Promise<InboxNotification[]> {
+  try {
+    const result = await client.database
+      .from("operational_alerts")
+      .select(INBOX_SELECTS.operationalAlerts)
+      .eq("status", "open")
+      .order("last_seen_at", { ascending: false })
+      .limit(50);
+    if (result.error || !result.data) return [];
+    const rows = mapRows<OperationalAlertRow>(result.data);
+    return rows.map((row) => {
+      const human = humanizeOpsBody(row.kind, row.payload);
+      const summary =
+        human ??
+        (typeof row.payload?.summary === "string"
+          ? row.payload.summary
+          : `${row.kind} · ${row.severity}`);
+      const shortBy =
+        !human && typeof row.payload?.shortBy === "number"
+          ? ` Short by ${row.payload.shortBy}.`
+          : "";
+      const body = human ? human : `${summary}.${shortBy}`.trim();
+      return {
+        id: `ops:${row.id}`,
+        kind: `ops_${row.kind}`,
+        title: OPS_KIND_TITLE[row.kind] ?? `Operational · ${row.kind}`,
+        body,
+        docType: null,
+        docId: null,
+        readAt: null,
+        createdAt: row.lastSeenAt || row.createdAt,
+        rowVersion: null,
+      };
+    });
+  } catch {
+    return [];
+  }
 }
 
 export async function getInboxNotification(

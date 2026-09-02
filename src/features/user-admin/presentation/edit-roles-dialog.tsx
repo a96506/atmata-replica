@@ -39,6 +39,13 @@ export function EditRolesDialog({
   const [roles, setRoles] = React.useState<string[]>(member.roles.filter((role) => role !== "ai_agent"));
   const lastOwner = isLastActiveOwner(member, activeOwnerCount);
 
+  const handleOpenChange = (next: boolean) => {
+    if (next) {
+      setRoles(member.roles.filter((role) => role !== "ai_agent"));
+    }
+    setOpen(next);
+  };
+
   const [state, action, pending] = useActionState(
     async () =>
       setMemberRolesAction({
@@ -62,7 +69,7 @@ export function EditRolesDialog({
   const errorKey = state && !state.ok ? state.error.messageKey : "";
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button variant="outline" size="sm">
           {t("editRoles")}

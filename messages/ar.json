@@ -5,6 +5,7 @@
   },
   "chrome": {
     "brand": "أتماتا",
+    "productSubtitle": "منصة أعمال",
     "demoRibbon": "معاينة واجهة — غير متصل بـ API",
     "demoUser": "demo@atmata.local",
     "tenant": "مستأجر",
@@ -45,6 +46,7 @@
     "transfers": "التحويلات",
     "adjustments": "التسويات",
     "ap_invoices_ocr": "فواتير الموردين (OCR)",
+    "scan_vendor_bill": "مسح فاتورة مورد",
     "journal_entries": "قيود اليومية",
     "reconciliation": "التسوية البنكية",
     "financials": "القوائم المالية",
@@ -68,6 +70,7 @@
     "sequences": "التسلسلات",
     "users": "المستخدمون",
     "approval_rules": "قواعد الاعتماد",
+    "audit_log": "سجل التدقيق",
     "organization": "المنشأة",
     "finance": "المالية",
     "master_data": "البيانات الأساسية",
@@ -95,11 +98,27 @@
     "resettingPassword": "جارٍ التغيير…",
     "passwordMismatch": "كلمتا المرور غير متطابقتين.",
     "passwordResetSuccess": "تم تغيير كلمة المرور. يمكنك تسجيل الدخول الآن.",
-    "invitationTitle": "قبول الدعوة",
-    "invitationSubtitle": "أنشئ حسابك للانضمام إلى مساحة عمل شركتك.",
-    "acceptInvitation": "إنشاء الحساب",
-    "acceptingInvitation": "جارٍ إنشاء الحساب…",
-    "invalidInvitation": "رابط الدعوة غير صالح أو غير مكتمل.",
+    "invitation": {
+      "titleNew": "قبول الدعوة",
+      "subtitleNew": "أنشئ حسابك للانضمام إلى مساحة عمل شركتك.",
+      "titleExisting": "سجّل الدخول لقبول الدعوة",
+      "subtitleExisting": "هذا البريد لديه حساب بالفعل. سجّل الدخول بكلمة المرور الحالية للانضمام إلى هذه الشركة.",
+      "newPassword": "كلمة المرور الجديدة",
+      "confirmPassword": "تأكيد كلمة المرور",
+      "currentPassword": "كلمة المرور الحالية",
+      "createAccount": "إنشاء الحساب",
+      "creatingAccount": "جارٍ إنشاء الحساب…",
+      "signInAndAccept": "تسجيل الدخول والقبول",
+      "signingInAndAccepting": "جارٍ تسجيل الدخول…",
+      "wrongPassword": "كلمة المرور غير صحيحة. حاول مرة أخرى أو أعد تعيين كلمة المرور.",
+      "emailHasAccount": "هذا البريد لديه حساب بالفعل. سجّل الدخول بكلمة المرور الحالية.",
+      "invalid": "رابط الدعوة غير صالح أو غير مكتمل.",
+      "incompleteFields": "أكمل كل الحقول واستخدم كلمة مرور من 6 أحرف على الأقل.",
+      "invalidOrExpired": "الدعوة غير صالحة أو منتهية الصلاحية.",
+      "createFailed": "تعذّر إنشاء الحساب.",
+      "acceptFailed": "تعذّر قبول الدعوة.",
+      "createdSignIn": "تم إنشاء الحساب. سجّل الدخول للمتابعة."
+    },
     "backToSignIn": "العودة إلى تسجيل الدخول",
     "noCompany": "حسابك غير مرتبط بأي شركة.",
     "companySuspended": "هذه الشركة موقوفة.",
@@ -125,7 +144,14 @@
     "reject": "رفض",
     "openWorkspace": "فتح مساحة العمل",
     "viewDetails": "عرض التفاصيل",
-    "confidence": "ثقة"
+    "confidence": "ثقة",
+    "kindScheduleFailure": "فشل مهمة مجدولة",
+    "kindFxStale": "أسعار الصرف تحتاج انتباهًا",
+    "bodyScheduleFailure": "فشلت مهمة مجدولة. راجع صحة العمليات في الإعدادات — لم تُعلَّم الأسعار كناجحة.",
+    "bodyScheduleFailureWithJob": "فشلت المهمة المجدولة \"{job}\". راجع صحة العمليات في الإعدادات.",
+    "bodyFxStaleProvider": "فشل جلب أسعار الصرف من المزود. لم تُحدَّث الأسعار — راجع أسعار الصرف في الإعدادات.",
+    "bodyFxStalePublication": "أسعار الصرف أقدم من ثلاثة أيام. حدّث الأسعار من الإعدادات.",
+    "bodyFxStale": "أسعار الصرف تحتاج انتباهًا. راجع الإعدادات → أسعار الصرف (صحة العمليات لم تتغير)."
   },
   "accounting": {
     "title": "المحاسبة",
@@ -169,7 +195,8 @@
     "manual": {
       "newInvoice": "فاتورة جديدة",
       "dialogTitle": "إنشاء فاتورة يدويًا",
-      "dialogDescription": "تجريبي فقط — لا يُحفظ شيء على خادم.",
+      "dialogDescription": "إدخال الفاتورة يدويًا غير متاح بعد.",
+      "ocrUnavailable": "تعرّف الفواتير وإنشاؤها يدويًا غير متصلين. ارفع ملف PDF للاستخراج عند التوفر، أو أنشئ فاتورة مورّد من المشتريات.",
       "invoiceNumber": "رقم الفاتورة",
       "vendorName": "اسم المورّد",
       "documentDate": "تاريخ المستند",
@@ -181,7 +208,7 @@
       "description": "الوصف",
       "lineItemsSection": "بنود السطور",
       "submit": "إنشاء",
-      "cancel": "إلغاء",
+      "cancel": "إغلاق",
       "validationInvoiceNumber": "رقم الفاتورة مطلوب.",
       "toastCreated": "تم إنشاء الفاتورة {number} (تجريبي) · {vendor} · د.ك {total}",
       "lineItems": {
@@ -195,6 +222,24 @@
         "actionsHeader": "",
         "footerGrandTotal": "الإجمالي الكلي"
       }
+    },
+    "financialsPage": {
+      "trialBalancePeriodBanner": "يعرض جميع القيود المُرحّلة في كل الفترات المالية. اختر فترة أعلاه للتصفية.",
+      "trialBalanceAllPeriods": "جميع الفترات المُرحّلة",
+      "title": "القوائم المالية",
+      "subtitle": "القيود المُرحّلة فقط. دينار كويتي بثلاث خانات عشرية.",
+      "generalLedgerTab": "دفتر الأستاذ",
+      "generalLedgerTitle": "دفتر الأستاذ العام",
+      "generalLedgerEmpty": "لا توجد قيود يومية مُرحّلة لهذه الفترة أو هذا الحساب.",
+      "noPeriod": "اختر فترة مالية لعرض دفتر الأستاذ.",
+      "noStatement": "لا توجد فترة مالية أو بيانات دفتر لهذا التقرير بعد.",
+      "colDate": "التاريخ",
+      "colJournal": "قيد",
+      "colAccount": "الحساب",
+      "colDescription": "الوصف",
+      "colDebit": "مدين",
+      "colCredit": "دائن",
+      "colBalance": "الرصيد"
     }
   },
   "sales": {
@@ -261,6 +306,61 @@
       "toastSend": "تمت جدولة عرض لـ {customer} · استثنائي: {exceptional} (تجريبي)",
       "yes": "نعم",
       "no": "لا"
+    },
+    "pipeline": {
+      "emptyMessage": "لا توجد فرص مفتوحة.",
+      "createRationale": "موظفو الذمم والمسؤولون فقط يمكنهم إنشاء الفرص.",
+      "formTitle": "فرصة جديدة",
+      "formHint": "أضف صفقة إلى خط الأنابيب. يُعيَّن الرقم تلقائياً.",
+      "name": "اسم الصفقة",
+      "amount": "المبلغ (د.ك)",
+      "submit": "إنشاء فرصة",
+      "selectCustomer": "اختر العميل",
+      "success": "تم إنشاء الفرصة",
+      "stages": {
+        "qualified": "مؤهل",
+        "proposal": "عرض",
+        "negotiation": "تفاوض",
+        "won": "فوز",
+        "lost": "خسارة"
+      },
+      "updateSuccess": "تم تحديث الفرصة",
+      "deleteSuccess": "تم حذف الفرصة",
+      "deleteConfirmTitle": "حذف هذه الفرصة؟",
+      "deleteConfirmDescription": "سيُزال الصفقة من خط الأنابيب. لا يمكن التراجع عن ذلك.",
+      "deleteConfirmLabel": "حذف",
+      "actions": "إجراءات"
+    },
+    "customerInvoice": {
+      "applyCreditTab": "تطبيق دائن",
+      "applyCreditTitle": "تطبيق دائن على الفاتورة",
+      "applyCreditBody": "طبّق إشعارات الدائن المرحّلة لهذا العميل على رصيد الفاتورة المستحق.",
+      "appliedCredits": "الدائن المرتبط بهذه الفاتورة",
+      "noAppliedCredits": "لا توجد إشعارات دائنة مرتبطة بهذه الفاتورة بعد.",
+      "colNumber": "الرقم",
+      "colReturn": "من المرتجع",
+      "colDate": "التاريخ",
+      "colTotal": "الإجمالي",
+      "colApplied": "المطبّق",
+      "colStatus": "الحالة",
+      "openCredits": "إشعارات دائنة مفتوحة",
+      "noOpenCredits": "لا توجد إشعارات دائنة مفتوحة لهذا العميل.",
+      "applySection": "تطبيق دائن",
+      "selectCredit": "إشعار دائن",
+      "amount": "المبلغ",
+      "apply": "تطبيق الدائن",
+      "maxHint": "الحد الأقصى",
+      "colRemaining": "المتبقي",
+      "postGl": "ترحيل قيد يومية مقابل ذمم مدينة"
+    },
+    "homeActions": {
+      "newQuote": "عرض سعر جديد",
+      "openQuotes": "عروض الأسعار المفتوحة",
+      "newSo": "أمر بيع جديد",
+      "creditCheck": "فحص ائتمان العميل",
+      "newInvoice": "فاتورة جديدة",
+      "newReceipt": "سند قبض جديد",
+      "creditNotes": "إشعارات دائن"
     }
   },
   "purchasing": {
@@ -350,6 +450,10 @@
       "approve": "موافقة",
       "adjust": "تعديل",
       "reject": "رفض",
+      "createPo": "أمر شراء جديد",
+      "openPr": "فتح الطلب",
+      "openBill": "فتح الفاتورة",
+      "openGrn": "فتح الاستلام",
       "approvePo": "تمت الموافقة على {id} (تجريبي)",
       "adjustPo": "تعديل {id} — المحرر للعرض فقط.",
       "rejectPo": "تم رفض الاقتراح {id} (تجريبي)",
@@ -359,6 +463,29 @@
       "flagBill": "تم الإبلاغ عن {id} ({status}) للمتابعة (تجريبي)",
       "confirmReceiptBtn": "تأكيد",
       "confirmReceipt": "تم تأكيد الاستلام {ref} (تجريبي)"
+    },
+    "homeActions": {
+      "scanPdf": "مسح PDF المورّد",
+      "newBill": "فاتورة جديدة",
+      "billsList": "قائمة الفواتير",
+      "billFromGrn": "فاتورة من GRN",
+      "newPo": "أمر شراء جديد",
+      "openPos": "أوامر الشراء المفتوحة",
+      "newRfq": "طلب عروض جديد",
+      "reorderAlerts": "تنبيهات إعادة الطلب"
+    },
+    "colOnTimePct": "نسبة التسليم في الموعد",
+    "colQualityPct": "نسبة الجودة",
+    "colComputedAt": "تاريخ الحساب",
+    "emptyVendorScores": "لا توجد درجات للموردين بعد — رحّل إشعارات استلام خلال 12 شهراً لبناء بطاقات التقييم.",
+    "vendorScoresHint": "تجمع الدرجات التسليم في الموعد (60%) والجودة من المرتجعات (40%) خلال 12 شهراً.",
+    "emptyPriceAlerts": "لا توجد تنبيهات أسعار من المورّدين حالياً.",
+    "colChangePct": "نسبة التغيير",
+    "colAlertType": "نوع التنبيه",
+    "colDetectedAt": "تاريخ الرصد",
+    "alertType": {
+      "price_increase": "ارتفاع السعر",
+      "price_watch": "مراقبة السعر"
     }
   },
   "inventory": {
@@ -368,7 +495,7 @@
     "reorderShort": "أقل من المخزون الأمني بمقدار {n} وحدة",
     "secStock": "مستويات المخزون",
     "secForecast": "تنبؤ الطلب",
-    "forecastHint": "الوحدات المتوقَّعة للحاجة خلال 30 و90 يومًا القادمة.",
+    "forecastHint": "الوحدات المتوقعة من متوسط الصرف اليومي خلال آخر 90 يومًا.",
     "secInbound": "شحنات واردة",
     "secOutbound": "تسليمات صادرة",
     "colSku": "الرمز",
@@ -404,7 +531,14 @@
       "refreshDemo": "التحديث للعرض فقط في القالب.",
       "viewDelay": "لماذا التأخير؟",
       "delayNote": "سبب التأخير لـ {ref} — سرد تجريبي فقط."
-    }
+    },
+    "homeActions": {
+      "newGrn": "استلام بضائع جديد",
+      "newDelivery": "تسليم جديد",
+      "stockMoves": "حركات المخزون",
+      "newTransfer": "تحويل جديد"
+    },
+    "colWarehouse": "المستودع"
   },
   "settings": {
     "overviewTitle": "الإعدادات",
@@ -472,8 +606,8 @@
         "approver": "معتمد",
         "ap_clerk": "موظف حسابات دائنة",
         "ar_clerk": "موظف حسابات مدينة",
-        "warehouse": "مستودع",
-        "buyer": "مشتري",
+        "warehouse": "المخزون",
+        "buyer": "المشتريات",
         "sales_rep": "مندوب مبيعات",
         "accountant": "محاسب",
         "period_adjust": "تعديل الفترات",
@@ -482,6 +616,15 @@
         "ai_agent": "وكيل الذكاء الاصطناعي"
       }
     }
+  },
+  "deferred": {
+    "comingSoonTitle": "قريباً",
+    "comingSoonGeneric": "هذه البيانات غير متاحة بعد.",
+    "comingSoonRoadmap": "مخطط لإصدارات لاحقة. توقعات الطلب ومقاييس التبني مدرجة في خارطة المنتج.",
+    "vendorScoresHint": "بطاقات الموردين ترتّب الموردين حسب التسليم في الموعد وجودة المرتجعات من الإشعارات المرحّلة.",
+    "forecastHint": "ستظهر توقعات الطلب للـ 30 و 90 يوماً القادمة عند ربط نموذج التنبؤ.",
+    "adoptionMetricsTooltip": "التبنّي يعمل في هذه الجلسة؛ ستُحفظ مقاييس الاستخدام عند تخزين رسم المستندات في SQL.",
+    "adoptionMetricsLink": "المزيد عن مقاييس التبني المؤجّلة"
   },
   "common": {
     "back": "رجوع",

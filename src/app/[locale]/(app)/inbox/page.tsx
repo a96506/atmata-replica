@@ -13,7 +13,44 @@ const KIND_LABEL: Record<string, string> = {
   approval_requested: "Approval requested",
   approval_resolved: "Approval resolved",
   system: "System",
+  ops_reorder: "Reorder",
+  ops_stale_draft: "Stale draft",
+  ops_abc: "ABC",
+  ops_schedule_failure: "Schedule failure",
+  ops_fx_stale: "FX stale",
+  ops_depreciation_blocked: "Depreciation",
 };
+
+function localizeOpsCopy(
+  kind: string,
+  title: string,
+  body: string,
+  t: Awaited<ReturnType<typeof getTranslations>>,
+): { title: string; body: string } | null {
+  const isSchedule =
+    kind === "ops_schedule_failure" || title === "schedule_failure";
+  const isFx = kind === "ops_fx_stale" || title === "fx_stale";
+  if (isSchedule) {
+    const jobMatch = body.match(/Scheduled job "([^"]+)" failed/i);
+    return {
+      title: t("kindScheduleFailure"),
+      body: jobMatch
+        ? t("bodyScheduleFailureWithJob", { job: jobMatch[1] })
+        : t("bodyScheduleFailure"),
+    };
+  }
+  if (isFx) {
+    const lower = body.toLowerCase();
+    const bodyKey =
+      lower.includes("provider") || lower.includes("fetch failed")
+        ? "bodyFxStaleProvider"
+        : lower.includes("older than") || lower.includes("three days")
+          ? "bodyFxStalePublication"
+          : "bodyFxStale";
+    return { title: t("kindFxStale"), body: t(bodyKey) };
+  }
+  return null;
+}
 
 export default async function InboxPage() {
   const t = await getTranslations("inbox");
@@ -33,7 +70,11 @@ export default async function InboxPage() {
           <div className="flex flex-wrap items-center gap-2">
             {Object.entries(bySource).map(([k, v]) => (
               <Badge key={k} variant="secondary" className="font-medium">
-                {KIND_LABEL[k] ?? k}
+                {k === "ops_schedule_failure"
+                  ? t("kindScheduleFailure")
+                  : k === "ops_fx_stale"
+                    ? t("kindFxStale")
+                    : (KIND_LABEL[k] ?? k)}
                 <span className="text-muted-foreground ms-1 tabular-nums">
                   {v}
                 </span>
@@ -48,10 +89,24 @@ export default async function InboxPage() {
       ) : (
         <ul className="flex flex-col gap-3">
           {items.map((item) => {
-            const sourceUrl = inboxDocPath(item.docType, item.docId);
-            // Synthesized pending-approval items use ids like `pending:po:...`
-            // and are not real notification rows — skip mark-read for them.
-            const isSynthesized = item.id.startsWith("pending:");
+            const localized = localizeOpsCopy(item.kind, item.title, item.body, t);
+            const title = localized?.title ?? item.title;
+            const body = localized?.body ?? item.body;
+            const kindLabel =
+              item.kind === "ops_schedule_failure" || item.title === "schedule_failure"
+                ? t("kindScheduleFailure")
+                : item.kind === "ops_fx_stale" || item.title === "fx_stale"
+                  ? t("kindFxStale")
+                  : (KIND_LABEL[item.kind] ?? item.kind);
+            const sourceUrl =
+              item.kind === "ops_reorder"
+                ? "/inventory"
+                : item.kind.startsWith("ops_")
+                  ? "/inventory"
+                  : inboxDocPath(item.docType, item.docId);
+            // `pending:*` mark-read upserts a notifications row; `ops:*` stays
+            // UI-only until an ops dismissal path exists (kind CHECK blocks ops kinds).
+            const canMarkRead = !item.id.startsWith("ops:");
             return (
               <li key={item.id}>
                 <Card
@@ -63,7 +118,7 @@ export default async function InboxPage() {
                     <div className="flex min-w-0 flex-1 flex-col gap-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="outline">
-                          {KIND_LABEL[item.kind] ?? item.kind}
+                          {kindLabel}
                         </Badge>
                         {!item.readAt ? (
                           <Badge className="bg-status-info-muted text-status-info-foreground">
@@ -72,11 +127,11 @@ export default async function InboxPage() {
                         ) : null}
                       </div>
                       <h3 className="text-sm font-semibold text-pretty">
-                        {item.title}
+                        {title}
                       </h3>
-                      {item.body ? (
+                      {body ? (
                         <p className="text-muted-foreground line-clamp-2 text-sm">
-                          {item.body}
+                          {body}
                         </p>
                       ) : null}
                     </div>
@@ -85,7 +140,7 @@ export default async function InboxPage() {
                         source={item.kind}
                         id={item.id}
                         sourceUrl={sourceUrl}
-                        notificationId={isSynthesized ? null : item.id}
+                        notificationId={canMarkRead ? item.id : null}
                         doc={{
                           docType: item.docType,
                           docId: item.docId,

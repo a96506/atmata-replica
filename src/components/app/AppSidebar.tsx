@@ -3,9 +3,11 @@
 import * as React from "react";
 import { ChevronRight } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { navigation, stripLocale, type NavModule } from "@/config/navigation";
+import { filterNavigation } from "@/lib/roles/nav-filter";
+import { useSession } from "@/lib/session";
 import { LocaleSwitcher } from "@/components/locale-switcher";
 import {
   Sidebar,
@@ -39,7 +41,14 @@ import {
 export function AppSidebar({ brand }: { brand: string }) {
   const pathname = usePathname();
   const path = stripLocale(pathname);
+  const locale = useLocale();
   const t = useTranslations("nav");
+  const tChrome = useTranslations("chrome");
+  const { roles } = useSession();
+  const nav = React.useMemo(
+    () => filterNavigation(navigation, roles),
+    [roles],
+  );
 
   const isActiveLeaf = (href: string) =>
     path === href || path.startsWith(`${href}/`);
@@ -59,7 +68,7 @@ export function AppSidebar({ brand }: { brand: string }) {
     group.labelKey && t.has(group.labelKey) ? t(group.labelKey) : group.label;
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" side={locale === "ar" ? "right" : "left"}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -71,7 +80,7 @@ export function AppSidebar({ brand }: { brand: string }) {
                 <span className="grid flex-1 text-start leading-tight">
                   <span className="truncate font-semibold">{brand}</span>
                   <span className="text-muted-foreground truncate text-xs">
-                    ERP demo
+                    {tChrome("productSubtitle")}
                   </span>
                 </span>
               </Link>
@@ -81,7 +90,7 @@ export function AppSidebar({ brand }: { brand: string }) {
       </SidebarHeader>
 
       <SidebarContent>
-        {navigation.map((module) => {
+        {nav.map((module) => {
           // Only single-destination modules (Dashboard) render as a flat link;
           // anything with real children stays collapsible so the module name
           // is never lost from the tree.

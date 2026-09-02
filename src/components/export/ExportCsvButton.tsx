@@ -14,7 +14,7 @@ export type ExportCsvButtonProps<T> = {
   filename: string;
   /** Button label. */
   label?: string;
-  /** Disable the button (e.g. when rows is empty). */
+  /** Disable the button. Empty rows still export a header-only CSV. */
   disabled?: boolean;
 };
 
@@ -26,7 +26,6 @@ export function ExportCsvButton<T>({
   disabled,
 }: ExportCsvButtonProps<T>) {
   const onClick = React.useCallback(() => {
-    if (rows.length === 0) return;
     const csv = toCsv(rows, columns);
     downloadCsv(csv, filename);
   }, [rows, columns, filename]);
@@ -37,7 +36,7 @@ export function ExportCsvButton<T>({
       variant="outline"
       size="sm"
       onClick={onClick}
-      disabled={disabled || rows.length === 0}
+      disabled={disabled}
     >
       <Download />
       {label}

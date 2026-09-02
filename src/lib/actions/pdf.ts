@@ -28,12 +28,42 @@ const docInputSchema = z.object({
   mode: z.enum(["preview", "save"]),
 });
 
-const financialInputSchema = z.object({
-  type: z.enum(["pl", "balance_sheet", "cash_flow", "trial_balance"]),
-  periodId: z.string().trim().min(1).max(160),
-  locale: z.enum(["en", "ar"]),
-  mode: z.enum(["preview", "save"]),
-});
+const financialInputSchema = z
+  .object({
+    type: z.enum([
+      "pl",
+      "balance_sheet",
+      "cash_flow",
+      "trial_balance",
+      "general_ledger",
+    ]),
+    periodId: z.string().trim().min(1).max(160).optional(),
+    accountId: z.string().trim().min(1).max(160).optional(),
+    from: z.string().trim().min(1).max(32).optional(),
+    to: z.string().trim().min(1).max(32).optional(),
+    locale: z.enum(["en", "ar"]),
+    mode: z.enum(["preview", "save"]),
+  })
+  .superRefine((val, ctx) => {
+    const hasFilters = Boolean(val.accountId || val.from || val.to);
+    if (val.type === "trial_balance") {
+      if (!val.periodId && !hasFilters) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "periodId or filters required",
+          path: ["periodId"],
+        });
+      }
+      return;
+    }
+    if (!val.periodId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "periodId required",
+        path: ["periodId"],
+      });
+    }
+  });
 
 function mapPdfError(error: unknown, requestId: string): ActionResult<never> {
   if (error instanceof PdfServiceError) {
@@ -80,7 +110,10 @@ export async function generateDocPdf(input: {
 
 export async function generateFinancialPdf(input: {
   type: FinancialPdfType;
-  periodId: string;
+  periodId?: string;
+  accountId?: string;
+  from?: string;
+  to?: string;
   locale: "en" | "ar";
   mode: "preview" | "save";
 }): Promise<ActionResult<PdfResult>> {

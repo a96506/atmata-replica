@@ -24,6 +24,9 @@ type Props =
       periodId: string;
       financialType: FinancialPdfType;
       locale: string;
+      accountId?: string;
+      from?: string;
+      to?: string;
       previewOnly?: boolean;
     };
 
@@ -47,6 +50,9 @@ export function DocPdfActions(props: Props) {
           ? await generateFinancialPdf({
               type: props.financialType,
               periodId: props.periodId,
+              accountId: props.accountId,
+              from: props.from,
+              to: props.to,
               locale,
               mode,
             })
@@ -60,7 +66,7 @@ export function DocPdfActions(props: Props) {
         toast.error(t("failed"));
         return;
       }
-      openResult(result.data, mode);
+      await openResult(result.data, mode);
     } catch {
       toast.error(t("failed"));
     } finally {
@@ -68,13 +74,25 @@ export function DocPdfActions(props: Props) {
     }
   };
 
-  const openResult = (result: PdfResult, mode: "preview" | "save") => {
+  const openResult = async (result: PdfResult, mode: "preview" | "save") => {
     if (result.mode === "save") {
+      const res = await fetch(
+        `/api/pdf?attachmentId=${encodeURIComponent(result.attachmentId)}`,
+      );
+      if (!res.ok) {
+        toast.error(t("failed"));
+        return;
+      }
+      const blob = await res.blob();
+      const objectUrl = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
-      anchor.href = result.url;
+      anchor.href = objectUrl;
       anchor.rel = "noopener";
       anchor.download = result.key.split("/").pop() ?? "document.pdf";
+      document.body.appendChild(anchor);
       anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
       toast.success(result.cached ? t("cached") : t("downloadReady"));
       return;
     }

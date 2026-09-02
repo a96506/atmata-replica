@@ -7,7 +7,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useActionToast } from "@/hooks/use-action-toast";
 import { useConfirm } from "@/components/confirm-dialog";
 import { DocumentList } from "@/components/doc/DocumentList";
-import { DataTable, type Column } from "@/components/data-table";
+import { DataTable, type Column, type ServerPagination } from "@/components/data-table";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,6 +21,8 @@ import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { SearchSelect, type SearchSelectOption } from "@/components/form/SearchSelect";
 import { MoneyInput } from "@/components/form/MoneyInput";
 import type { ActionResult } from "@/lib/actions/result";
+import type { OperationKey } from "@/lib/roles/capabilities";
+import { useCanOperation } from "@/lib/roles/use-can-operation";
 
 type Currency = "KWD" | "SAR" | "AED" | "USD";
 
@@ -107,6 +109,10 @@ export type MasterCrudProps = {
   formBanner?: React.ReactNode;
   /** Extra actions rendered next to the New button (e.g. CSV export). */
   extraActions?: React.ReactNode;
+  /** OPERATIONS key; when denied, hide create/edit/delete (read-only list). */
+  writeOperation?: OperationKey;
+  /** Server-driven paging; forwarded to DataTable when list pages pass URL page/limit/total. */
+  serverPagination?: ServerPagination;
 };
 
 type FormState = Record<string, FieldValue>;
@@ -147,24 +153,40 @@ export function MasterCrud({
   hideEdit,
   formBanner,
   extraActions,
+  writeOperation,
+  serverPagination,
 }: MasterCrudProps) {
   const router = useRouter();
   const confirm = useConfirm();
   const actionToast = useActionToast();
+  const canWrite = useCanOperation(writeOperation);
+  const showCreate = !hideCreate && canWrite;
+  const showEdit = !hideEdit && canWrite;
+  const showDelete = !hideDelete && canWrite;
   const [open, setOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<Entity | null>(null);
   const [pending, setPending] = React.useState(false);
   const [form, setForm] = React.useState<FormState>(() => emptyForm(fields));
+  // Controlled Dialog has no <DialogTrigger>, so Radix cannot restore focus.
+  // Capture the opener and return focus on close (same pattern as confirm-dialog).
+  const triggerRef = React.useRef<HTMLElement | null>(null);
 
   const writeLocale = locale === "ar" ? "ar" : "en";
 
+  const captureTrigger = () => {
+    triggerRef.current =
+      (document.activeElement as HTMLElement | null) ?? null;
+  };
+
   const openCreate = () => {
+    captureTrigger();
     setEditing(null);
     setForm(emptyForm(fields));
     setOpen(true);
   };
 
   const openEdit = (entity: Entity) => {
+    captureTrigger();
     setEditing(entity);
     setForm(seedForm(fields, entity));
     setOpen(true);
@@ -243,7 +265,7 @@ export function MasterCrud({
     const entity = entities[i];
     const actions = (
       <div key="actions" className="flex items-center justify-end gap-1">
-        {!hideEdit ? (
+        {showEdit ? (
           <Button
             type="button"
             variant="ghost"
@@ -254,7 +276,7 @@ export function MasterCrud({
             <Pencil />
           </Button>
         ) : null}
-        {!hideDelete ? (
+        {showDelete ? (
           <Button
             type="button"
             variant="ghost"
@@ -278,11 +300,11 @@ export function MasterCrud({
         primaryAction={
           <div className="flex flex-wrap items-center gap-2">
             {extraActions}
-            {hideCreate ? null : (
+            {showCreate ? (
               <Button type="button" onClick={openCreate}>
                 <Plus /> New {entityLabel}
               </Button>
-            )}
+            ) : null}
           </div>
         }
       >
@@ -290,11 +312,22 @@ export function MasterCrud({
           columns={[...columns, actionCol]}
           rows={rowsWithActions}
           emptyMessage={`No ${entityLabel.toLowerCase()}s yet.`}
+          serverPagination={serverPagination}
         />
       </DocumentList>
 
       <Dialog open={open} onOpenChange={(o) => !pending && setOpen(o)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent
+          className="sm:max-w-lg"
+          onCloseAutoFocus={(event) => {
+            event.preventDefault();
+            const trigger = triggerRef.current;
+            triggerRef.current = null;
+            if (trigger && typeof trigger.focus === "function") {
+              trigger.focus();
+            }
+          }}
+        >
           <DialogHeader>
             <DialogTitle>{editing ? `Edit ${entityLabel}` : `New ${entityLabel}`}</DialogTitle>
             <DialogDescription>
@@ -393,6 +426,7 @@ function FieldRenderer({
           <input
             type="number"
             inputMode="decimal"
+            step="any"
             min={field.min}
             value={value === null || value === "" ? "" : String(value)}
             placeholder={field.placeholder}

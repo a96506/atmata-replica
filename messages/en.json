@@ -5,6 +5,7 @@
   },
   "chrome": {
     "brand": "Atmata",
+    "productSubtitle": "Business platform",
     "demoRibbon": "UI preview — not connected to API",
     "demoUser": "demo@atmata.local",
     "tenant": "Tenant",
@@ -45,6 +46,7 @@
     "transfers": "Transfers",
     "adjustments": "Adjustments",
     "ap_invoices_ocr": "AP invoices (OCR)",
+    "scan_vendor_bill": "Scan vendor bill",
     "journal_entries": "Journal entries",
     "reconciliation": "Reconciliation",
     "financials": "Financials",
@@ -62,12 +64,13 @@
     "payment_terms": "Payment terms",
     "bank_accounts": "Bank accounts",
     "customers": "Customers",
-    "suppliers": "Suppliers",
+    "suppliers": "Vendors",
     "products": "Products",
     "price_lists": "Price lists",
     "sequences": "Sequences",
     "users": "Users",
     "approval_rules": "Approval rules",
+    "audit_log": "Audit log",
     "organization": "Organization",
     "finance": "Finance",
     "master_data": "Master data",
@@ -95,11 +98,27 @@
     "resettingPassword": "Resetting…",
     "passwordMismatch": "The passwords do not match.",
     "passwordResetSuccess": "Password reset. You can now sign in.",
-    "invitationTitle": "Accept invitation",
-    "invitationSubtitle": "Create your account to join your company workspace.",
-    "acceptInvitation": "Create account",
-    "acceptingInvitation": "Creating account…",
-    "invalidInvitation": "This invitation link is invalid or incomplete.",
+    "invitation": {
+      "titleNew": "Accept invitation",
+      "subtitleNew": "Create your account to join your company workspace.",
+      "titleExisting": "Sign in to accept",
+      "subtitleExisting": "This email already has an account. Sign in with your current password to join this company.",
+      "newPassword": "New password",
+      "confirmPassword": "Confirm password",
+      "currentPassword": "Current password",
+      "createAccount": "Create account",
+      "creatingAccount": "Creating account…",
+      "signInAndAccept": "Sign in and accept",
+      "signingInAndAccepting": "Signing in…",
+      "wrongPassword": "Incorrect password. Try again or reset your password.",
+      "emailHasAccount": "This email already has an account. Sign in with your current password instead.",
+      "invalid": "This invitation link is invalid or incomplete.",
+      "incompleteFields": "Complete every field and use a password of at least 6 characters.",
+      "invalidOrExpired": "Invalid or expired invitation.",
+      "createFailed": "Unable to create the account.",
+      "acceptFailed": "Unable to accept the invitation.",
+      "createdSignIn": "Account created. Sign in to continue."
+    },
     "backToSignIn": "Back to sign in",
     "noCompany": "Your account is not assigned to a company.",
     "companySuspended": "This company is suspended.",
@@ -125,7 +144,14 @@
     "reject": "Reject",
     "openWorkspace": "Open workspace",
     "viewDetails": "View details",
-    "confidence": "confidence"
+    "confidence": "confidence",
+    "kindScheduleFailure": "Schedule failure",
+    "kindFxStale": "FX rates need attention",
+    "bodyScheduleFailure": "A scheduled job failed. Review ops health in Settings — rates were not marked successful.",
+    "bodyScheduleFailureWithJob": "Scheduled job \"{job}\" failed. Review ops health in Settings.",
+    "bodyFxStaleProvider": "FX rate provider fetch failed. Rates were not updated — check FX rates in Settings.",
+    "bodyFxStalePublication": "FX rates are older than three days. Refresh rates in Settings.",
+    "bodyFxStale": "FX rates need attention. Check Settings → FX rates (ops health is unchanged)."
   },
   "accounting": {
     "title": "Accounting",
@@ -169,7 +195,8 @@
     "manual": {
       "newInvoice": "New invoice",
       "dialogTitle": "Create invoice manually",
-      "dialogDescription": "Demo only — nothing is saved to a server.",
+      "dialogDescription": "Manual invoice entry is not available yet.",
+      "ocrUnavailable": "Invoice OCR and manual create are not connected. Upload a PDF for extraction when available, or create a bill from Purchasing.",
       "invoiceNumber": "Invoice number",
       "vendorName": "Vendor name",
       "documentDate": "Document date",
@@ -181,7 +208,7 @@
       "description": "Description",
       "lineItemsSection": "Line items",
       "submit": "Create",
-      "cancel": "Cancel",
+      "cancel": "Close",
       "validationInvoiceNumber": "Invoice number is required.",
       "toastCreated": "Invoice {number} created (demo) · {vendor} · KWD {total}",
       "lineItems": {
@@ -195,6 +222,24 @@
         "actionsHeader": "",
         "footerGrandTotal": "Grand total"
       }
+    },
+    "financialsPage": {
+      "trialBalancePeriodBanner": "Showing all posted entries across every fiscal period. Select a period above to filter.",
+      "trialBalanceAllPeriods": "All posted periods",
+      "title": "Financial statements",
+      "subtitle": "Posted entries only. KWD with 3 decimal places.",
+      "generalLedgerTab": "General ledger",
+      "generalLedgerTitle": "General ledger",
+      "generalLedgerEmpty": "No posted journal lines for this period and account filter.",
+      "noPeriod": "Select a fiscal period to view the general ledger.",
+      "noStatement": "No fiscal period or posted ledger data for this statement yet.",
+      "colDate": "Date",
+      "colJournal": "Journal",
+      "colAccount": "Account",
+      "colDescription": "Description",
+      "colDebit": "Debit",
+      "colCredit": "Credit",
+      "colBalance": "Balance"
     }
   },
   "sales": {
@@ -261,6 +306,61 @@
       "toastSend": "Quote queued for {customer} · exceptional: {exceptional} (demo)",
       "yes": "Yes",
       "no": "No"
+    },
+    "pipeline": {
+      "emptyMessage": "No open opportunities.",
+      "createRationale": "Only AR clerks and admins can create opportunities.",
+      "formTitle": "New opportunity",
+      "formHint": "Add a deal to the pipeline. Number is assigned automatically.",
+      "name": "Deal name",
+      "amount": "Amount (KWD)",
+      "submit": "Create opportunity",
+      "selectCustomer": "Select customer",
+      "success": "Opportunity created",
+      "stages": {
+        "qualified": "Qualified",
+        "proposal": "Proposal",
+        "negotiation": "Negotiation",
+        "won": "Won",
+        "lost": "Lost"
+      },
+      "updateSuccess": "Opportunity updated",
+      "deleteSuccess": "Opportunity deleted",
+      "deleteConfirmTitle": "Delete this opportunity?",
+      "deleteConfirmDescription": "This removes the deal from the pipeline. This cannot be undone.",
+      "deleteConfirmLabel": "Delete",
+      "actions": "Actions"
+    },
+    "customerInvoice": {
+      "applyCreditTab": "Apply credit",
+      "applyCreditTitle": "Apply credit to invoice",
+      "applyCreditBody": "Apply posted credit notes from this customer against the outstanding invoice balance.",
+      "appliedCredits": "Credits linked to this invoice",
+      "noAppliedCredits": "No credit notes linked to this invoice yet.",
+      "colNumber": "Number",
+      "colReturn": "From return",
+      "colDate": "Date",
+      "colTotal": "Total",
+      "colApplied": "Applied",
+      "colStatus": "Status",
+      "openCredits": "Open credit notes",
+      "noOpenCredits": "No open credit notes for this customer.",
+      "applySection": "Apply credit",
+      "selectCredit": "Credit note",
+      "amount": "Amount",
+      "apply": "Apply credit",
+      "maxHint": "Maximum",
+      "colRemaining": "Remaining",
+      "postGl": "Post contra-AR journal entry"
+    },
+    "homeActions": {
+      "newQuote": "New quote",
+      "openQuotes": "Open quotes",
+      "newSo": "New sales order",
+      "creditCheck": "Customer credit check",
+      "newInvoice": "New invoice",
+      "newReceipt": "New receipt",
+      "creditNotes": "Credit notes"
     }
   },
   "purchasing": {
@@ -350,6 +450,10 @@
       "approve": "Approve",
       "adjust": "Adjust",
       "reject": "Reject",
+      "createPo": "New PO",
+      "openPr": "Open PR",
+      "openBill": "Open bill",
+      "openGrn": "Open GRN",
       "approvePo": "PO {id} approved (demo)",
       "adjustPo": "Adjust {id} — editor is visual-only.",
       "rejectPo": "Suggestion {id} dismissed (demo)",
@@ -359,6 +463,29 @@
       "flagBill": "Flagged {id} ({status}) for follow-up (demo)",
       "confirmReceiptBtn": "Confirm",
       "confirmReceipt": "Receipt {ref} confirmed (demo)"
+    },
+    "homeActions": {
+      "scanPdf": "Scan vendor PDF",
+      "newBill": "New bill",
+      "billsList": "Bills list",
+      "billFromGrn": "Bill from GRN",
+      "newPo": "New PO",
+      "openPos": "Open POs",
+      "newRfq": "New RFQ",
+      "reorderAlerts": "Reorder alerts"
+    },
+    "colOnTimePct": "On-time %",
+    "colQualityPct": "Quality %",
+    "colComputedAt": "Computed",
+    "emptyVendorScores": "No vendor scores yet — post goods receipts in the last 12 months to build scorecards.",
+    "vendorScoresHint": "Scores combine on-time delivery (60%) and quality from returns (40%) over the last 12 months.",
+    "emptyPriceAlerts": "No vendor price alerts right now.",
+    "colChangePct": "Change %",
+    "colAlertType": "Alert type",
+    "colDetectedAt": "Detected",
+    "alertType": {
+      "price_increase": "Price increase",
+      "price_watch": "Price watch"
     }
   },
   "inventory": {
@@ -368,7 +495,7 @@
     "reorderShort": "{n} units below safety stock",
     "secStock": "Stock levels",
     "secForecast": "Demand forecast",
-    "forecastHint": "Projected units needed over the next 30 and 90 days.",
+    "forecastHint": "Projected units from average daily outbound over the last 90 days.",
     "secInbound": "Inbound shipments",
     "secOutbound": "Outbound deliveries",
     "colSku": "SKU",
@@ -404,7 +531,14 @@
       "refreshDemo": "Refresh is visual-only in this template.",
       "viewDelay": "Why delayed?",
       "delayNote": "Delay reason for {ref} — demo narrative only."
-    }
+    },
+    "homeActions": {
+      "newGrn": "New GRN",
+      "newDelivery": "New delivery",
+      "stockMoves": "Stock moves",
+      "newTransfer": "New transfer"
+    },
+    "colWarehouse": "Warehouse"
   },
   "settings": {
     "overviewTitle": "Settings",
@@ -472,8 +606,8 @@
         "approver": "Approver",
         "ap_clerk": "AP clerk",
         "ar_clerk": "AR clerk",
-        "warehouse": "Warehouse",
-        "buyer": "Buyer",
+        "warehouse": "Inventory",
+        "buyer": "Purchasing",
         "sales_rep": "Sales representative",
         "accountant": "Accountant",
         "period_adjust": "Period adjustments",
@@ -482,6 +616,15 @@
         "ai_agent": "AI agent"
       }
     }
+  },
+  "deferred": {
+    "comingSoonTitle": "Coming soon",
+    "comingSoonGeneric": "This data is not available yet.",
+    "comingSoonRoadmap": "Planned for a future release. Demand forecasts and adoption analytics are tracked on the product roadmap.",
+    "vendorScoresHint": "Vendor scorecards rank suppliers by on-time delivery and return quality from posted receipts.",
+    "forecastHint": "Demand projections for the next 30 and 90 days will appear here once a forecast model is connected.",
+    "adoptionMetricsTooltip": "Adoption works in this session; usage metrics will persist once the document graph is stored in SQL.",
+    "adoptionMetricsLink": "Learn more about deferred adoption metrics"
   },
   "common": {
     "back": "Back",

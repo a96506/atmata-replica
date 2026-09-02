@@ -22,6 +22,8 @@ import type {
   PdfResult,
   FunctionLocale,
 } from "@/types/functions";
+import type { Currency } from "@/types";
+import { formatMoney } from "@/lib/money";
 
 export type PdfClient = Awaited<ReturnType<typeof createInsForgeServerClient>>;
 
@@ -39,7 +41,10 @@ export type DocPdfInput = {
 export type FinancialPdfInput = {
   docType: "financial";
   type: FinancialType;
-  periodId: string;
+  periodId?: string;
+  accountId?: string;
+  from?: string;
+  to?: string;
   locale: PdfLocale;
   mode: PdfMode;
 };
@@ -169,6 +174,24 @@ function docTypeLabel(docType: string, locale: PdfLocale): string {
   return map[docType] ?? labelsFor(locale).docType;
 }
 
+const SUPPORTED_CURRENCIES = new Set<string>(["KWD", "SAR", "AED", "USD"]);
+
+function coerceCurrency(value: string | undefined | null): Currency {
+  const code = String(value ?? "KWD").toUpperCase();
+  return (SUPPORTED_CURRENCIES.has(code) ? code : "KWD") as Currency;
+}
+
+function statementTypeLabel(type: string, locale: PdfLocale): string {
+  const map: Record<string, string> = {
+    pl: locale === "ar" ? "الأرباح والخسائر" : "Profit & Loss",
+    balance_sheet: locale === "ar" ? "الميزانية العمومية" : "Balance Sheet",
+    cash_flow: locale === "ar" ? "التدفقات النقدية" : "Cash Flow",
+    general_ledger: locale === "ar" ? "دفتر الأستاذ العام" : "General Ledger",
+    trial_balance: locale === "ar" ? "ميزان المراجعة" : "Trial Balance",
+  };
+  return map[type] ?? (locale === "ar" ? "القوائم المالية" : "Financial statement");
+}
+
 // ─── fonts (lazy per-locale; pdfnative bundled Noto data) ─────────────────
 
 let fontsRegistered = false;
@@ -214,15 +237,25 @@ const BW = {
   white: "#FFFFFF" as const,
 };
 
-function lineItemsTable(lines: LineRow[], L: Labels, isAr: boolean): DocumentBlock {
-  const headers = isAr
-    ? [L.colCode, L.colDescription, L.colQty, L.colUnitPrice, L.colTotal]
-    : ["Code", "Description", "Qty", "Unit price", "Total"];
+function lineItemsTable(
+  lines: LineRow[],
+  L: Labels,
+  isAr: boolean,
+  currency: Currency,
+  locale: PdfLocale,
+): DocumentBlock {
+  const headers = [L.colCode, L.colDescription, L.colQty, L.colUnitPrice, L.colTotal];
   return {
     type: "table",
     headers,
     rows: lines.map((l) => ({
-      cells: [l.code, l.description, String(l.qty), String(l.unitPrice), String(l.total)],
+      cells: [
+        l.code,
+        l.description,
+        String(l.qty),
+        formatMoney(Number(l.unitPrice), currency, locale),
+        formatMoney(Number(l.total), currency, locale),
+      ],
       type: "",
       pointed: false,
     })),
@@ -255,13 +288,19 @@ function partyBlock(data: DocData, L: Labels, isAr: boolean): DocumentBlock {
   };
 }
 
-function totalsBlock(data: DocData, L: Labels, isAr: boolean): DocumentBlock {
+function totalsBlock(
+  data: DocData,
+  L: Labels,
+  isAr: boolean,
+  currency: Currency,
+  locale: PdfLocale,
+): DocumentBlock {
   return {
     type: "paragraph",
     text: [
-      `${L.subtotal}: ${data.currency} ${data.subtotal}`,
-      `${L.tax}: ${data.currency} ${data.taxTotal}`,
-      `${L.total}: ${data.currency} ${data.total}`,
+      `${L.subtotal}: ${formatMoney(data.subtotal, currency, locale)}`,
+      `${L.tax}: ${formatMoney(data.taxTotal, currency, locale)}`,
+      `${L.total}: ${formatMoney(data.total, currency, locale)}`,
     ].join("  ·  "),
     align: isAr ? "right" : "left",
     color: BW.black,
@@ -280,9 +319,9 @@ function buildDocBlocks(
     { type: "heading", text: title, level: 1, color: BW.black },
     partyBlock(data, L, isAr),
     { type: "spacer", height: 12 },
-    lineItemsTable(data.lines, L, isAr),
+    lineItemsTable(data.lines, L, isAr, coerceCurrency(data.currency), locale),
     { type: "spacer", height: 12 },
-    totalsBlock(data, L, isAr),
+    totalsBlock(data, L, isAr, coerceCurrency(data.currency), locale),
   ];
   if (data.notes) blocks.push({ type: "paragraph", text: data.notes, color: BW.gray });
   blocks.push({ type: "paragraph", text: L.footer, color: BW.gray });
@@ -295,6 +334,7 @@ function buildFinancialBlocks(
   locale: PdfLocale,
 ): DocumentBlock[] {
   const isAr = locale === "ar";
+  const currency = coerceCurrency(data.currency);
   return [
     { type: "heading", text: `${data.statementType} — ${data.period}`, level: 1, color: BW.black },
     {
@@ -306,9 +346,9 @@ function buildFinancialBlocks(
     { type: "spacer", height: 12 },
     {
       type: "table",
-      headers: isAr ? [L.label, L.amount] : ["Label", "Amount"],
+      headers: [L.label, L.amount],
       rows: data.lineItems.map((li) => ({
-        cells: [li.label, String(li.amount)],
+        cells: [li.label, formatMoney(Number(li.amount), currency, locale)],
         type: "",
         pointed: false,
       })),
@@ -321,7 +361,7 @@ function buildFinancialBlocks(
     {
       type: "paragraph",
       text: Object.entries(data.totals)
-        .map(([k, v]) => `${k}: ${data.currency} ${v}`)
+        .map(([k, v]) => `${k}: ${formatMoney(Number(v), currency, locale)}`)
         .join("  ·  "),
       align: isAr ? "right" : "left",
       color: BW.black,
@@ -330,7 +370,7 @@ function buildFinancialBlocks(
   ];
 }
 
-const TEMPLATE_VERSION = "sha256:9fa58346c397f250";
+const TEMPLATE_VERSION = "sha256:a1b2c3d4e5f60718";
 
 const BW_COLORS = {
   title: BW.black,
@@ -551,8 +591,21 @@ async function fetchDocData(
 async function fetchFinancialData(
   c: PdfClient,
   type: FinancialType,
-  periodId: string,
+  opts: {
+    periodId?: string;
+    accountId?: string;
+    from?: string;
+    to?: string;
+    locale: PdfLocale;
+  },
 ): Promise<FinancialData> {
+  const periodId = opts.periodId;
+  const rpcArgs: Record<string, unknown> = {};
+  if (periodId) rpcArgs.p_period_id = periodId;
+  if (opts.accountId) rpcArgs.p_account_id = opts.accountId;
+  if (opts.from) rpcArgs.p_from = opts.from;
+  if (opts.to) rpcArgs.p_to = opts.to;
+
   const rpcName =
     type === "pl"
       ? "report_pnl"
@@ -560,67 +613,106 @@ async function fetchFinancialData(
         ? "report_balance_sheet"
         : type === "cash_flow"
           ? "report_cash_flow"
-          : "report_trial_balance";
-  const { data, error } =
-    type === "trial_balance"
-      ? await c.database.rpc(rpcName)
-      : await c.database.rpc(rpcName, { p_period_id: periodId });
+          : type === "general_ledger"
+            ? "report_general_ledger"
+            : "report_trial_balance";
+
+  const { data, error } = await c.database.rpc(
+    rpcName,
+    type === "trial_balance" || type === "general_ledger"
+      ? rpcArgs
+      : { p_period_id: periodId },
+  );
   if (error || !data) throw new PdfServiceError("UNAVAILABLE", 503, true);
 
-  const json =
-    type === "trial_balance"
-      ? {
-          line_items: (data as Array<Record<string, unknown>>).map((row) => ({
-            label: `${row.account_code ?? ""} ${row.account_name ?? ""}`.trim(),
-            amount: Number(row.balance ?? 0),
-          })),
-          totals: {
-            debit: (data as Array<Record<string, unknown>>).reduce(
-              (sum, row) => sum + Number(row.debit ?? 0),
-              0,
-            ),
-            credit: (data as Array<Record<string, unknown>>).reduce(
-              (sum, row) => sum + Number(row.credit ?? 0),
-              0,
-            ),
-          },
-        }
-      : (data as {
-          line_items: { label: string; amount: number }[];
-          totals: Record<string, number>;
-        });
+  let lineItems: { label: string; amount: number }[] = [];
+  let totals: Record<string, number> = {};
 
-  const period = await fetchOne<{ year: number; month: number; companyId: string }>(
-    c,
-    "fiscal_periods",
-    periodId,
-    "year, month, company_id",
-  );
+  if (type === "general_ledger") {
+    const rows = data as Array<Record<string, unknown>>;
+    lineItems = rows.map((row) => {
+      const entryDate = String(row.entry_date ?? row.entryDate ?? "");
+      const journalNumber = String(row.journal_number ?? row.journalNumber ?? "");
+      const code = String(row.account_code ?? row.accountCode ?? "");
+      const name = String(row.account_name ?? row.accountName ?? "");
+      const debit = Number(row.debit ?? 0);
+      const credit = Number(row.credit ?? 0);
+      const side =
+        debit > 0 && credit > 0
+          ? `Dr ${debit} / Cr ${credit}`
+          : debit > 0
+            ? `Dr ${debit}`
+            : `Cr ${credit}`;
+      return {
+        label: `${entryDate} | ${journalNumber} | ${`${code} ${name}`.trim()} | ${side}`,
+        amount: Number(row.running_balance ?? row.runningBalance ?? 0),
+      };
+    });
+    totals = {
+      debit: rows.reduce((sum, row) => sum + Number(row.debit ?? 0), 0),
+      credit: rows.reduce((sum, row) => sum + Number(row.credit ?? 0), 0),
+    };
+  } else if (type === "trial_balance") {
+    const rows = data as Array<Record<string, unknown>>;
+    lineItems = rows.map((row) => ({
+      label: `${row.account_code ?? row.accountCode ?? ""} ${row.account_name ?? row.accountName ?? ""}`.trim(),
+      amount: Number(row.balance ?? 0),
+    }));
+    totals = {
+      debit: rows.reduce((sum, row) => sum + Number(row.debit ?? 0), 0),
+      credit: rows.reduce((sum, row) => sum + Number(row.credit ?? 0), 0),
+    };
+  } else {
+    const json = data as {
+      line_items: { label: string; amount: number }[];
+      totals: Record<string, number>;
+    };
+    lineItems = json.line_items ?? [];
+    totals = json.totals ?? {};
+  }
+
+  let companyId: string;
+  let periodLabel: string;
+  if (periodId) {
+    const period = await fetchOne<{ year: number; month: number; companyId: string }>(
+      c,
+      "fiscal_periods",
+      periodId,
+      "year, month, company_id",
+    );
+    companyId = String(period.companyId);
+    periodLabel = `${period.year}-${String(period.month).padStart(2, "0")}`;
+  } else {
+    const { data: memberData, error: memberError } = await c.database
+      .from("company_members")
+      .select("company_id")
+      .eq("active", true)
+      .limit(1)
+      .maybeSingle();
+    if (memberError || !memberData) throw new PdfServiceError("UNAVAILABLE", 503, true);
+    companyId = String((memberData as { company_id?: string; companyId?: string }).company_id
+      ?? (memberData as { companyId?: string }).companyId);
+    const parts = [opts.from, opts.to].filter(Boolean);
+    periodLabel = parts.length > 0 ? parts.join(" – ") : (opts.locale === "ar" ? "كل الفترات" : "All periods");
+  }
+
   const company = await fetchOne<{ id: string; name: string; baseCurrency: string }>(
     c,
     "companies",
-    period.companyId,
+    companyId,
     "id, name, base_currency",
   );
 
   return {
     companyId: String(company.id),
     companyName: String(company.name),
-    statementType:
-      type === "pl"
-        ? "Profit & Loss"
-        : type === "balance_sheet"
-          ? "Balance Sheet"
-          : type === "cash_flow"
-            ? "Cash Flow"
-            : "Trial Balance",
-    period: `${period.year}-${String(period.month).padStart(2, "0")}`,
+    statementType: statementTypeLabel(type, opts.locale),
+    period: periodLabel,
     currency: String(company.baseCurrency ?? "KWD"),
-    lineItems: json.line_items ?? [],
-    totals: json.totals ?? {},
+    lineItems,
+    totals,
   };
 }
-
 function stableStringify(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(stableStringify).join(",")}]`;
   if (value && typeof value === "object") {
@@ -750,6 +842,7 @@ const FINANCIAL_TYPES = new Set<string>([
   "balance_sheet",
   "cash_flow",
   "trial_balance",
+  "general_ledger",
 ]);
 
 export function parsePdfRequest(value: unknown): PdfRequest | null {
@@ -762,16 +855,43 @@ export function parsePdfRequest(value: unknown): PdfRequest | null {
     return null;
   }
   if (body.docType === "financial") {
-    if (
-      typeof body.type !== "string" ||
-      !FINANCIAL_TYPES.has(body.type) ||
-      typeof body.periodId !== "string" ||
-      body.periodId.length < 1 ||
-      body.periodId.length > 160
-    ) {
+    if (typeof body.type !== "string" || !FINANCIAL_TYPES.has(body.type)) {
       return null;
     }
-    return body as FinancialPdfInput;
+    const periodId = body.periodId;
+    const accountId = body.accountId;
+    const from = body.from;
+    const to = body.to;
+    const hasPeriod =
+      typeof periodId === "string" &&
+      periodId.length >= 1 &&
+      periodId.length <= 160;
+    const hasAccount =
+      typeof accountId === "string" &&
+      accountId.length >= 1 &&
+      accountId.length <= 160;
+    const hasFrom = typeof from === "string" && from.length >= 1 && from.length <= 32;
+    const hasTo = typeof to === "string" && to.length >= 1 && to.length <= 32;
+    const hasFilters = hasAccount || hasFrom || hasTo;
+    if (body.type === "trial_balance") {
+      if (!hasPeriod && !hasFilters) return null;
+    } else if (!hasPeriod) {
+      return null;
+    }
+    if (periodId !== undefined && !hasPeriod) return null;
+    if (accountId !== undefined && !hasAccount) return null;
+    if (from !== undefined && !hasFrom) return null;
+    if (to !== undefined && !hasTo) return null;
+    return {
+      docType: "financial",
+      type: body.type as FinancialType,
+      periodId: hasPeriod ? (periodId as string) : undefined,
+      accountId: hasAccount ? (accountId as string) : undefined,
+      from: hasFrom ? (from as string) : undefined,
+      to: hasTo ? (to as string) : undefined,
+      locale: body.locale as PdfLocale,
+      mode: body.mode as PdfMode,
+    };
   }
   if (
     typeof body.docType !== "string" ||
@@ -810,7 +930,13 @@ export async function generatePdf(
   }
 
   if (isFinancialInput(body)) {
-    const data = await fetchFinancialData(c, body.type, body.periodId);
+    const data = await fetchFinancialData(c, body.type, {
+      periodId: body.periodId,
+      accountId: body.accountId,
+      from: body.from,
+      to: body.to,
+      locale: body.locale,
+    });
     const bytes = await renderFinancial(data, body.locale);
     if (body.mode === "preview") {
       return {
@@ -819,12 +945,15 @@ export async function generatePdf(
         base64: bytesToBase64(bytes),
       };
     }
+    const saveDocId =
+      body.periodId ??
+      `tb-${body.accountId ?? "all"}-${body.from ?? ""}-${body.to ?? ""}`;
     // Sync save — see TODO above (pdf job handler + UI poll not ready).
     return handleSave(
       c,
       data.companyId,
       "financial",
-      body.periodId,
+      saveDocId,
       body.locale,
       "posted",
       await hashData(data),

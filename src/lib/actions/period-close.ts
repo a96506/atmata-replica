@@ -40,15 +40,17 @@ export async function startPeriodCloseAction(
     // (open → soft_closed) — the same RPC `set_fiscal_period_status` the
     // Fiscal calendar grid uses. "Run close" must actually close the
     // period, not just toast success.
+    // Distinct idempotency keys: same client key must not collide across RPCs.
+    const key = parsed.data.idempotencyKey;
     await callWriteRpcJson("set_fiscal_period_status", {
-      p_idempotency_key: parsed.data.idempotencyKey,
+      p_idempotency_key: `${key}:fiscal`,
       p_fiscal_period_id: parsed.data.fiscalPeriodId,
       p_status: "soft_closed",
     });
 
     // Then create / refresh the close run + checklist tasks.
     const data = await callWriteRpcJson("start_period_close", {
-      p_idempotency_key: parsed.data.idempotencyKey,
+      p_idempotency_key: `${key}:start`,
       p_fiscal_period_id: parsed.data.fiscalPeriodId,
     });
 
@@ -157,6 +159,24 @@ export async function closeFiscalYearAction(
   }
 }
 
+/**
+ * Synthesized inbox rows use ids `pending:{docType}:{docId}` (see inbox.ts).
+ * Persist mark-read by upserting a real notifications row with that id and
+ * read_at set; the feed then prefers the DB row and skips re-synthesis.
+ */
+function parsePendingInboxId(
+  notificationId: string,
+): { docType: string; docId: string } | null {
+  if (!notificationId.startsWith("pending:")) return null;
+  const rest = notificationId.slice("pending:".length);
+  const colon = rest.indexOf(":");
+  if (colon <= 0) return null;
+  const docType = rest.slice(0, colon).trim();
+  const docId = rest.slice(colon + 1).trim();
+  if (!docType || !docId) return null;
+  return { docType, docId };
+}
+
 export async function markInboxNotificationReadAction(
   input: unknown,
 ): Promise<ActionResult<unknown>> {
@@ -169,9 +189,68 @@ export async function markInboxNotificationReadAction(
     );
     if (!parsed.ok) return parsed;
 
+    const notificationId = parsed.data.notificationId;
+    const pending = parsePendingInboxId(notificationId);
+
+    if (pending) {
+      const { getAppSession } = await import("@/lib/insforge/session");
+      const { createInsForgeServerClient } = await import(
+        "@/lib/insforge/server"
+      );
+      const { session } = await getAppSession();
+      if (!session) {
+        return {
+          ok: false,
+          error: {
+            code: "UNAUTHENTICATED",
+            messageKey: "errors.unauthenticated",
+            retryable: false,
+            requestId,
+          },
+        };
+      }
+
+      const client = await createInsForgeServerClient();
+      const now = new Date().toISOString();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const insertResult: any = await client.database
+        .from("notifications")
+        .insert([
+          {
+            id: notificationId,
+            recipient_user_id: session.user.id,
+            kind: "approval_requested",
+            title: "Document awaiting approval",
+            body: "Marked read from inbox.",
+            doc_type: pending.docType,
+            doc_id: pending.docId,
+            read_at: now,
+          },
+        ]);
+
+      if (insertResult.error) {
+        const msg = String(insertResult.error.message ?? "");
+        // Already persisted (re-mark or race) — fall through to the read RPC.
+        if (!/duplicate|unique|already exists/i.test(msg)) {
+          throw new Error(msg || "notifications insert failed");
+        }
+        await callWriteRpcJson("mark_inbox_notification_read", {
+          p_idempotency_key: parsed.data.idempotencyKey,
+          p_notification_id: notificationId,
+        });
+      }
+
+      revalidatePath(`/${parsed.data.locale}/inbox`);
+      revalidatePath(`/inbox`);
+      return {
+        ok: true,
+        data: { notificationId, read: true, synthesized: true },
+      };
+    }
+
     const data = await callWriteRpcJson("mark_inbox_notification_read", {
       p_idempotency_key: parsed.data.idempotencyKey,
-      p_notification_id: parsed.data.notificationId,
+      p_notification_id: notificationId,
     });
 
     revalidatePath(`/${parsed.data.locale}/inbox`);

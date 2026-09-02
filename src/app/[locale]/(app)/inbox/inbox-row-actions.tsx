@@ -22,6 +22,12 @@ const APPROVABLE_SOURCES = new Set([
 const FALLBACK_ROUTES: Record<string, string> = {
   reconciliation: "/accounting/reconciliation",
   credit_hold: "/accounting",
+  ops_reorder: "/inventory",
+  ops_stale_draft: "/inventory",
+  ops_abc: "/inventory",
+  ops_schedule_failure: "/settings",
+  ops_fx_stale: "/settings/fx-rates",
+  ops_depreciation_blocked: "/accounting",
 };
 
 export type InboxRowDocContext = {
@@ -40,7 +46,7 @@ export function InboxRowActions({
   source: string;
   id: number | string;
   sourceUrl?: string | null;
-  /** Real notifications.id when available; otherwise mark-read is skipped. */
+  /** notifications.id, including synthesized `pending:{docType}:{docId}` ids. */
   notificationId?: string | null;
   doc?: InboxRowDocContext | null;
 }) {

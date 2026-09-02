@@ -23,7 +23,7 @@ type DocType =
   | 'vendor_bill'
   | 'financial';
 
-type FinancialType = 'pl' | 'balance_sheet' | 'cash_flow' | 'trial_balance';
+type FinancialType = 'pl' | 'balance_sheet' | 'cash_flow' | 'trial_balance' | 'general_ledger';
 type PdfLocale = 'en' | 'ar';
 type PdfMode = 'preview' | 'save';
 
@@ -37,7 +37,10 @@ type DocInput = {
 type FinancialInput = {
   docType: 'financial';
   type: FinancialType;
-  periodId: string;
+  periodId?: string;
+  accountId?: string;
+  from?: string;
+  to?: string;
   locale: PdfLocale;
   mode: PdfMode;
 };
@@ -553,35 +556,102 @@ async function fetchDocData(c: SdkClient, docType: Exclude<DocType, 'financial'>
 async function fetchFinancialData(
   c: SdkClient,
   type: FinancialType,
-  periodId: string,
+  opts: {
+    periodId?: string;
+    accountId?: string;
+    from?: string;
+    to?: string;
+  },
 ): Promise<FinancialData> {
+  const periodId = opts.periodId;
+  const rpcArgs: Record<string, unknown> = {};
+  if (periodId) rpcArgs.p_period_id = periodId;
+  if (opts.accountId) rpcArgs.p_account_id = opts.accountId;
+  if (opts.from) rpcArgs.p_from = opts.from;
+  if (opts.to) rpcArgs.p_to = opts.to;
+
   const rpcName =
     type === 'pl' ? 'report_pnl'
     : type === 'balance_sheet' ? 'report_balance_sheet'
     : type === 'cash_flow' ? 'report_cash_flow'
+    : type === 'general_ledger' ? 'report_general_ledger'
     : 'report_trial_balance';
-  const { data, error } = type === 'trial_balance'
-    ? await c.database.rpc(rpcName)
-    : await c.database.rpc(rpcName, { p_period_id: periodId });
-  if (error || !data) throw new FunctionFailure('UNAVAILABLE', 503, true);
-  const json = type === 'trial_balance'
-    ? {
-        line_items: (data as Array<Record<string, unknown>>).map((row) => ({
-          label: `${row.account_code ?? ''} ${row.account_name ?? ''}`.trim(),
-          amount: Number(row.balance ?? 0),
-        })),
-        totals: {
-          debit: (data as Array<Record<string, unknown>>).reduce((sum, row) => sum + Number(row.debit ?? 0), 0),
-          credit: (data as Array<Record<string, unknown>>).reduce((sum, row) => sum + Number(row.credit ?? 0), 0),
-        },
-      }
-    : data as { line_items: { label: string; amount: number }[]; totals: Record<string, number> };
 
-  const period = await fetchOne<{ year: number; month: number; companyId: string }>(
-    c, 'fiscal_periods', periodId, 'year, month, company_id',
+  const { data, error } = await c.database.rpc(
+    rpcName,
+    type === 'trial_balance' || type === 'general_ledger'
+      ? rpcArgs
+      : { p_period_id: periodId },
   );
+  if (error || !data) throw new FunctionFailure('UNAVAILABLE', 503, true);
+
+  let lineItems: { label: string; amount: number }[] = [];
+  let totals: Record<string, number> = {};
+
+  if (type === 'general_ledger') {
+    const rows = data as Array<Record<string, unknown>>;
+    lineItems = rows.map((row) => {
+      const entryDate = String(row.entry_date ?? row.entryDate ?? '');
+      const journalNumber = String(row.journal_number ?? row.journalNumber ?? '');
+      const code = String(row.account_code ?? row.accountCode ?? '');
+      const name = String(row.account_name ?? row.accountName ?? '');
+      const debit = Number(row.debit ?? 0);
+      const credit = Number(row.credit ?? 0);
+      const side =
+        debit > 0 && credit > 0
+          ? `Dr ${debit} / Cr ${credit}`
+          : debit > 0
+            ? `Dr ${debit}`
+            : `Cr ${credit}`;
+      return {
+        label: `${entryDate} | ${journalNumber} | ${`${code} ${name}`.trim()} | ${side}`,
+        amount: Number(row.running_balance ?? row.runningBalance ?? 0),
+      };
+    });
+    totals = {
+      debit: rows.reduce((sum, row) => sum + Number(row.debit ?? 0), 0),
+      credit: rows.reduce((sum, row) => sum + Number(row.credit ?? 0), 0),
+    };
+  } else if (type === 'trial_balance') {
+    const rows = data as Array<Record<string, unknown>>;
+    lineItems = rows.map((row) => ({
+      label: `${row.account_code ?? row.accountCode ?? ''} ${row.account_name ?? row.accountName ?? ''}`.trim(),
+      amount: Number(row.balance ?? 0),
+    }));
+    totals = {
+      debit: rows.reduce((sum, row) => sum + Number(row.debit ?? 0), 0),
+      credit: rows.reduce((sum, row) => sum + Number(row.credit ?? 0), 0),
+    };
+  } else {
+    const json = data as { line_items: { label: string; amount: number }[]; totals: Record<string, number> };
+    lineItems = json.line_items ?? [];
+    totals = json.totals ?? {};
+  }
+
+  let companyId: string;
+  let periodLabel: string;
+  if (periodId) {
+    const period = await fetchOne<{ year: number; month: number; companyId: string }>(
+      c, 'fiscal_periods', periodId, 'year, month, company_id',
+    );
+    companyId = String(period.companyId);
+    periodLabel = `${period.year}-${String(period.month).padStart(2, '0')}`;
+  } else {
+    const { data: memberData, error: memberError } = await c.database
+      .from('company_members')
+      .select('company_id')
+      .eq('active', true)
+      .limit(1)
+      .maybeSingle();
+    if (memberError || !memberData) throw new FunctionFailure('UNAVAILABLE', 503, true);
+    companyId = String((memberData as { company_id?: string; companyId?: string }).company_id
+      ?? (memberData as { companyId?: string }).companyId);
+    const parts = [opts.from, opts.to].filter(Boolean);
+    periodLabel = parts.length > 0 ? parts.join(' – ') : 'All periods';
+  }
+
   const company = await fetchOne<{ id: string; name: string; baseCurrency: string }>(
-    c, 'companies', period.companyId, 'id, name, base_currency',
+    c, 'companies', companyId, 'id, name, base_currency',
   );
 
   return {
@@ -591,11 +661,12 @@ async function fetchFinancialData(
       type === 'pl' ? 'Profit & Loss'
       : type === 'balance_sheet' ? 'Balance Sheet'
       : type === 'cash_flow' ? 'Cash Flow'
+      : type === 'general_ledger' ? 'General Ledger'
       : 'Trial Balance',
-    period: `${period.year}-${String(period.month).padStart(2, '00')}`,
+    period: periodLabel,
     currency: String(company.baseCurrency ?? 'KWD'),
-    lineItems: json.line_items ?? [],
-    totals: json.totals ?? {},
+    lineItems,
+    totals,
   };
 }
 
@@ -644,7 +715,7 @@ function unauthorized(requestId: string): Response {
 }
 
 const DOC_TYPES = new Set(['quote', 'invoice', 'delivery', 'purchase_order', 'vendor_bill']);
-const FINANCIAL_TYPES = new Set(['pl', 'balance_sheet', 'cash_flow', 'trial_balance']);
+const FINANCIAL_TYPES = new Set(['pl', 'balance_sheet', 'cash_flow', 'trial_balance', 'general_ledger']);
 
 function parseRequest(value: unknown): PdfRequest | null {
   if (!value || typeof value !== 'object') return null;
@@ -653,14 +724,37 @@ function parseRequest(value: unknown): PdfRequest | null {
     return null;
   }
   if (body.docType === 'financial') {
-    if (
-      typeof body.type !== 'string' ||
-      !FINANCIAL_TYPES.has(body.type) ||
-      typeof body.periodId !== 'string' ||
-      body.periodId.length < 1 ||
-      body.periodId.length > 160
-    ) return null;
-    return body as FinancialInput;
+    if (typeof body.type !== 'string' || !FINANCIAL_TYPES.has(body.type)) return null;
+    const periodId = body.periodId;
+    const accountId = body.accountId;
+    const from = body.from;
+    const to = body.to;
+    const hasPeriod =
+      typeof periodId === 'string' && periodId.length >= 1 && periodId.length <= 160;
+    const hasAccount =
+      typeof accountId === 'string' && accountId.length >= 1 && accountId.length <= 160;
+    const hasFrom = typeof from === 'string' && from.length >= 1 && from.length <= 32;
+    const hasTo = typeof to === 'string' && to.length >= 1 && to.length <= 32;
+    const hasFilters = hasAccount || hasFrom || hasTo;
+    if (body.type === 'trial_balance') {
+      if (!hasPeriod && !hasFilters) return null;
+    } else if (!hasPeriod) {
+      return null;
+    }
+    if (periodId !== undefined && !hasPeriod) return null;
+    if (accountId !== undefined && !hasAccount) return null;
+    if (from !== undefined && !hasFrom) return null;
+    if (to !== undefined && !hasTo) return null;
+    return {
+      docType: 'financial',
+      type: body.type as FinancialType,
+      periodId: hasPeriod ? (periodId as string) : undefined,
+      accountId: hasAccount ? (accountId as string) : undefined,
+      from: hasFrom ? (from as string) : undefined,
+      to: hasTo ? (to as string) : undefined,
+      locale: body.locale as PdfLocale,
+      mode: body.mode as PdfMode,
+    };
   }
   if (
     typeof body.docType !== 'string' ||
@@ -823,13 +917,21 @@ export default async function (req: Request): Promise<Response> {
 
   try {
     if (isFinancialInput(body)) {
-      const data = await fetchFinancialData(c, body.type, body.periodId);
+      const data = await fetchFinancialData(c, body.type, {
+        periodId: body.periodId,
+        accountId: body.accountId,
+        from: body.from,
+        to: body.to,
+      });
       const bytes = await renderFinancial(data, body.locale);
+      const saveDocId =
+        body.periodId ??
+        `tb-${body.accountId ?? 'all'}-${body.from ?? ''}-${body.to ?? ''}`;
       if (body.mode === 'preview') {
-        console.info(JSON.stringify({ requestId, function: 'pdf-gen', operation: 'preview', companyId: data.companyId, userId: userData.user.id, documentId: body.periodId, durationMs: Date.now() - startedAt, resultCode: 'OK' }));
+        console.info(JSON.stringify({ requestId, function: 'pdf-gen', operation: 'preview', companyId: data.companyId, userId: userData.user.id, documentId: saveDocId, durationMs: Date.now() - startedAt, resultCode: 'OK' }));
         return json(200, { mode: 'preview', contentType: 'application/pdf', base64: bytesToBase64(bytes) });
       }
-      const saved = await handleSave(c, data.companyId, 'financial', body.periodId, body.locale, 'posted', await hashData(data), bytes);
+      const saved = await handleSave(c, data.companyId, 'financial', saveDocId, body.locale, 'posted', await hashData(data), bytes);
       return json(200, saved);
     }
 
