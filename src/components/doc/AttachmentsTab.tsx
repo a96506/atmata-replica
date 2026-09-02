@@ -5,12 +5,12 @@ import { FileDrop, type DroppedFile } from "./FileDrop";
 import { toast } from "@/components/toast";
 import { useConfirm } from "@/components/confirm-dialog";
 import {
-  ATTACHMENTS_PAGE_SIZE,
   deleteAttachment,
   insertAttachment,
   listAttachments,
   signedAttachmentUrl,
 } from "@/lib/actions/storage";
+import { ATTACHMENTS_PAGE_SIZE } from "@/lib/list-paging";
 import type { Attachment } from "@/types/entities";
 
 export type AttachmentsTabProps = {

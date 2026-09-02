@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { camelize } from "@/lib/db/case";
 import { createInsForgeServerClient } from "@/lib/insforge/server";
 import { assertAllowedAttachmentMime } from "@/lib/actions/attachment-mime";
+import { ATTACHMENTS_PAGE_SIZE } from "@/lib/list-paging";
 import {
   recordAttachmentAddedEvent,
   recordAttachmentRemovedEvent,
@@ -30,9 +31,6 @@ function assertCompanyPrefix(key: string, companyId: string): void {
     );
   }
 }
-
-/** Default page size for doc-scoped attachment lists. */
-export const ATTACHMENTS_PAGE_SIZE = 50;
 
 export type ListAttachmentsResult = {
   items: Attachment[];

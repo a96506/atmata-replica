@@ -7,6 +7,9 @@
 /** Default page size for server-paginated list reads (`listPage`). */
 export const DEFAULT_LIST_PAGE_SIZE = 50;
 
+/** Default page size for doc-scoped attachment lists. */
+export const ATTACHMENTS_PAGE_SIZE = 50;
+
 /** Upper bound for a single `listPage` / `?limit=` request. */
 export const MAX_LIST_PAGE_SIZE = 100;
 
