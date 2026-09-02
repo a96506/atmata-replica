@@ -1,6 +1,6 @@
 .vercel
 
-# Vercel CLI token (paste yours here, used by agent for vercel login --token)
+# legacy ignore; do not recreate
 .vercel-token
 
 # code-review-graph (derived, local only)

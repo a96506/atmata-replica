@@ -12,6 +12,7 @@ These decisions are final for this plan. They define the target shape.
 
 1. **Path:** the implementation changes to adhere to the original design. The design is the target, not the code.
 2. **Server place:** the Next app runs on **Railway** as one long-running container, pinned to one replica, with vertical autoscale. Not Vercel.
+   Agents: Railway MCP only (`plugin-railway-railway`) — do not use Vercel CLI/plugin/MCP for this app.
 3. **Database, Auth, Storage places:** stay on managed InsForge (`yfmw4i43.eu-central.insforge.app`). The `@insforge/sdk` and the `insforge` CLI plus the agent skills keep working.
 4. **Edge functions:** all six fold into the Next app as route handlers, in-process workers, and in-process cron. They do not stay as separate InsForge edge deploys.
 5. **Rate limit:** the in-memory `Map` stays for day-one. It moves to a durable store only when a second replica is added.

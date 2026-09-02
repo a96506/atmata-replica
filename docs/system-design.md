@@ -78,6 +78,7 @@ The Next app runs on Railway as one long-running container.
 Replicas stay at one.
 Scale vertically with Railway plan limits before you add a second replica.
 Do not deploy this app to Vercel.
+Agents: use Railway MCP (`plugin-railway-railway`) only for this app — not the Vercel CLI, plugin, or MCP.
 
 ### 3.3 Database, Auth, Storage — managed InsForge
 

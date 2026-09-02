@@ -1,8 +1,9 @@
 /**
  * Absolute app origin for invitation / email links.
  * Prefer explicit APP_URL / NEXT_PUBLIC_APP_URL when non-localhost.
- * On Vercel, fall back to system URLs so deploy links are not stuck on localhost
- * (https://vercel.com/docs/environment-variables/system-environment-variables).
+ * On Railway, fall back to the public domain so deploy links are not stuck on
+ * localhost ([Railway variables](https://docs.railway.com/reference/variables):
+ * `RAILWAY_PUBLIC_DOMAIN`). Optional `RAILWAY_STATIC_URL` if set.
  */
 export function resolveAppOrigin(): string | null {
   const explicit = (
@@ -13,24 +14,31 @@ export function resolveAppOrigin(): string | null {
     .trim()
     .replace(/\/$/, "");
 
-  const vercelEnv = process.env.VERCEL_ENV;
-  const onVercel = Boolean(vercelEnv);
+  const railwayHostOrUrl = (
+    process.env.RAILWAY_PUBLIC_DOMAIN ??
+    process.env.RAILWAY_STATIC_URL ??
+    ""
+  ).trim();
+  const onRailway = Boolean(railwayHostOrUrl);
   const explicitIsLocalhost =
     !explicit || /localhost|127\.0\.0\.1/i.test(explicit);
 
-  if (explicit && !(onVercel && explicitIsLocalhost)) {
+  if (explicit && !(onRailway && explicitIsLocalhost)) {
     if (!/^https?:\/\//i.test(explicit)) return null;
     return explicit;
   }
 
-  if (vercelEnv === "production" && process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL.replace(/\/$/, "")}`;
+  if (railwayHostOrUrl) {
+    if (/^https?:\/\//i.test(railwayHostOrUrl)) {
+      return railwayHostOrUrl.replace(/\/$/, "");
+    }
+    return `https://${railwayHostOrUrl.replace(/\/$/, "")}`;
   }
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL.replace(/\/$/, "")}`;
-  }
+
   if (explicit && /^https?:\/\//i.test(explicit)) {
     return explicit;
   }
-  return null;
+
+  // Local default when no explicit / Railway URL is configured.
+  return "http://localhost:3000";
 }

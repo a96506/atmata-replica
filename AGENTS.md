@@ -20,3 +20,7 @@ Key patterns:
 - Reference users with `auth.users(id)`; use `auth.uid()` in RLS policies.
 - For storage uploads, persist both the returned `url` and `key`.
 <!-- INSFORGE:END -->
+
+## Deploy / ops (locked)
+
+Production app host = **Railway only**. Do NOT use the `vercel` CLI, do NOT link or recreate `.vercel`, and do NOT use the Vercel Cursor plugin/MCP for this repo. Use Railway MCP (`plugin-railway-railway`) for deploy, status, and env vars. Cursor project plugins: `.cursor/settings.json` (see https://cursor.com/docs/mcp).

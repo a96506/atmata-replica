@@ -176,18 +176,13 @@ export function isBlockedProductionUrl(url) {
   if (host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0") {
     return false;
   }
-  // Preview vercel URLs are allowed; bare production custom domains / main prod blocked.
-  if (host.endsWith(".vercel.app")) {
-    // Treat *-git-* and project preview hosts as previews; block obvious production aliases.
-    if (
-      host === "atmata.com" ||
-      host.startsWith("www.") ||
-      /-(production|prod|main)\./.test(host) ||
-      host === "atmata.vercel.app"
-    ) {
-      return true;
-    }
+  // Railway public hosts are allowed for verify (not production custom domains).
+  // Do not treat Vercel as a verify target for this app (Railway only).
+  if (host.endsWith(".up.railway.app")) {
     return false;
+  }
+  if (host.endsWith(".vercel.app")) {
+    return true;
   }
   if (
     host === "atmata.com" ||

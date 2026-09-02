@@ -1,0 +1,10 @@
+{
+  "plugins": {
+    "railway": {
+      "enabled": true
+    },
+    "vercel": {
+      "enabled": false
+    }
+  }
+}

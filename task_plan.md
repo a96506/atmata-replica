@@ -92,9 +92,9 @@ Hygiene: VERIFY_A/B tenants provisioned (`scripts/bootstrap-verify-tenants.mjs`)
 ## Hygiene leftover (not a phase reopen)
 - Note (Aug31): production app server is Railway; InsForge remains DB/Auth/Storage. Vercel entries below are historical hygiene/preview notes, not current topology.
 - ~~Phase 1–8 tree still uncommitted~~ → committed with Phase 8–10 + Aug21 hygiene (this commit)
-- ~~`APP_URL` still localhost~~ → `resolveAppOrigin()` (`src/lib/app-url.ts`) ignores localhost on Vercel and uses `VERCEL_URL` / `VERCEL_PROJECT_PRODUCTION_URL` ([Vercel system env](https://vercel.com/docs/environment-variables/system-environment-variables)); local `.env.local` stays localhost
+- ~~`APP_URL` still localhost~~ → `resolveAppOrigin()` (`src/lib/app-url.ts`) uses explicit `APP_URL` / `NEXT_PUBLIC_APP_URL`, then Railway `RAILWAY_PUBLIC_DOMAIN` ([Railway variables](https://docs.railway.com/reference/variables)); local `.env.local` may stay localhost
 - `FX_RATES_API_KEY` set Aug20 — fx_ingest verified (CBK `value` field parser fix)
-- Vercel preview `l9ejvc4lb` (SSO), not production — prod promote still manual (`vercel --prod` / merge to production branch)
+- Historical (pre-Railway): Vercel preview/`vercel --prod` notes retired — production host is Railway only; use Railway MCP for deploy/status/env.
 - ~~dashboard / financials / module overview pages still `DEMO_*` page mocks~~ — Hygiene 4: live InsForge reads (reports + list aggregates)
 - Overview metric gap audit (Hygiene leftover fill):
   - **Wired:** dashboard AI `success_rate` ← `ai_queued_actions` (executed/(executed+failed)); omit when no terminal rows
