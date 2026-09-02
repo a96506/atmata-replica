@@ -166,6 +166,20 @@ export default async function ClosePage({
       : Promise.resolve({} as Record<string, number>),
   ]);
 
+  // Same honesty as checklist rows (F-043 / displayStatus): only count a step
+  // complete when the user marked it AND real work exists. Do not use the
+  // API's overallProgressPct (raw stored completed/skipped).
+  let honestProgressPct = 0;
+  if (workspace && workspace.tasks.length > 0) {
+    let honestCompleted = 0;
+    for (const task of workspace.tasks) {
+      const realFound =
+        counts[task.code] ?? detailCount(task.detail, "itemsFound");
+      if (task.status === "completed" && realFound > 0) honestCompleted += 1;
+    }
+    honestProgressPct = (honestCompleted / workspace.tasks.length) * 100;
+  }
+
   return (
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -213,11 +227,11 @@ export default async function ClosePage({
                 <div className="h-2 flex-1 rounded-full bg-muted">
                   <div
                     className="h-2 rounded-full bg-primary transition-all duration-300"
-                    style={{ width: `${workspace.overallProgressPct}%` }}
+                    style={{ width: `${honestProgressPct}%` }}
                   />
                 </div>
                 <span className="text-sm font-medium text-foreground">
-                  {workspace.overallProgressPct.toFixed(0)}%
+                  {honestProgressPct.toFixed(0)}%
                 </span>
               </div>
             </div>

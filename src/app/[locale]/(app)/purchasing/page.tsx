@@ -77,7 +77,9 @@ export default async function PurchasingPage() {
             </ul>
           </AlertDescription>
         </Alert>
-      ) : null}
+      ) : (
+        <p className="text-muted-foreground text-sm">{t("emptyPriceAlerts")}</p>
+      )}
 
       {/* Four queues share one surface via tabs so the overview stays a single
           screen instead of four stacked tables. */}
@@ -115,7 +117,7 @@ export default async function PurchasingPage() {
               r.qty,
               formatKwd(r.est_unit, lk),
               severityBadge(r.severity),
-              <PoSuggestionActions key={`a-${r.id}`} id={r.id} />,
+              <PoSuggestionActions key={`a-${r.id}`} prId={r.prId} />,
             ])}
             emptyMessage="No open purchase requisitions."
           />
@@ -143,7 +145,10 @@ export default async function PurchasingPage() {
           />
         </TabsContent>
 
-        <TabsContent value="vendors">
+        <TabsContent value="vendors" className="flex flex-col gap-2">
+          {d.vendor_scores.length > 0 ? (
+            <p className="text-muted-foreground text-sm">{t("vendorScoresHint")}</p>
+          ) : null}
           <DataTable
             columns={[
               { key: "v", label: t("colVendor") },
@@ -153,25 +158,27 @@ export default async function PurchasingPage() {
                 className: "text-right tabular-nums",
               },
               {
-                key: "l",
-                label: t("colLeadDays"),
+                key: "ot",
+                label: t("colOnTimePct"),
                 className: "text-right tabular-nums",
               },
-              { key: "q", label: t("colQuality") },
               {
-                key: "p",
-                label: t("colPriceRank"),
+                key: "qp",
+                label: t("colQualityPct"),
                 className: "text-right tabular-nums",
               },
+              { key: "at", label: t("colComputedAt") },
             ]}
             rows={d.vendor_scores.map((v) => [
               v.vendor,
               v.score,
-              v.lead_days,
-              t(`quality.${v.quality}`),
-              v.price_rank,
+              `${v.on_time_pct}%`,
+              `${v.quality_pct}%`,
+              new Intl.DateTimeFormat(lk === "ar" ? "ar-KW" : "en-GB", {
+                dateStyle: "medium",
+              }).format(new Date(v.computed_at)),
             ])}
-            emptyMessage="Vendor scores not available yet."
+            emptyMessage={t("emptyVendorScores")}
           />
         </TabsContent>
 
@@ -201,7 +208,7 @@ export default async function PurchasingPage() {
               r.expected,
               r.received,
               r.flag ? t(`recvFlag.${r.flag}`) : "—",
-              <ReceivingDemoActions key={r.ref} refCode={r.ref} />,
+              <ReceivingDemoActions key={r.id} grnId={r.id} />,
             ])}
             emptyMessage="No goods receipts yet."
           />

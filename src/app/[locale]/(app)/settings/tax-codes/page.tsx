@@ -75,6 +75,7 @@ export default async function Page({
       onCreate={createTaxCodeAction}
       onUpdate={updateTaxCodeAction}
       onDelete={deleteTaxCodeAction}
+      writeOperation="create_tax_code"
     />
   );
 }

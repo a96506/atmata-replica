@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { DataTable, type Column } from "@/components/data-table";
+import { type Column } from "@/components/data-table";
 import { MasterCrud, type MasterField } from "@/components/master/MasterCrud";
-import { ExportCsvButton } from "@/components/export/ExportCsvButton";
-import { listSuppliers, listPaymentTerms } from "@/lib/api/master";
+import { SuppliersExportClient } from "./suppliers-export-client";
+import { listSuppliersPage, listPaymentTerms } from "@/lib/api/master";
+import { parseListPage } from "@/lib/db/read";
 import { pageMetadata } from "@/lib/metadata";
 import {
   createSupplierAction,
@@ -22,11 +23,17 @@ const COLUMNS: Column[] = [
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ page?: string | string[]; limit?: string | string[] }>;
 }) {
   const { locale } = await params;
-  const [rows, terms] = await Promise.all([listSuppliers(), listPaymentTerms()]);
+  const { page, limit, offset } = parseListPage(await searchParams);
+  const [{ items: rows, total }, terms] = await Promise.all([
+    listSuppliersPage({ limit, offset }),
+    listPaymentTerms(),
+  ]);
 
   const fields: MasterField[] = [
     { name: "name", label: "Name", type: "text", required: true },
@@ -95,19 +102,10 @@ export default async function Page({
       onCreate={createSupplierAction}
       onUpdate={updateSupplierAction}
       onDelete={deleteSupplierAction}
+      writeOperation="create_supplier"
+      serverPagination={{ page, pageSize: limit, total }}
       extraActions={
-        <ExportCsvButton
-          rows={rows}
-          filename="suppliers"
-          columns={[
-            { label: "Name", value: (s) => s.name },
-            { label: "VAT number", value: (s) => s.vatNumber ?? "" },
-            { label: "Bank account", value: (s) => s.bankAccount ?? "" },
-            { label: "Payment term id", value: (s) => s.paymentTermId ?? "" },
-            { label: "WHT applicable", value: (s) => s.whtApplicable ?? false },
-            { label: "WHT rate", value: (s) => s.whtRate ?? "" },
-          ]}
-        />
+        <SuppliersExportClient rows={rows} />
       }
     />
   );

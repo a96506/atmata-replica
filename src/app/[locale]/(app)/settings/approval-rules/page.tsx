@@ -93,6 +93,7 @@ export default async function Page({
       onCreate={createApprovalRuleAction}
       onUpdate={updateApprovalRuleAction}
       onDelete={deleteApprovalRuleAction}
+      writeOperation="create_approval_rule"
     />
   );
 }

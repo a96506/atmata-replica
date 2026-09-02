@@ -13,6 +13,7 @@ const JOBS = new Set([
   "month_end",
   "inventory_alerts",
   "depreciation",
+  "metrics_refresh",
 ]);
 
 type JobName =
@@ -21,7 +22,8 @@ type JobName =
   | "stale_drafts"
   | "month_end"
   | "inventory_alerts"
-  | "depreciation";
+  | "depreciation"
+  | "metrics_refresh";
 
 type CompanyResult = {
   companyId: string;

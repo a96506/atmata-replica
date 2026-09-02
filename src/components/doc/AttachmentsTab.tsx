@@ -5,6 +5,7 @@ import { FileDrop, type DroppedFile } from "./FileDrop";
 import { toast } from "@/components/toast";
 import { useConfirm } from "@/components/confirm-dialog";
 import {
+  ATTACHMENTS_PAGE_SIZE,
   deleteAttachment,
   insertAttachment,
   listAttachments,
@@ -39,21 +40,38 @@ function shortUser(id: string | null) {
 
 export function AttachmentsTab({ docType, docId }: AttachmentsTabProps) {
   const [attachments, setAttachments] = React.useState<Attachment[]>([]);
+  const [total, setTotal] = React.useState(0);
+  const [page, setPage] = React.useState(1);
   const [loading, setLoading] = React.useState(true);
   const [companyId, setCompanyId] = React.useState<string | null>(null);
   const confirm = useConfirm();
   const [pendingDelete, setPendingDelete] = React.useState<string | null>(null);
 
-  const refresh = React.useCallback(async () => {
-    const list = await listAttachments({ docType, docId });
-    setAttachments(list);
-  }, [docType, docId]);
+  const pageSize = ATTACHMENTS_PAGE_SIZE;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+
+  const refresh = React.useCallback(
+    async (pageNum: number) => {
+      const offset = (pageNum - 1) * pageSize;
+      const result = await listAttachments({
+        docType,
+        docId,
+        limit: pageSize,
+        offset,
+      });
+      setAttachments(result.items);
+      setTotal(result.total);
+      setPage(pageNum);
+    },
+    [docType, docId, pageSize],
+  );
 
   React.useEffect(() => {
     let cancelled = false;
     (async () => {
+      setLoading(true);
       try {
-        await refresh();
+        await refresh(1);
       } catch (e) {
         if (!cancelled) toast.error(e instanceof Error ? e.message : String(e));
       } finally {
@@ -84,6 +102,20 @@ export function AttachmentsTab({ docType, docId }: AttachmentsTabProps) {
     };
   }, []);
 
+  const goToPage = React.useCallback(
+    async (nextPage: number) => {
+      setLoading(true);
+      try {
+        await refresh(nextPage);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : String(e));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [refresh],
+  );
+
   const onAccept = React.useCallback(
     async (file: DroppedFile) => {
       if (!file.key || !file.url || !companyId) return;
@@ -98,7 +130,13 @@ export function AttachmentsTab({ docType, docId }: AttachmentsTabProps) {
           size: file.size,
           filename: file.name,
         });
-        await refresh();
+        // Reload page 1 so the new upload is visible.
+        setLoading(true);
+        try {
+          await refresh(1);
+        } finally {
+          setLoading(false);
+        }
       } catch (e) {
         toast.error(e instanceof Error ? e.message : String(e));
       }
@@ -120,7 +158,11 @@ export function AttachmentsTab({ docType, docId }: AttachmentsTabProps) {
       setPendingDelete(attachment.id);
       try {
         await deleteAttachment({ id: attachment.id });
-        setAttachments((prev) => prev.filter((a) => a.id !== attachment.id));
+        // Re-fetch current page from server (may shrink if last item on page).
+        const nextTotal = Math.max(0, total - 1);
+        const nextPageCount = Math.max(1, Math.ceil(nextTotal / pageSize));
+        const targetPage = Math.min(page, nextPageCount);
+        await refresh(targetPage);
         toast.success("Attachment deleted.");
       } catch (e) {
         toast.error(e instanceof Error ? e.message : String(e));
@@ -128,7 +170,7 @@ export function AttachmentsTab({ docType, docId }: AttachmentsTabProps) {
         setPendingDelete(null);
       }
     },
-    [confirm],
+    [confirm, page, pageSize, refresh, total],
   );
 
   const onDownload = React.useCallback(async (id: string) => {
@@ -144,6 +186,10 @@ export function AttachmentsTab({ docType, docId }: AttachmentsTabProps) {
     ? `${companyId}/${docType}/${docId}`
     : null;
 
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = Math.min(page * pageSize, total);
+  const showPager = total > pageSize || page > 1;
+
   return (
     <div className="space-y-4">
       <div>
@@ -153,37 +199,64 @@ export function AttachmentsTab({ docType, docId }: AttachmentsTabProps) {
         {loading ? (
           <div className="text-sm text-muted-foreground">Loading…</div>
         ) : attachments.length > 0 ? (
-          <ul className="divide-y divide-border rounded-xl border border-border bg-card">
-            {attachments.map((a) => (
-              <li
-                key={a.id}
-                className="flex items-center justify-between px-4 py-3 text-sm"
-              >
-                <div className="min-w-0 flex-1">
+          <>
+            <ul className="divide-y divide-border rounded-xl border border-border bg-card">
+              {attachments.map((a) => (
+                <li
+                  key={a.id}
+                  className="flex items-center justify-between px-4 py-3 text-sm"
+                >
+                  <div className="min-w-0 flex-1">
+                    <button
+                      type="button"
+                      onClick={() => onDownload(a.id)}
+                      className="block truncate text-left font-medium text-primary hover:underline"
+                      title={a.filename ?? a.key}
+                    >
+                      {a.filename ?? a.key.split("/").pop()}
+                    </button>
+                    <div className="text-xs text-muted-foreground">
+                      {shortUser(a.uploadedBy)} · {formatDate(a.createdAt)} ·{" "}
+                      {humanSize(a.size)}
+                    </div>
+                  </div>
                   <button
                     type="button"
-                    onClick={() => onDownload(a.id)}
-                    className="block truncate text-left font-medium text-primary hover:underline"
-                    title={a.filename ?? a.key}
+                    onClick={() => onDelete(a)}
+                    disabled={pendingDelete === a.id}
+                    className="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-muted disabled:opacity-50"
                   >
-                    {a.filename ?? a.key.split("/").pop()}
+                    {pendingDelete === a.id ? "Deleting…" : "Delete"}
                   </button>
-                  <div className="text-xs text-muted-foreground">
-                    {shortUser(a.uploadedBy)} · {formatDate(a.createdAt)} ·{" "}
-                    {humanSize(a.size)}
-                  </div>
+                </li>
+              ))}
+            </ul>
+            {showPager ? (
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <p className="text-xs tabular-nums text-muted-foreground">
+                  {from}–{to} of {total}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={page <= 1 || loading}
+                    onClick={() => void goToPage(page - 1)}
+                    className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    disabled={page >= pageCount || loading}
+                    onClick={() => void goToPage(page + 1)}
+                    className="rounded-md border border-border px-2 py-1 text-xs hover:bg-muted disabled:opacity-50"
+                  >
+                    Next
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => onDelete(a)}
-                  disabled={pendingDelete === a.id}
-                  className="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-muted-foreground hover:bg-muted disabled:opacity-50"
-                >
-                  {pendingDelete === a.id ? "Deleting…" : "Delete"}
-                </button>
-              </li>
-            ))}
-          </ul>
+              </div>
+            ) : null}
+          </>
         ) : (
           <div className="text-sm text-muted-foreground">
             No attachments yet.

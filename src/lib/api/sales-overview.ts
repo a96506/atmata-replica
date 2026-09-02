@@ -3,7 +3,6 @@ import {
   listProducts,
 } from "@/lib/api/master";
 import {
-  listOpportunities,
   listQuotes,
   listSalesOrders,
 } from "@/lib/api/q2c";
@@ -36,14 +35,6 @@ export type SalesOverview = {
     score: string;
     payment_status: "current" | "overdue_14" | "on_hold";
   }>;
-  pipeline: Array<{
-    deal: string;
-    stage: string;
-    value: number;
-    probability: number;
-    days_idle: number;
-    next_action: string;
-  }>;
   quick_quote_products: Array<{
     sku: string;
     label: string;
@@ -66,12 +57,11 @@ function mapOrderState(state: string): string {
 }
 
 export async function getSalesOverview(): Promise<SalesOverview> {
-  const [quotes, orders, customers, opportunities, products] =
+  const [quotes, orders, customers, products] =
     await Promise.all([
       listQuotes().catch(() => []),
       listSalesOrders().catch(() => []),
       listCustomers().catch(() => []),
-      listOpportunities().catch(() => []),
       listProducts().catch(() => []),
     ]);
 
@@ -101,18 +91,6 @@ export async function getSalesOverview(): Promise<SalesOverview> {
     score: c.creditScore,
     payment_status: c.paymentStatus,
   }));
-
-  const pipeline = opportunities
-    .filter((o) => o.stage !== "won" && o.stage !== "lost")
-    .map((o) => ({
-      deal: o.title,
-      stage: o.stage.charAt(0).toUpperCase() + o.stage.slice(1),
-      value: o.value,
-      probability: o.probability,
-      days_idle: o.daysIdle,
-      next_action: o.nextAction ?? "—",
-    }));
-
   const quick_quote_products = products
     .filter((p) => p.sellable)
     .slice(0, 8)
@@ -137,7 +115,6 @@ export async function getSalesOverview(): Promise<SalesOverview> {
     quotations,
     orders: orderRows,
     customers: customerRows,
-    pipeline,
     quick_quote_products,
   };
 }

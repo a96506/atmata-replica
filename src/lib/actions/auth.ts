@@ -153,6 +153,13 @@ export async function resetPasswordAction(input: {
   return { ok: true };
 }
 
+export type InvitationAcceptMode = "new" | "existing";
+
+export type InvitationContext = {
+  email: string;
+  mode: InvitationAcceptMode;
+};
+
 export async function resolveInvitationEmail(token: string): Promise<string | null> {
   const trimmed = token.trim();
   if (!trimmed) return null;
@@ -179,40 +186,78 @@ export async function resolveInvitationEmail(token: string): Promise<string | nu
   return invitation.email.toLowerCase();
 }
 
+/**
+ * Detect whether the invite email already exists in InsForge auth.users.
+ * Admin list-users: GET /api/auth/users?search=…
+ * @see https://docs.insforge.dev/api-reference/admin/list-all-users-admin-only
+ */
+async function authEmailExists(email: string): Promise<boolean> {
+  const baseUrl = process.env.INSFORGE_URL?.replace(/\/$/, "");
+  const apiKey = process.env.INSFORGE_API_KEY;
+  if (!baseUrl || !apiKey) {
+    throw new Error("Missing INSFORGE_URL or INSFORGE_API_KEY");
+  }
+
+  const url = new URL("/api/auth/users", baseUrl);
+  url.searchParams.set("search", email);
+  url.searchParams.set("limit", "50");
+  url.searchParams.set("offset", "0");
+
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${apiKey}` },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Unable to look up invitation account (${response.status}).`);
+  }
+
+  const body = (await response.json()) as {
+    data?: Array<{ email?: string | null }>;
+  };
+  const needle = email.trim().toLowerCase();
+  return (body.data ?? []).some(
+    (user) => (user.email ?? "").trim().toLowerCase() === needle,
+  );
+}
+
+export async function resolveInvitationContext(
+  token: string,
+): Promise<InvitationContext | null> {
+  const email = await resolveInvitationEmail(token);
+  if (!email) return null;
+  const exists = await authEmailExists(email);
+  return { email, mode: exists ? "existing" : "new" };
+}
+
 export async function acceptInvitationAction(input: {
   token: string;
   fullName: string;
   password: string;
+  mode: InvitationAcceptMode;
 }): Promise<AuthActionResult> {
   const token = input.token.trim();
   const fullName = input.fullName.trim();
+  const mode = input.mode === "existing" ? "existing" : "new";
 
   if (!token || !fullName || input.password.length < 6) {
     return {
       ok: false,
-      message: "Complete every field and use a password of at least 6 characters.",
+      messageKey: "auth.invitation.incompleteFields",
     };
   }
 
   const admin = createInsForgeAdminClient();
   const auth = await createInsForgeAuthActions();
-  let userId: string | null = null;
 
   const email = await resolveInvitationEmail(token);
   if (!email) {
-    return { ok: false, message: "Invalid or expired invitation." };
+    return { ok: false, messageKey: "auth.invitation.invalidOrExpired" };
   }
 
-  const { data: createData, error: createError } = await admin.auth.signUp({
-    email,
-    password: input.password,
-    name: fullName,
-    autoConfirm: true,
-  });
+  let userId: string | null = null;
 
-  if (createData?.user) {
-    userId = createData.user.id;
-  } else if (createError) {
+  if (mode === "existing") {
     const { data: signInData, error: signInError } =
       await auth.signInWithPassword({
         email,
@@ -221,22 +266,40 @@ export async function acceptInvitationAction(input: {
     if (signInError || !signInData?.user) {
       return {
         ok: false,
-        message: "This email already has an account. Enter its current password.",
+        messageKey: "auth.invitation.wrongPassword",
       };
     }
     const signedEmail = signInData.user.email?.trim().toLowerCase() ?? "";
     if (signedEmail !== email) {
       await auth.signOut();
-      return { ok: false, message: "Invalid or expired invitation." };
+      return { ok: false, messageKey: "auth.invitation.invalidOrExpired" };
     }
     userId = signInData.user.id;
+  } else {
+    const { data: createData, error: createError } = await admin.auth.signUp({
+      email,
+      password: input.password,
+      name: fullName,
+      autoConfirm: true,
+    });
+
+    if (!createData?.user) {
+      if (createError) {
+        return {
+          ok: false,
+          messageKey: "auth.invitation.emailHasAccount",
+        };
+      }
+      return {
+        ok: false,
+        messageKey: "auth.invitation.createFailed",
+      };
+    }
+    userId = createData.user.id;
   }
 
   if (!userId) {
-    return {
-      ok: false,
-      message: messageFrom(createError, "Unable to create the account."),
-    };
+    return { ok: false, messageKey: "auth.invitation.acceptFailed" };
   }
 
   const { error: acceptError } = await admin.database.rpc(
@@ -252,21 +315,23 @@ export async function acceptInvitationAction(input: {
     await auth.signOut();
     return {
       ok: false,
-      message: messageFrom(acceptError, "Invalid or expired invitation."),
+      messageKey: "auth.invitation.invalidOrExpired",
     };
   }
 
-  const { data: signInData, error: signInError } =
-    await auth.signInWithPassword({
-      email,
-      password: input.password,
-    });
+  if (mode === "new") {
+    const { data: signInData, error: signInError } =
+      await auth.signInWithPassword({
+        email,
+        password: input.password,
+      });
 
-  if (signInError || !signInData?.user) {
-    return {
-      ok: false,
-      message: messageFrom(signInError, "Account created. Sign in to continue."),
-    };
+    if (signInError || !signInData?.user) {
+      return {
+        ok: false,
+        messageKey: "auth.invitation.createdSignIn",
+      };
+    }
   }
 
   return { ok: true };

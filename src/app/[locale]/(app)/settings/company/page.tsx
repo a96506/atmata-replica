@@ -65,6 +65,7 @@ export default async function Page({
         onDelete={updateCompanyProfileAction}
         hideCreate
         hideDelete
+        writeOperation="update_company"
         formBanner={
           <div className="rounded-md border border-status-info-border bg-status-info-muted p-2 text-xs text-status-info-foreground">
             Editing updates your own company record. Address and logo fields are

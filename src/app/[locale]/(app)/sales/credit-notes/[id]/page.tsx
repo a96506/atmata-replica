@@ -4,6 +4,7 @@ import { RelatedDocs } from "@/components/doc/RelatedDocs";
 import { HistoryTab } from "@/components/doc/HistoryTab";
 import { attachmentsTab } from "@/components/doc/docAttachmentsTab";
 import { AdoptionTrail } from "@/components/doc/AdoptionTrail";
+import { DocActionBar } from "@/components/doc/DocActionBar";
 import { getCreditNote } from "@/lib/api/returns";
 import { getCustomer } from "@/lib/api/master";
 import { relatedDocsFor } from "@/lib/api/links";
@@ -42,6 +43,18 @@ export default async function Page({
       subtitle={`Issued ${cn.date} · against return ${cn.customerReturnId}${cn.invoiceId ? ` · applied to ${cn.invoiceId}` : ""}`}
       states={STATES}
       currentState={cn.state}
+      actionBar={
+        <DocActionBar
+          locale={locale === "ar" ? "ar" : "en"}
+          docType="credit_note"
+          docId={cn.id}
+          expectedRowVersion={cn.rowVersion}
+          docDate={cn.date}
+          docNumber={cn.number}
+          currentState={cn.state}
+          totalLabel={formatMoney(cn.total, cn.currency)}
+        />
+      }
       totals={
         <div>
           <div className="text-xs text-muted-foreground">Balance</div>

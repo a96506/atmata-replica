@@ -10,6 +10,7 @@ import { toCsv, downloadCsv, type CsvColumn } from "@/lib/export/csv";
 import {
   exportCompanyDataAction,
   type CompanyDataExport,
+  type TableExportSlice,
 } from "@/lib/actions/data-export";
 import { requestAccountDeletionAction } from "@/lib/actions/account-deletion";
 
@@ -25,24 +26,100 @@ import { requestAccountDeletionAction } from "@/lib/actions/account-deletion";
 
 type AnyRow = Record<string, unknown>;
 
-function columnsFor(rows: AnyRow[]): CsvColumn<AnyRow>[] {
+/** Fallback headers when a table is empty so the CSV is still a valid empty success. */
+const EMPTY_HEADERS: Record<string, string[]> = {
+  products: [
+    "id",
+    "sku",
+    "name",
+    "uom",
+    "taxCodeId",
+    "costingMethod",
+    "lotTracked",
+    "purchasable",
+    "sellable",
+  ],
+  customers: [
+    "id",
+    "name",
+    "email",
+    "vatNumber",
+    "creditLimit",
+    "exposure",
+    "paymentStatus",
+    "creditScore",
+  ],
+  suppliers: [
+    "id",
+    "name",
+    "email",
+    "vatNumber",
+    "bankAccount",
+    "paymentTermId",
+    "whtApplicable",
+    "whtRate",
+  ],
+  invoices: [
+    "id",
+    "number",
+    "customerId",
+    "date",
+    "dueDate",
+    "currency",
+    "state",
+    "subtotal",
+    "taxTotal",
+    "total",
+    "paid",
+  ],
+  bills: [
+    "id",
+    "number",
+    "supplierId",
+    "invoiceNumber",
+    "date",
+    "dueDate",
+    "currency",
+    "state",
+    "subtotal",
+    "taxTotal",
+    "total",
+    "paid",
+  ],
+  "journal-entries": [
+    "id",
+    "number",
+    "date",
+    "currency",
+    "state",
+    "sourceType",
+    "sourceId",
+    "description",
+    "lines",
+  ],
+  accounts: ["id", "code", "name", "type", "parent"],
+};
+
+function columnsFor(rows: AnyRow[], fallbackKeys: string[]): CsvColumn<AnyRow>[] {
   const keys = new Set<string>();
   for (const row of rows.slice(0, 200)) {
     for (const k of Object.keys(row)) keys.add(k);
   }
-  return [...keys].map((key) => ({
+  const labels = keys.size > 0 ? [...keys] : fallbackKeys;
+  return labels.map((key) => ({
     label: key,
     value: (row) => (row as Record<string, unknown>)[key],
   }));
 }
 
 function downloadTable(name: string, rows: AnyRow[]): void {
-  if (rows.length === 0) {
-    // Still emit an empty CSV with no header so the user sees the file.
-    downloadCsv("", `company-${name}`);
-    return;
-  }
-  downloadCsv(toCsv(rows, columnsFor(rows)), `company-${name}`);
+  const columns = columnsFor(rows, EMPTY_HEADERS[name] ?? ["id"]);
+  // Always emit at least the header row so empty success ≠ 0-byte failure.
+  downloadCsv(toCsv(rows, columns), `company-${name}`);
+}
+
+function sliceRows(slice: TableExportSlice<unknown>): AnyRow[] {
+  return slice.rows as unknown as AnyRow[];
 }
 
 export function CompanyDataControls({ locale }: { locale: string }) {
@@ -64,15 +141,26 @@ export function CompanyDataControls({ locale }: { locale: string }) {
         return;
       }
       const data = result.data as CompanyDataExport;
+      const failed = new Set(data.failedTables);
       // Sequential downloads so the browser doesn't block multiple at once.
-      downloadTable("products", data.products as unknown as AnyRow[]);
-      downloadTable("customers", data.customers as unknown as AnyRow[]);
-      downloadTable("suppliers", data.suppliers as unknown as AnyRow[]);
-      downloadTable("invoices", data.invoices as unknown as AnyRow[]);
-      downloadTable("bills", data.bills as unknown as AnyRow[]);
-      downloadTable("journal-entries", data.journalEntries as unknown as AnyRow[]);
-      downloadTable("accounts", data.accounts as unknown as AnyRow[]);
-      toast.success("Company data export started (one CSV per table).");
+      // Skip failed tables — empty rows from a failure are not a reliable export.
+      if (!failed.has("products")) downloadTable("products", sliceRows(data.products));
+      if (!failed.has("customers")) downloadTable("customers", sliceRows(data.customers));
+      if (!failed.has("suppliers")) downloadTable("suppliers", sliceRows(data.suppliers));
+      if (!failed.has("invoices")) downloadTable("invoices", sliceRows(data.invoices));
+      if (!failed.has("bills")) downloadTable("bills", sliceRows(data.bills));
+      if (!failed.has("journal-entries")) {
+        downloadTable("journal-entries", sliceRows(data.journalEntries));
+      }
+      if (!failed.has("accounts")) downloadTable("accounts", sliceRows(data.accounts));
+
+      if (data.failedTables.length > 0) {
+        toast.error(
+          `Export finished with failures: ${data.failedTables.join(", ")}. Empty files for those tables are not reliable.`,
+        );
+      } else {
+        toast.success("Company data export started (one CSV per table).");
+      }
     } catch {
       actionToast.network();
     } finally {

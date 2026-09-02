@@ -3,23 +3,33 @@ import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
 import { NewDocButton } from "@/components/doc/CreateChildLinks";
-import { listRfqs } from "@/lib/api/rfq";
-import { listSuppliers } from "@/lib/api/master";
+import { listRfqsPage } from "@/lib/api/rfq";
+import { mapSupplierNamesByIds } from "@/lib/api/master";
+import { parseListPage } from "@/lib/db/read";
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ page?: string; limit?: string }>;
 }) {
   const { locale } = await params;
-  const [rfqs, suppliers] = await Promise.all([listRfqs(), listSuppliers()]);
+  const { page, limit, offset } = parseListPage(await searchParams);
+
+  const paged = await listRfqsPage({ limit, offset });
+  const awardedVendorIds = paged.items
+    .map((r) => r.award?.vendorId)
+    .filter((id): id is string => Boolean(id));
+  const supplierNames = await mapSupplierNamesByIds(awardedVendorIds);
 
   return (
     <DocumentList
       title="Requests for quotation"
       subtitle="Issue an RFQ to multiple suppliers, compare quotes, and award the winning bid."
       primaryAction={
-        <NewDocButton href={`/${locale}/purchasing/rfqs/new`} label="New RFQ" />
+        <NewDocButton href={`/${locale}/purchasing/rfqs/new`} label="New RFQ" 
+          operation="create_rfq"/>
       }
     >
       <DataTable
@@ -32,9 +42,9 @@ export default async function Page({
           { key: "state", label: "Status" },
           { key: "award", label: "Awarded to" },
         ]}
-        rows={rfqs.map((r) => {
+        rows={paged.items.map((r) => {
           const awarded = r.award
-            ? suppliers.find((s) => s.id === r.award!.vendorId)?.name ?? r.award.vendorId
+            ? supplierNames.get(r.award.vendorId) ?? r.award.vendorId
             : "—";
           return [
             <Link
@@ -55,6 +65,11 @@ export default async function Page({
           ];
         })}
         emptyMessage="No RFQs yet."
+        serverPagination={{
+          page,
+          pageSize: paged.limit,
+          total: paged.total,
+        }}
       />
     </DocumentList>
   );

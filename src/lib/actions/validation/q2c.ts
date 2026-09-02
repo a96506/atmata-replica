@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { actionSchema } from "../validation";
-import { writeCommandBaseSchema } from "./common";
+import { idempotencyKeySchema, localeSchema, writeCommandBaseSchema } from "./common";
 import {
   currencyCodeSchema,
   isoDateSchema,
@@ -161,6 +161,56 @@ export type CreateCustomerInvoiceInput = z.infer<
 export type CreateCustomerReceiptInput = z.infer<
   typeof createCustomerReceiptSchema
 >;
+
+export const opportunityStageSchema = z.enum([
+  "qualified",
+  "proposal",
+  "negotiation",
+  "won",
+  "lost",
+]);
+
+export const createOpportunitySchema = actionSchema({
+  locale: localeSchema,
+  title: z.string().trim().min(1).max(200),
+  customerId: z.string().trim().min(1),
+  stage: opportunityStageSchema,
+  value: z.number().min(0),
+});
+
+export type CreateOpportunityInput = z.infer<typeof createOpportunitySchema>;
+
+const opportunityIdSchema = z.string().trim().min(1);
+
+export const updateOpportunitySchema = actionSchema({
+  locale: localeSchema,
+  id: opportunityIdSchema,
+  stage: opportunityStageSchema.optional(),
+  value: z.number().min(0).optional(),
+}).refine((data) => data.stage !== undefined || data.value !== undefined, {
+  message: "At least one of stage or value is required",
+});
+
+export const deleteOpportunitySchema = actionSchema({
+  locale: localeSchema,
+  id: opportunityIdSchema,
+});
+
+export type UpdateOpportunityInput = z.infer<typeof updateOpportunitySchema>;
+export type DeleteOpportunityInput = z.infer<typeof deleteOpportunitySchema>;
 export type CreateCustomerReturnInput = z.infer<
   typeof createCustomerReturnSchema
 >;
+
+
+export const applyCreditToInvoiceSchema = actionSchema({
+  locale: localeSchema,
+  invoiceId: z.string().trim().min(1),
+  creditNoteId: z.string().trim().min(1),
+  amount: z.number().positive(),
+  idempotencyKey: idempotencyKeySchema,
+  /** When true, RPC posts a balanced contra-AR journal (default off). */
+  postGl: z.boolean().optional().default(false),
+});
+
+export type ApplyCreditToInvoiceInput = z.infer<typeof applyCreditToInvoiceSchema>;

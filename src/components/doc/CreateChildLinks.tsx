@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import type { OperationKey } from "@/lib/roles/capabilities";
+import { useCanOperation } from "@/lib/roles/use-can-operation";
 
 export type CreateChildLink = {
   label: string;
@@ -30,10 +34,16 @@ export function CreateChildLinks({ links }: { links: CreateChildLink[] }) {
 export function NewDocButton({
   href,
   label,
+  operation,
 }: {
   href: string;
   label: string;
+  /** When set, hide the CTA unless the session may perform this operation. */
+  operation?: OperationKey;
 }) {
+  const allowed = useCanOperation(operation);
+  if (!allowed) return null;
+
   return (
     <Link
       href={href}

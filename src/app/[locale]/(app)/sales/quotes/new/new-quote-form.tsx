@@ -17,7 +17,9 @@ import { TaxBreakdown } from "@/components/form/TaxBreakdown";
 import { CreditHoldBanner, CreditLimitWarning } from "@/components/banners";
 import { createQuoteAction } from "@/lib/actions/q2c";
 import type { WriteIntent } from "@/lib/actions/validation/p2p";
+import { applyResolvedLinePrices } from "@/lib/apply-resolved-line-prices";
 import { previewSequence } from "@/lib/numbering";
+import type { PriceListRow } from "@/lib/price-lists";
 import type { Currency, Customer, Product, TaxCode } from "@/types";
 import type { ValidationError } from "@/components/form/ValidationSummary";
 
@@ -28,11 +30,13 @@ export function NewQuoteForm({
   customers,
   products,
   taxCodes,
+  priceLists,
 }: {
   locale: string;
   customers: Customer[];
   products: Product[];
   taxCodes: TaxCode[];
+  priceLists: PriceListRow[];
 }) {
   const router = useRouter();
   const confirm = useConfirm();
@@ -57,6 +61,34 @@ export function NewQuoteForm({
       setDirty(true);
       setter(v);
     };
+
+  const onLinesChange = (next: LineDraft[]) => {
+    setDirty(true);
+    setLines(next);
+    void applyResolvedLinePrices({
+      lines: next,
+      customerId,
+      currency,
+      onDate: date,
+      priceLists,
+    }).then((resolved) => {
+      if (resolved !== next) setLines(resolved);
+    });
+  };
+
+  const onCustomerChange = (id: string) => {
+    setDirty(true);
+    setCustomerId(id);
+    void applyResolvedLinePrices({
+      lines,
+      customerId: id,
+      currency,
+      onDate: date,
+      priceLists,
+    }).then((resolved) => {
+      if (resolved !== lines) setLines(resolved);
+    });
+  };
 
   const customer = customers.find((c) => c.id === customerId);
   const onCreditHold = customer?.paymentStatus === "on_hold";
@@ -171,7 +203,7 @@ export function NewQuoteForm({
             label="Customer"
             required
             value={customerId || null}
-            onChange={wrap(setCustomerId)}
+            onChange={onCustomerChange}
             options={customers.map((c) => ({
               value: c.id,
               label: c.name,
@@ -203,7 +235,7 @@ export function NewQuoteForm({
       lines={
         <ProductLinesEditor
           lines={lines}
-          onChange={wrap(setLines)}
+          onChange={onLinesChange}
           products={products}
           taxCodes={taxCodes}
           currency={currency}

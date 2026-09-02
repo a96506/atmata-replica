@@ -54,7 +54,7 @@ export default async function AppLayout({
               {tc("skipToContent")}
             </a>
             <AppSidebar brand={tc("brand")} />
-            <SidebarInset id="main-content" className="min-w-0">
+            <SidebarInset id="main-content" tabIndex={-1} className="min-w-0">
               <AppTopBar
                 signOutLabel={tc("signOut")}
                 localeLabel={tc("locale")}

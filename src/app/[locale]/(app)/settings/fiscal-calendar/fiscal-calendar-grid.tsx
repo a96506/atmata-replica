@@ -10,6 +10,7 @@ import {
   closeFiscalYearAction,
   setFiscalPeriodStatusAction,
 } from "@/lib/actions/period-close";
+import { useCanOperation } from "@/lib/roles/use-can-operation";
 import type { FiscalPeriod } from "@/types";
 
 /**
@@ -27,6 +28,7 @@ export function FiscalCalendarGrid({
   const router = useRouter();
   const confirm = useConfirm();
   const actionToast = useActionToast();
+  const canManage = useCanOperation("manage_fiscal_period");
   const [pending, setPending] = React.useState(false);
   const [periods, setPeriods] = React.useState(initialPeriods);
 
@@ -163,7 +165,7 @@ export function FiscalCalendarGrid({
               <button
                 type="button"
                 onClick={() => void closeYear(year)}
-                disabled={pending || yearLocked || !allAtLeastSoft}
+                disabled={pending || yearLocked || !allAtLeastSoft || !canManage}
                 className="cursor-pointer rounded-md border border-input bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
                 title={
                   !allAtLeastSoft
@@ -216,7 +218,7 @@ export function FiscalCalendarGrid({
                           <button
                             type="button"
                             onClick={() => void setStatus(p, "soft_closed")}
-                            disabled={pending || yearLocked}
+                            disabled={pending || yearLocked || !canManage}
                             className="cursor-pointer rounded border border-status-pending-border bg-card px-2 py-0.5 text-[10px] text-status-pending-foreground hover:bg-status-pending-muted disabled:opacity-50"
                           >
                             Soft
@@ -226,7 +228,7 @@ export function FiscalCalendarGrid({
                           <button
                             type="button"
                             onClick={() => void setStatus(p, "hard_closed")}
-                            disabled={pending || yearLocked}
+                            disabled={pending || yearLocked || !canManage}
                             className="cursor-pointer rounded border border-status-danger-border bg-card px-2 py-0.5 text-[10px] text-destructive hover:bg-status-danger-muted disabled:opacity-50"
                           >
                             Hard
@@ -236,7 +238,7 @@ export function FiscalCalendarGrid({
                           <button
                             type="button"
                             onClick={() => void setStatus(p, "open")}
-                            disabled={pending || yearLocked}
+                            disabled={pending || yearLocked || !canManage}
                             className="cursor-pointer rounded border border-status-success-border bg-card px-2 py-0.5 text-[10px] text-status-success-foreground hover:bg-status-success-muted disabled:opacity-50"
                           >
                             Open

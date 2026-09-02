@@ -1,4 +1,5 @@
-import { DataTable, type Column } from "@/components/data-table";
+import Link from "next/link";
+import { type Column } from "@/components/data-table";
 import { MasterCrud, type MasterField } from "@/components/master/MasterCrud";
 import { listPriceLists } from "@/lib/api/master";
 import {
@@ -43,7 +44,13 @@ export default async function Page({
   }));
 
   const tableRows = rows.map((p) => [
-    p.name,
+    <Link
+      key="n"
+      href={`/${locale}/settings/price-lists/${p.id}`}
+      className="font-medium text-primary hover:underline"
+    >
+      {p.name}
+    </Link>,
     p.currency,
     p.active ? "yes" : "no",
     p.startsOn ?? "—",
@@ -63,6 +70,7 @@ export default async function Page({
       onCreate={createPriceListAction}
       onUpdate={updatePriceListAction}
       onDelete={deletePriceListAction}
+      writeOperation="create_price_list"
     />
   );
 }

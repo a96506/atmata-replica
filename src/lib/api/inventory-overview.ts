@@ -1,11 +1,15 @@
-import { listStockMoves } from "@/lib/api/inventory-tx";
+import { getCompanyOnHandByProduct } from "@/lib/api/items";
+import { refreshMetricsIfStale } from "@/lib/api/metrics-refresh";
 import {
   listCustomers,
   listProducts,
   listSuppliers,
+  listWarehouses,
 } from "@/lib/api/master";
 import { listGoodsReceipts, listPurchaseOrders } from "@/lib/api/p2p";
 import { listDeliveryNotes, listSalesOrders } from "@/lib/api/q2c";
+import { listTable } from "@/lib/db/read";
+import { INVENTORY_SELECTS } from "@/lib/db/selects";
 
 export type InventoryOverview = {
   stock: Array<{
@@ -22,16 +26,16 @@ export type InventoryOverview = {
     short_by: number;
     severity: "critical" | "medium";
   }>;
-  /**
-   * No backend — deferred: no demand-forecast table/RPC
-   * (products only have reorder_point + abc_class).
-   */
+  /** Computed from outbound stock moves (90d avg × horizon). */
   forecasts: Array<{
     sku: string;
     name: string;
     d30: number;
     d90: number;
+    warehouse?: string;
   }>;
+  /** True when per-warehouse forecast rows exist (show warehouse column). */
+  showWarehouseForecasts: boolean;
   inbound: Array<{
     ref: string;
     po: string;
@@ -48,35 +52,108 @@ export type InventoryOverview = {
   }>;
 };
 
-function onHandByProduct(
-  moves: Awaited<ReturnType<typeof listStockMoves>>,
-): Map<string, number> {
-  const map = new Map<string, number>();
-  for (const m of moves) {
-    const delta = m.direction === "in" ? m.qty : -m.qty;
-    map.set(m.productId, (map.get(m.productId) ?? 0) + delta);
+
+type InventoryForecastRow = {
+  productId: string;
+  warehouseId: string | null;
+  forecastQty: number;
+  horizonDays: number;
+};
+
+async function listInventoryForecasts(): Promise<InventoryForecastRow[]> {
+  return listTable<InventoryForecastRow>(
+    "inventory_forecasts",
+    INVENTORY_SELECTS.inventory_forecasts,
+    [{ column: "horizon_days", ascending: true }],
+  ).catch(() => []);
+}
+
+type ForecastPivot = {
+  forecasts: InventoryOverview["forecasts"];
+  showWarehouseForecasts: boolean;
+};
+
+function pivotForecasts(
+  rows: InventoryForecastRow[],
+  products: Awaited<ReturnType<typeof listProducts>>,
+  warehouses: Awaited<ReturnType<typeof listWarehouses>>,
+): ForecastPivot {
+  const productById = new Map(products.map((p) => [p.id, p]));
+  const warehouseName = new Map(warehouses.map((w) => [w.id, w.name]));
+  const showWarehouseForecasts = rows.some((r) => r.warehouseId != null);
+  const sourceRows = showWarehouseForecasts
+    ? rows.filter((r) => r.warehouseId != null)
+    : rows.filter((r) => r.warehouseId == null);
+
+  const byKey = new Map<
+    string,
+    { productId: string; warehouseId: string | null; d30?: number; d90?: number }
+  >();
+
+  for (const row of sourceRows) {
+    const key = showWarehouseForecasts
+      ? `${row.productId}:${row.warehouseId}`
+      : row.productId;
+    const entry = byKey.get(key) ?? {
+      productId: row.productId,
+      warehouseId: row.warehouseId,
+    };
+    if (row.horizonDays === 30) entry.d30 = Number(row.forecastQty);
+    if (row.horizonDays === 90) entry.d90 = Number(row.forecastQty);
+    byKey.set(key, entry);
   }
-  return map;
+
+  const forecasts = [...byKey.values()]
+    .map((horizons) => {
+      const product = productById.get(horizons.productId);
+      if (!product || horizons.d30 == null || horizons.d90 == null) return null;
+      const row: InventoryOverview["forecasts"][number] = {
+        sku: product.sku,
+        name: product.name,
+        d30: horizons.d30,
+        d90: horizons.d90,
+      };
+      if (showWarehouseForecasts && horizons.warehouseId) {
+        row.warehouse = warehouseName.get(horizons.warehouseId) ?? horizons.warehouseId;
+      }
+      return row;
+    })
+    .filter((row): row is NonNullable<typeof row> => row != null);
+
+  return { forecasts, showWarehouseForecasts };
+}
+
+/** On-hand per product via batch RPC `company_on_hand_by_product()`. */
+async function companyOnHandMap(): Promise<Map<string, number>> {
+  try {
+    const rows = await getCompanyOnHandByProduct();
+    return new Map(rows.map((r) => [r.productId, Number(r.onHand ?? 0)]));
+  } catch {
+    return new Map();
+  }
 }
 
 export async function getInventoryOverview(): Promise<InventoryOverview> {
-  const [products, moves, grns, dns, pos, sos, suppliers, customers] =
+  await refreshMetricsIfStale().catch(() => {});
+
+  const [products, grns, dns, pos, sos, suppliers, customers, warehouses, forecastRows] =
     await Promise.all([
       listProducts().catch(() => []),
-      listStockMoves().catch(() => []),
       listGoodsReceipts().catch(() => []),
       listDeliveryNotes().catch(() => []),
       listPurchaseOrders().catch(() => []),
       listSalesOrders().catch(() => []),
       listSuppliers().catch(() => []),
       listCustomers().catch(() => []),
+      listWarehouses().catch(() => []),
+      listInventoryForecasts(),
     ]);
 
   const supplierName = new Map(suppliers.map((s) => [s.id, s.name]));
   const customerName = new Map(customers.map((c) => [c.id, c.name]));
   const poNumber = new Map(pos.map((p) => [p.id, p.number]));
   const soNumber = new Map(sos.map((s) => [s.id, s.number]));
-  const onHand = onHandByProduct(moves);
+  const onHand = await companyOnHandMap();
   const today = new Date().toISOString().slice(0, 10);
 
   const stock = products.map((p) => {
@@ -139,10 +216,17 @@ export async function getInventoryOverview(): Promise<InventoryOverview> {
       };
     });
 
+  const { forecasts, showWarehouseForecasts } = pivotForecasts(
+    forecastRows,
+    products,
+    warehouses,
+  );
+
   return {
     stock,
     reorder_alerts,
-    forecasts: [],
+    forecasts,
+    showWarehouseForecasts,
     inbound,
     outbound,
   };

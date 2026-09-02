@@ -1,13 +1,27 @@
 import {
   getReadClient,
   getTable,
+  listPage,
   listTable,
   mapOne,
   mapRows,
   maybeOne,
   requireData,
+  type ListPageResult,
+  type ReadFilter,
 } from "@/lib/db/read";
 import { RECON_SELECTS } from "@/lib/db/selects";
+
+const BANK_STATEMENT_ORDERS = [
+  { column: "created_at", ascending: false },
+  { column: "id" },
+] as const;
+
+const OPEN_BANK_STATEMENT_STATUSES = [
+  "imported",
+  "reconciling",
+  "failed",
+] as const;
 
 export type BankStatement = {
   id: string;
@@ -75,11 +89,36 @@ function one<T>(value: T | T[] | null | undefined): T | null {
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
+/** Hard-capped via listTable — prefer listBankStatementsPage for UI lists. */
 export async function listBankStatements(): Promise<BankStatement[]> {
-  return listTable("bank_statements", RECON_SELECTS.bankStatements, [
-    { column: "created_at", ascending: false },
-    { column: "id" },
-  ]);
+  return listTable(
+    "bank_statements",
+    RECON_SELECTS.bankStatements,
+    [...BANK_STATEMENT_ORDERS],
+  );
+}
+
+/** One server page for the bank reconciliation statements list. */
+export async function listBankStatementsPage(params?: {
+  limit?: number;
+  offset?: number;
+  /** When true, only imported|reconciling|failed (excludes reconciled). */
+  openOnly?: boolean;
+}): Promise<ListPageResult<BankStatement>> {
+  const filters: ReadFilter[] = [];
+  if (params?.openOnly) {
+    filters.push({
+      column: "status",
+      in: [...OPEN_BANK_STATEMENT_STATUSES],
+    });
+  }
+  return listPage<BankStatement>(
+    "bank_statements",
+    RECON_SELECTS.bankStatements,
+    [...BANK_STATEMENT_ORDERS],
+    filters,
+    { limit: params?.limit, offset: params?.offset },
+  );
 }
 
 export async function getBankStatement(

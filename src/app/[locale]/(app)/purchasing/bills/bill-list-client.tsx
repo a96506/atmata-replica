@@ -1,29 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import { SelectableDataTable } from "@/components/data-table-selectable";
+import {
+  SelectableDataTable,
+  type ServerPagination,
+} from "@/components/data-table-selectable";
 import { StateBadge } from "@/components/doc/StateBadge";
 import { BulkAdoptButton } from "@/components/doc/BulkAdoptButton";
 import { ExportCsvButton } from "@/components/export/ExportCsvButton";
 import { formatMoney } from "@/lib/money";
-import type { Supplier, VendorBill } from "@/types";
+import type { VendorBill } from "@/types";
 
 export function BillListClient({
   locale,
   bills,
-  suppliers,
+  exportBills,
+  supplierNames,
+  serverPagination,
 }: {
   locale: string;
+  /** Current server page rows (shown in the table). */
   bills: VendorBill[];
-  suppliers: Supplier[];
+  /** Capped full list for CSV export (prior UX). */
+  exportBills: VendorBill[];
+  /** id → name for parties on this page and export rows. */
+  supplierNames: Record<string, string>;
+  serverPagination: ServerPagination;
 }) {
-  const supplierName = (id: string) =>
-    suppliers.find((s) => s.id === id)?.name ?? "—";
+  const supplierName = (id: string) => supplierNames[id] ?? "—";
   return (
     <div className="space-y-3">
       <div className="flex justify-end">
         <ExportCsvButton
-          rows={bills}
+          rows={exportBills}
           filename="vendor-bills"
           columns={[
             { label: "Number", value: (b) => b.number },
@@ -44,19 +53,17 @@ export function BillListClient({
         />
       </div>
       <SelectableDataTable
-      columns={[
-        { key: "number", label: "Number" },
-        { key: "supplier", label: "Supplier" },
-        { key: "po", label: "PO ref" },
-        { key: "date", label: "Date" },
-        { key: "total", label: "Total", className: "text-right" },
-        { key: "match", label: "3-way" },
-        { key: "state", label: "Status" },
-      ]}
-      rowIds={bills.map((b) => b.id)}
-      rows={bills.map((b) => {
-        const sup = suppliers.find((s) => s.id === b.supplierId);
-        return [
+        columns={[
+          { key: "number", label: "Number" },
+          { key: "supplier", label: "Supplier" },
+          { key: "po", label: "PO ref" },
+          { key: "date", label: "Date" },
+          { key: "total", label: "Total", className: "text-right" },
+          { key: "match", label: "3-way" },
+          { key: "state", label: "Status" },
+        ]}
+        rowIds={bills.map((b) => b.id)}
+        rows={bills.map((b) => [
           <Link
             key="n"
             href={`/${locale}/purchasing/bills/${b.id}`}
@@ -64,7 +71,7 @@ export function BillListClient({
           >
             {b.number}
           </Link>,
-          sup?.name ?? "—",
+          supplierName(b.supplierId),
           b.poId ? (
             <Link
               key="p"
@@ -82,29 +89,29 @@ export function BillListClient({
           </span>,
           <StateBadge key="m" state={b.threeWayMatch} />,
           <StateBadge key="s" state={b.state} />,
-        ];
-      })}
-      emptyMessage="No vendor bills yet."
-      renderBulkActions={(ids, clear) => {
-        const first = bills.find((b) => b.id === ids[0]);
-        if (!first || first.state !== "posted") {
+        ])}
+        emptyMessage="No vendor bills yet."
+        serverPagination={serverPagination}
+        renderBulkActions={(ids, clear) => {
+          const first = bills.find((b) => b.id === ids[0]);
+          if (!first || first.state !== "posted") {
+            return (
+              <span className="text-xs text-muted-foreground">
+                Select posted bills to bulk-adopt into a payment.
+              </span>
+            );
+          }
           return (
-            <span className="text-xs text-muted-foreground">
-              Select posted bills to bulk-adopt into a payment.
-            </span>
+            <BulkAdoptButton
+              parentType="vendor_bill"
+              parentState={first.state}
+              selectedIds={ids}
+              currency={first.currency}
+              locale={locale}
+              onAfter={clear}
+            />
           );
-        }
-        return (
-          <BulkAdoptButton
-            parentType="vendor_bill"
-            parentState={first.state}
-            selectedIds={ids}
-            currency={first.currency}
-            locale={locale}
-            onAfter={clear}
-          />
-        );
-      }}
+        }}
       />
     </div>
   );

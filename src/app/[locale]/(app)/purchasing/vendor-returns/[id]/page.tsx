@@ -5,11 +5,13 @@ import { HistoryTab } from "@/components/doc/HistoryTab";
 import { attachmentsTab } from "@/components/doc/docAttachmentsTab";
 import { AdoptionTrail } from "@/components/doc/AdoptionTrail";
 import { DocLines } from "@/components/doc/DocLines";
+import { DocActionBar } from "@/components/doc/DocActionBar";
 import { getVendorReturn } from "@/lib/api/returns";
 import { getSupplier, getWarehouse, listTaxCodes } from "@/lib/api/master";
 import { relatedDocsFor } from "@/lib/api/links";
 import { listAuditEvents } from "@/lib/api/audit";
 import { getAncestry, getDescendants } from "@/lib/api/adoption.server";
+import { formatMoney } from "@/lib/money";
 
 const STATES = [
   { id: "draft", label: "Draft" },
@@ -47,6 +49,18 @@ export default async function Page({
       subtitle={`Returned ${vr.date} · ${warehouse?.name ?? ""} · against ${vr.grnId}${vr.notes ? ` · ${vr.notes}` : ""}`}
       states={STATES}
       currentState={vr.state}
+      actionBar={
+        <DocActionBar
+          locale={locale === "ar" ? "ar" : "en"}
+          docType="vendor_return"
+          docId={vr.id}
+          expectedRowVersion={vr.rowVersion}
+          docDate={vr.date}
+          docNumber={vr.number}
+          currentState={vr.state}
+          totalLabel={formatMoney(totalValue, "KWD")}
+        />
+      }
       totals={
         <div>
           <div className="text-xs text-muted-foreground">Total returned</div>

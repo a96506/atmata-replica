@@ -10,9 +10,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 function safeNextPath(nextPath?: string) {
-  if (!nextPath?.startsWith("/") || nextPath.startsWith("//")) return "/inbox";
+  if (!nextPath?.startsWith("/") || nextPath.startsWith("//")) return "/";
   const withoutLocale = nextPath.replace(/^\/(en|ar)(?=\/|$)/, "");
-  return withoutLocale.length > 0 ? withoutLocale : "/inbox";
+  return withoutLocale.length > 0 ? withoutLocale : "/";
 }
 
 export function LoginForm({

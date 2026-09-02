@@ -31,11 +31,10 @@ const COLUMNS = [
 export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJob[] }) {
   const t = useTranslations("accounting.manual");
   const locale = useLocale();
-  const [docs, setDocs] = React.useState<DocumentJob[]>(initialInvoices);
+  const [docs] = React.useState<DocumentJob[]>(initialInvoices);
   const [modalOpen, setModalOpen] = React.useState(false);
-  // The manual "New invoice" modal fabricates a 100%-confidence / queued row
-  // indistinguishable from real OCR output and injects it into the live table
-  // (it vanishes on refresh). Demo-only — keep it out of production builds.
+  // Manual create stays available in dev as an honest empty state until OCR exists;
+  // it must not inject fake DocumentJob rows into the live table.
   const showManualModal = process.env.NODE_ENV === "development";
 
   const rows = docs.map((doc) => {
@@ -114,11 +113,7 @@ export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJ
       />
 
       {showManualModal ? (
-        <ManualInvoiceModal
-          open={modalOpen}
-          onOpenChange={setModalOpen}
-          onCreated={(doc) => setDocs((prev) => [doc, ...prev])}
-        />
+        <ManualInvoiceModal open={modalOpen} onOpenChange={setModalOpen} />
       ) : null}
     </div>
   );

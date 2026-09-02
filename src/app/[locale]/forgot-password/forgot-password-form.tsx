@@ -20,6 +20,19 @@ export function ForgotPasswordForm() {
   const router = useRouter();
   const [pending, startTransition] = React.useTransition();
   const [error, setError] = React.useState("");
+  const [prefillEmail, setPrefillEmail] = React.useState("");
+
+  React.useEffect(() => {
+    try {
+      const stored = window.sessionStorage.getItem(RESET_EMAIL_STORAGE_KEY);
+      if (stored) {
+        setPrefillEmail(stored);
+        window.sessionStorage.removeItem(RESET_EMAIL_STORAGE_KEY);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   return (
     <form
@@ -62,10 +75,12 @@ export function ForgotPasswordForm() {
       <div className="space-y-2">
         <Label htmlFor="email">{t("email")}</Label>
         <Input
+          key={prefillEmail || "email"}
           id="email"
           type="email"
           name="email"
           autoComplete="email"
+          defaultValue={prefillEmail}
           required
           autoFocus
         />

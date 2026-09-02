@@ -111,6 +111,24 @@ const ACTION_PREVIEW: Record<
     confirmLabel: "Reverse",
     tone: "destructive",
   }),
+  send: (c) => ({
+    title: `Send ${c.number}?`,
+    description: `Marks the RFQ as sent to invited vendors. State moves to "${c.nextState}".`,
+    confirmLabel: "Send",
+    tone: "default",
+  }),
+  record_quotes: (c) => ({
+    title: `Record quotes for ${c.number}?`,
+    description: `Confirms vendor quotes are recorded. State moves to "${c.nextState}" so you can award a winner.`,
+    confirmLabel: "Record quotes",
+    tone: "default",
+  }),
+  close: (c) => ({
+    title: `Close ${c.number}?`,
+    description: `Closes the document. State moves to "${c.nextState}".`,
+    confirmLabel: "Close",
+    tone: "default",
+  }),
 };
 
 export type DocActionBarProps = {
@@ -150,7 +168,10 @@ export function DocActionBar({
     setRowVersion(expectedRowVersion);
   }, [expectedRowVersion]);
 
-  const actions = legalActions(docType, currentState, role);
+  // RFQ award needs a quoteId — handled on the Compare tab via awardRfqAction.
+  const actions = legalActions(docType, currentState, role).filter(
+    (a) => !(docType === "rfq" && a.id === "award"),
+  );
   const periodStatus = periodStatusFor(docDate, periods);
   const periodBlocked =
     periodStatus === "hard_closed" ||

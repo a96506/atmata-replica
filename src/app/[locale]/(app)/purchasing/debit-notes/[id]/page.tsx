@@ -4,6 +4,7 @@ import { RelatedDocs } from "@/components/doc/RelatedDocs";
 import { HistoryTab } from "@/components/doc/HistoryTab";
 import { attachmentsTab } from "@/components/doc/docAttachmentsTab";
 import { AdoptionTrail } from "@/components/doc/AdoptionTrail";
+import { DocActionBar } from "@/components/doc/DocActionBar";
 import { getDebitNote } from "@/lib/api/returns";
 import { getSupplier } from "@/lib/api/master";
 import { relatedDocsFor } from "@/lib/api/links";
@@ -42,6 +43,18 @@ export default async function Page({
       subtitle={`Issued ${dn.date} · against return ${dn.vendorReturnId}${dn.billId ? ` · applied to ${dn.billId}` : ""}`}
       states={STATES}
       currentState={dn.state}
+      actionBar={
+        <DocActionBar
+          locale={locale === "ar" ? "ar" : "en"}
+          docType="debit_note"
+          docId={dn.id}
+          expectedRowVersion={dn.rowVersion}
+          docDate={dn.date}
+          docNumber={dn.number}
+          currentState={dn.state}
+          totalLabel={formatMoney(dn.total, dn.currency)}
+        />
+      }
       totals={
         <div>
           <div className="text-xs text-muted-foreground">Balance</div>

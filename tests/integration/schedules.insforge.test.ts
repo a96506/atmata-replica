@@ -55,6 +55,6 @@ describe.skipIf(!configured)("scheduled-operations live RPCs", () => {
   });
 
   it("exposes every scheduled job name", () => {
-    expect(SCHEDULER_JOBS).toHaveLength(6);
+    expect(SCHEDULER_JOBS).toHaveLength(7);
   });
 });

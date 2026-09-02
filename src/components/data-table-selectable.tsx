@@ -2,6 +2,12 @@
 
 import * as React from "react";
 import type { ReactNode } from "react";
+import {
+  ServerPaginationBar,
+  type ServerPagination,
+} from "@/components/data-table";
+
+export type { ServerPagination };
 
 type Column = {
   key: string;
@@ -17,6 +23,11 @@ export type SelectableDataTableProps = {
   emptyMessage?: ReactNode;
   /** Toolbar rendered above the table when any row is selected. */
   renderBulkActions?: (selectedIds: string[], clear: () => void) => ReactNode;
+  /**
+   * Server-driven paging: Previous/Next update URL `?page=`.
+   * `rows` must already be the current page from the server.
+   */
+  serverPagination?: ServerPagination;
 };
 
 export function SelectableDataTable({
@@ -25,6 +36,7 @@ export function SelectableDataTable({
   rowIds,
   emptyMessage = "No data.",
   renderBulkActions,
+  serverPagination,
 }: SelectableDataTableProps) {
   const [selected, setSelected] = React.useState<Set<string>>(() => new Set());
 
@@ -54,6 +66,17 @@ export function SelectableDataTable({
 
   const clear = () => setSelected(new Set());
   const selectedArr = Array.from(selected);
+
+  const pageCount = serverPagination
+    ? Math.max(1, Math.ceil(serverPagination.total / serverPagination.pageSize))
+    : 1;
+  const safePage = serverPagination
+    ? Math.min(Math.max(serverPagination.page, 1), pageCount)
+    : 1;
+  const showServerPager =
+    serverPagination != null &&
+    (serverPagination.total > serverPagination.pageSize ||
+      serverPagination.page > 1);
 
   return (
     <div className="space-y-3">
@@ -122,6 +145,15 @@ export function SelectableDataTable({
           </tbody>
         </table>
       </div>
+      {showServerPager && serverPagination ? (
+        <React.Suspense fallback={null}>
+          <ServerPaginationBar
+            page={safePage}
+            pageSize={serverPagination.pageSize}
+            total={serverPagination.total}
+          />
+        </React.Suspense>
+      ) : null}
     </div>
   );
 }

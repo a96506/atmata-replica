@@ -22,7 +22,8 @@ export type FinancialPdfType =
   | "pl"
   | "balance_sheet"
   | "cash_flow"
-  | "trial_balance";
+  | "trial_balance"
+  | "general_ledger";
 export type PdfMode = "preview" | "save";
 
 export type PdfPreviewResult = {

@@ -6,6 +6,7 @@ import { attachmentsTab } from "@/components/doc/docAttachmentsTab";
 import { AdoptionTrail } from "@/components/doc/AdoptionTrail";
 import { AdoptToButton } from "@/components/doc/AdoptToButton";
 import { DocLines } from "@/components/doc/DocLines";
+import { DocActionBar } from "@/components/doc/DocActionBar";
 import { getPurchaseRequisition } from "@/lib/api/p2p";
 import { listTaxCodes } from "@/lib/api/master";
 import { relatedDocsFor } from "@/lib/api/links";
@@ -45,6 +46,17 @@ export default async function Page({
       subtitle={`Date ${pr.date} · needed by ${pr.neededBy}${pr.notes ? ` · ${pr.notes}` : ""}`}
       states={STATES}
       currentState={pr.state}
+      actionBar={
+        <DocActionBar
+          locale={locale === "ar" ? "ar" : "en"}
+          docType="pr"
+          docId={pr.id}
+          expectedRowVersion={pr.rowVersion}
+          docDate={pr.date}
+          docNumber={pr.number}
+          currentState={pr.state}
+        />
+      }
       tabs={[
         {
           id: "lines",

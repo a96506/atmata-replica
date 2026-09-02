@@ -31,19 +31,52 @@ function assertCompanyPrefix(key: string, companyId: string): void {
   }
 }
 
+/** Default page size for doc-scoped attachment lists. */
+export const ATTACHMENTS_PAGE_SIZE = 50;
+
+export type ListAttachmentsResult = {
+  items: Attachment[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
+/**
+ * Doc-scoped attachment page. Uses PostgREST `count: 'exact'` + `.range()`
+ * @see https://docs.insforge.dev/sdks/typescript/database
+ */
 export async function listAttachments(input: {
   docType: string;
   docId: string;
-}): Promise<Attachment[]> {
+  limit?: number;
+  offset?: number;
+}): Promise<ListAttachmentsResult> {
+  const limitRaw = input.limit ?? ATTACHMENTS_PAGE_SIZE;
+  const limit = Math.min(
+    100,
+    Math.max(1, Number.isFinite(limitRaw) ? Math.floor(limitRaw) : ATTACHMENTS_PAGE_SIZE),
+  );
+  const offset = Math.max(
+    0,
+    Math.floor(Number.isFinite(input.offset ?? 0) ? (input.offset ?? 0) : 0),
+  );
+
   const insforge = await createInsForgeServerClient();
-  const { data, error } = await insforge.database
+  const { data, error, count } = await insforge.database
     .from("attachments")
-    .select("*")
+    .select("*", { count: "exact" })
     .eq("doc_type", input.docType)
     .eq("doc_id", input.docId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .range(offset, offset + limit - 1);
   if (error) throw new Error(error.message);
-  return camelize<Attachment[]>(data ?? []);
+  const items = camelize<Attachment[]>(data ?? []);
+  const total =
+    typeof count === "number" && Number.isFinite(count)
+      ? count
+      : offset + items.length;
+  return { items, total, limit, offset };
 }
 
 export async function insertAttachment(input: {

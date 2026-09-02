@@ -2,6 +2,7 @@ import { NewSoForm } from "./new-so-form";
 import { getQuote } from "@/lib/api/q2c";
 import {
   listCustomers,
+  listPriceLists,
   listProducts,
   listTaxCodes,
   listWarehouses,
@@ -17,13 +18,15 @@ export default async function Page({
 }) {
   const { locale } = await params;
   const { from } = await searchParams;
-  const [customers, products, taxCodes, warehouses, quote] = await Promise.all([
-    listCustomers(),
-    listProducts(),
-    listTaxCodes(),
-    listWarehouses(),
-    from ? getQuote(from) : Promise.resolve(null),
-  ]);
+  const [customers, products, taxCodes, warehouses, quote, priceLists] =
+    await Promise.all([
+      listCustomers(),
+      listProducts(),
+      listTaxCodes(),
+      listWarehouses(),
+      from ? getQuote(from) : Promise.resolve(null),
+      listPriceLists(),
+    ]);
 
   return (
     <PermissionGate
@@ -37,6 +40,7 @@ export default async function Page({
         taxCodes={taxCodes}
         warehouses={warehouses}
         quote={quote}
+        priceLists={priceLists}
       />
     </PermissionGate>
   );

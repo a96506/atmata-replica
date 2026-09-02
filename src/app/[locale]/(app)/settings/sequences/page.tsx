@@ -2,6 +2,8 @@ import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable, type Column } from "@/components/data-table";
 import { listDocumentSequences } from "@/lib/api/master";
 
+// DONE(role-ux): read-only by design — next numbers are issued by the backend on post; no MasterCrud planned.
+
 const COLUMNS: Column[] = [
   { key: "doc", label: "Doc type" },
   { key: "prefix", label: "Prefix" },
@@ -40,7 +42,7 @@ export default async function Page({
   return (
     <DocumentList
       title="Document sequences"
-      subtitle="Per doc-type prefix and format. The next number is issued by the backend on post."
+      subtitle="Per doc-type prefix and format. The next number is issued by the backend on post. Read-only by design."
     >
       {rows.length === 0 ? (
         <p className="text-sm text-muted-foreground">

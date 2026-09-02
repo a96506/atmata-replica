@@ -1,8 +1,20 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
+import { RoleHomeActions } from "@/components/app/RoleHomeActions";
 import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
-import { listStockMoves } from "@/lib/api/inventory-tx";
-import { listProducts, listWarehouses } from "@/lib/api/master";
+import { ListWarehouseFilter } from "@/components/list/ListStateFilter";
+import { listStockMovesPage } from "@/lib/api/inventory-tx";
+import { getProductBySku } from "@/lib/api/items";
+import { listWarehouses } from "@/lib/api/master";
+import {
+  getReadClient,
+  mapRows,
+  parseListPage,
+  requireData,
+} from "@/lib/db/read";
+import { MASTER_SELECTS } from "@/lib/db/selects";
+import type { Product, Warehouse } from "@/types";
 
 const SOURCE_HREF: Record<string, (locale: string, id: string) => string> = {
   grn: (l, id) => `/${l}/purchasing/goods-receipts/${id}`,
@@ -11,32 +23,170 @@ const SOURCE_HREF: Record<string, (locale: string, id: string) => string> = {
   stock_adjustment: (l, id) => `/${l}/inventory/adjustments/${id}`,
 };
 
+async function productsByIds(ids: string[]): Promise<Map<string, Product>> {
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (unique.length === 0) return new Map();
+  const client = await getReadClient();
+  const result = await client.database
+    .from("products")
+    .select(MASTER_SELECTS.products)
+    .in("id", unique);
+  const rows = mapRows<Product>(requireData(result, "products by id"));
+  return new Map(rows.map((p) => [p.id, p]));
+}
+
+async function warehousesByIds(ids: string[]): Promise<Map<string, Warehouse>> {
+  const unique = [...new Set(ids.filter(Boolean))];
+  if (unique.length === 0) return new Map();
+  const client = await getReadClient();
+  const result = await client.database
+    .from("warehouses")
+    .select(MASTER_SELECTS.warehouses)
+    .in("id", unique);
+  const rows = mapRows<Warehouse>(requireData(result, "warehouses by id"));
+  return new Map(rows.map((w) => [w.id, w]));
+}
+
 export default async function Page({
   params,
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ sku?: string }>;
+  searchParams: Promise<{
+    sku?: string;
+    warehouse?: string;
+    page?: string;
+    limit?: string;
+  }>;
 }) {
   const { locale } = await params;
-  const { sku } = await searchParams;
-  const [allMoves, products, warehouses] = await Promise.all([
-    listStockMoves(),
-    listProducts(),
-    listWarehouses(),
+  const th = await getTranslations("inventory.homeActions");
+  const sp = await searchParams;
+  const { page, limit, offset } = parseListPage(sp);
+  const sku = typeof sp.sku === "string" ? sp.sku : undefined;
+  const warehouseParam =
+    typeof sp.warehouse === "string" && sp.warehouse.trim()
+      ? sp.warehouse.trim()
+      : undefined;
+
+  const allWarehouses = await listWarehouses().catch(() => [] as Warehouse[]);
+  const warehouseId =
+    warehouseParam && allWarehouses.some((w) => w.id === warehouseParam)
+      ? warehouseParam
+      : undefined;
+
+  let productId: string | undefined;
+  let skuProduct: Product | null = null;
+  if (sku) {
+    skuProduct = await getProductBySku(sku);
+    if (!skuProduct) {
+      return (
+        <DocumentList
+          title="Stock moves"
+          subtitle={`Filtered to SKU ${sku}. Atomic inventory ledger.`}
+          primaryAction={
+            <RoleHomeActions
+              actions={[
+                {
+                  label: th("newGrn"),
+                  href: `/${locale}/purchasing/goods-receipts/new`,
+                  operation: "create_goods_receipt",
+                  primary: true,
+                },
+                {
+                  label: th("newDelivery"),
+                  href: `/${locale}/sales/deliveries/new`,
+                  operation: "create_delivery_note",
+                },
+                {
+                  label: th("newTransfer"),
+                  href: `/${locale}/inventory/transfers/new`,
+                  operation: "create_internal_transfer",
+                },
+              ]}
+            />
+          }
+          filters={
+            <ListWarehouseFilter
+              current={warehouseId ?? null}
+              warehouses={allWarehouses.map((w) => ({ id: w.id, name: w.name }))}
+            />
+          }
+        >
+          <DataTable
+            columns={[
+              { key: "id", label: "Move" },
+              { key: "date", label: "Date" },
+              { key: "product", label: "Product" },
+              { key: "wh", label: "Warehouse" },
+              { key: "dir", label: "Dir" },
+              { key: "qty", label: "Qty", className: "text-right" },
+              { key: "cost", label: "Cost", className: "text-right" },
+              { key: "source", label: "Source" },
+            ]}
+            rows={[]}
+            emptyMessage="No stock moves yet."
+            serverPagination={{ page, pageSize: limit, total: 0 }}
+          />
+        </DocumentList>
+      );
+    }
+    productId = skuProduct.id;
+  }
+
+  const { items: moves, total } = await listStockMovesPage({
+    limit,
+    offset,
+    productId,
+    warehouseId,
+  });
+
+  const [products, warehouses] = await Promise.all([
+    skuProduct
+      ? Promise.resolve(new Map([[skuProduct.id, skuProduct]]))
+      : productsByIds(moves.map((m) => m.productId)),
+    warehousesByIds(moves.map((m) => m.warehouseId)),
   ]);
-  const filtered = sku
-    ? allMoves.filter((m) => products.find((p) => p.id === m.productId)?.sku === sku)
-    : allMoves;
-  const moves = filtered;
+
+  const subtitleParts = [
+    sku ? `Filtered to SKU ${sku}.` : null,
+    warehouseId
+      ? `Warehouse: ${allWarehouses.find((w) => w.id === warehouseId)?.name ?? warehouseId}.`
+      : null,
+    "Atomic inventory ledger. Every GRN, delivery, transfer and adjustment posts one or more moves.",
+  ].filter(Boolean);
 
   return (
     <DocumentList
       title="Stock moves"
-      subtitle={
-        sku
-          ? `Filtered to SKU ${sku}. Atomic inventory ledger.`
-          : "Atomic inventory ledger. Every GRN, delivery, transfer and adjustment posts one or more moves."
+      subtitle={subtitleParts.join(" ")}
+      primaryAction={
+        <RoleHomeActions
+          actions={[
+            {
+              label: th("newGrn"),
+              href: `/${locale}/purchasing/goods-receipts/new`,
+              operation: "create_goods_receipt",
+              primary: true,
+            },
+            {
+              label: th("newDelivery"),
+              href: `/${locale}/sales/deliveries/new`,
+              operation: "create_delivery_note",
+            },
+            {
+              label: th("newTransfer"),
+              href: `/${locale}/inventory/transfers/new`,
+              operation: "create_internal_transfer",
+            },
+          ]}
+        />
+      }
+      filters={
+        <ListWarehouseFilter
+          current={warehouseId ?? null}
+          warehouses={allWarehouses.map((w) => ({ id: w.id, name: w.name }))}
+        />
       }
     >
       <DataTable
@@ -51,8 +201,8 @@ export default async function Page({
           { key: "source", label: "Source" },
         ]}
         rows={moves.map((m) => {
-          const prod = products.find((p) => p.id === m.productId);
-          const wh = warehouses.find((w) => w.id === m.warehouseId);
+          const prod = products.get(m.productId);
+          const wh = warehouses.get(m.warehouseId);
           const hrefFn = SOURCE_HREF[m.sourceType];
           return [
             <span id={m.id} key="id" className="font-mono text-xs text-foreground">
@@ -106,6 +256,7 @@ export default async function Page({
           ];
         })}
         emptyMessage="No stock moves yet."
+        serverPagination={{ page, pageSize: limit, total }}
       />
     </DocumentList>
   );

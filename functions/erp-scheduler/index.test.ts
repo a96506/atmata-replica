@@ -11,7 +11,7 @@ import {
 describe("erp-scheduler contract", () => {
   // Reference-only edge source; live path is /api/cron/erp + in-app node-cron.
   it("keeps the schedule manifest aligned with in-app cron ownership", () => {
-    expect(SCHEDULE_MANIFEST).toHaveLength(7);
+    expect(SCHEDULE_MANIFEST).toHaveLength(8);
     expect(SCHEDULER_JOBS).toEqual([
       "fx_ingest",
       "aging_refresh",
@@ -19,6 +19,7 @@ describe("erp-scheduler contract", () => {
       "month_end",
       "inventory_alerts",
       "depreciation",
+      "metrics_refresh",
     ]);
     expect(DEFAULT_SCHEDULER_URL).toBe("/api/cron/erp");
     expect(isSchedulerJob("fx_ingest")).toBe(true);

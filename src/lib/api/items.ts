@@ -120,6 +120,16 @@ export function getItemStockByWarehouse(productId: string): Promise<ItemWarehous
   return rpcRows("item_stock_by_warehouse", { p_product_id: productId });
 }
 
+export type CompanyOnHandRow = {
+  productId: string;
+  onHand: number;
+};
+
+/** Company-wide on-hand totals per product (single RPC; inventory overview). */
+export function getCompanyOnHandByProduct(): Promise<CompanyOnHandRow[]> {
+  return rpcRows("company_on_hand_by_product", {});
+}
+
 export function getItemMoves(productId: string): Promise<ItemMoveRow[]> {
   return rpcRows("item_moves", { p_product_id: productId });
 }

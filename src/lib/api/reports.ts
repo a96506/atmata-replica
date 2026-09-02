@@ -6,13 +6,15 @@ import {
   rpcRows,
 } from "@/lib/db/read";
 import type { Currency, LocaleCode } from "@/types";
-import { listFiscalPeriods } from "@/lib/api/master";
+import { getCompany, listCompanies, listFiscalPeriods } from "@/lib/api/master";
 
 export type ReportLineItem = { label: string; amount: number };
 
 export type ReportPayload = {
   lineItems: ReportLineItem[];
   totals: Record<string, number>;
+  /** Company base currency from report RPCs when present. */
+  currency?: string;
 };
 
 export type AgingInvoiceRow = {
@@ -37,6 +39,8 @@ export type FinancialStatementView = {
   totals: Record<string, number>;
   generated_at: string;
   notes: string[];
+  /** False when trial balance is unfiltered (no period query param). */
+  period_filter_applied?: boolean;
 };
 
 const SUBTOTAL_LABELS = new Set([
@@ -59,7 +63,31 @@ function asReportPayload(raw: ReportPayload | null | undefined): ReportPayload {
     totals: Object.fromEntries(
       Object.entries(raw?.totals ?? {}).map(([k, v]) => [k, Number(v ?? 0)]),
     ),
+    currency: raw?.currency != null ? String(raw.currency) : undefined,
   };
+}
+
+const KNOWN_CURRENCIES = new Set<Currency>(["KWD", "SAR", "AED", "USD"]);
+
+function asCurrency(value: string | null | undefined): Currency | null {
+  if (!value) return null;
+  const upper = value.toUpperCase() as Currency;
+  return KNOWN_CURRENCIES.has(upper) ? upper : null;
+}
+
+async function resolveDisplayCurrency(opts: {
+  rpcCurrency?: string;
+  companyId?: string;
+}): Promise<Currency> {
+  const fromRpc = asCurrency(opts.rpcCurrency);
+  if (fromRpc) return fromRpc;
+  if (opts.companyId) {
+    const company = await getCompany(opts.companyId).catch(() => null);
+    const fromCompany = asCurrency(company?.baseCurrency);
+    if (fromCompany) return fromCompany;
+  }
+  const companies = await listCompanies().catch(() => []);
+  return asCurrency(companies[0]?.baseCurrency) ?? "KWD";
 }
 
 export async function getReportPnL(periodId: string): Promise<ReportPayload> {
@@ -88,7 +116,59 @@ export async function getReportCashFlow(
   );
 }
 
-export async function getReportTrialBalance(): Promise<ReportPayload> {
+
+export type GeneralLedgerRow = {
+  journalEntryId: string;
+  journalNumber: string;
+  entryDate: string;
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  lineDescription: string;
+  debit: number;
+  credit: number;
+  runningBalance: number;
+};
+
+export async function getGeneralLedgerReport(opts: {
+  periodId?: string;
+  accountId?: string;
+  from?: string;
+  to?: string;
+}): Promise<GeneralLedgerRow[]> {
+  const params: Record<string, string> = {};
+  if (opts.periodId) params.p_period_id = opts.periodId;
+  if (opts.accountId) params.p_account_id = opts.accountId;
+  if (opts.from) params.p_from = opts.from;
+  if (opts.to) params.p_to = opts.to;
+  const rows = await rpcRows<GeneralLedgerRow>(
+    "report_general_ledger",
+    params,
+  );
+  return rows.map((row) => ({
+    journalEntryId: String(row.journalEntryId ?? ""),
+    journalNumber: String(row.journalNumber ?? ""),
+    entryDate: String(row.entryDate ?? ""),
+    accountId: String(row.accountId ?? ""),
+    accountCode: String(row.accountCode ?? ""),
+    accountName: String(row.accountName ?? ""),
+    lineDescription: String(row.lineDescription ?? ""),
+    debit: Number(row.debit ?? 0),
+    credit: Number(row.credit ?? 0),
+    runningBalance: Number(row.runningBalance ?? 0),
+  }));
+}
+
+export type TrialBalanceFilters = {
+  periodId?: string;
+  accountId?: string;
+  from?: string;
+  to?: string;
+};
+
+export async function getReportTrialBalance(
+  filters: TrialBalanceFilters = {},
+): Promise<ReportPayload> {
   type TbRow = {
     accountCode: string;
     accountName: string;
@@ -96,7 +176,12 @@ export async function getReportTrialBalance(): Promise<ReportPayload> {
     credit: number;
     balance: number;
   };
-  const rows = await rpcRows<TbRow>("report_trial_balance", {});
+  const args: Record<string, unknown> = {};
+  if (filters.periodId) args.p_period_id = filters.periodId;
+  if (filters.accountId) args.p_account_id = filters.accountId;
+  if (filters.from) args.p_from = filters.from;
+  if (filters.to) args.p_to = filters.to;
+  const rows = await rpcRows<TbRow>("report_trial_balance", args);
   const lineItems = rows.map((row) => ({
     label: `${row.accountCode ?? ""} ${row.accountName ?? ""}`.trim(),
     amount: Number(row.balance ?? 0),
@@ -166,29 +251,42 @@ function formatStatement(
     formatted_totals,
     totals,
     generated_at: new Date().toISOString(),
-    notes: ["Posted entries only.", "KWD, 3 decimal places."],
+    notes: [
+      "Posted entries only.",
+      `${currency} amounts in company base currency.`,
+    ],
   };
 }
 
 export async function getFinancialStatement(opts: {
   type: "pl" | "balance-sheet" | "cash-flow" | "trial-balance";
   periodId?: string;
+  accountId?: string;
+  from?: string;
+  to?: string;
   locale: LocaleCode;
 }): Promise<FinancialStatementView | null> {
   const periods = await listFiscalPeriods();
   const period =
-    (opts.periodId
-      ? periods.find((p) => p.id === opts.periodId)
-      : undefined) ?? periods[0];
+    opts.type === "trial-balance"
+      ? opts.periodId
+        ? periods.find((p) => p.id === opts.periodId)
+        : undefined
+      : ((opts.periodId
+          ? periods.find((p) => p.id === opts.periodId)
+          : undefined) ?? periods[0]);
   if (!period && opts.type !== "trial-balance") return null;
 
   const label = period ? periodLabel(period.year, period.month) : "—";
-  const currency: Currency = "KWD";
 
   try {
     if (opts.type === "pl") {
       if (!period) return null;
       const payload = await getReportPnL(period.id);
+      const currency = await resolveDisplayCurrency({
+        rpcCurrency: payload.currency,
+        companyId: period.companyId,
+      });
       return formatStatement(
         "Profit & Loss",
         label,
@@ -201,6 +299,10 @@ export async function getFinancialStatement(opts: {
     if (opts.type === "balance-sheet") {
       if (!period) return null;
       const payload = await getReportBalanceSheet(period.id);
+      const currency = await resolveDisplayCurrency({
+        rpcCurrency: payload.currency,
+        companyId: period.companyId,
+      });
       return formatStatement(
         "Balance Sheet",
         label,
@@ -216,6 +318,10 @@ export async function getFinancialStatement(opts: {
     if (opts.type === "cash-flow") {
       if (!period) return null;
       const payload = await getReportCashFlow(period.id);
+      const currency = await resolveDisplayCurrency({
+        rpcCurrency: payload.currency,
+        companyId: period.companyId,
+      });
       return formatStatement(
         "Cash Flow",
         label,
@@ -225,10 +331,27 @@ export async function getFinancialStatement(opts: {
         [{ key: "ending", label: "Ending cash" }],
       );
     }
-    const payload = await getReportTrialBalance();
-    return formatStatement(
+    const tbFilters: TrialBalanceFilters = {
+      periodId: period?.id,
+      accountId: opts.accountId,
+      from: opts.from,
+      to: opts.to,
+    };
+    const payload = await getReportTrialBalance(tbFilters);
+    const currency = await resolveDisplayCurrency({
+      rpcCurrency: payload.currency,
+      companyId: period?.companyId,
+    });
+    const filterParts: string[] = [];
+    if (period) filterParts.push(label);
+    if (opts.from || opts.to) {
+      filterParts.push(`${opts.from ?? "…"} → ${opts.to ?? "…"}`);
+    }
+    const tbLabel =
+      filterParts.length > 0 ? filterParts.join(" · ") : "All posted periods";
+    const stmt = formatStatement(
       "Trial Balance",
-      label,
+      tbLabel,
       currency,
       opts.locale,
       payload,
@@ -237,6 +360,13 @@ export async function getFinancialStatement(opts: {
         { key: "credit", label: "Credit" },
       ],
     );
+    const filtersApplied = !!(
+      period ||
+      opts.accountId ||
+      opts.from ||
+      opts.to
+    );
+    return { ...stmt, period_filter_applied: filtersApplied };
   } catch (err) {
     if (err instanceof DataReadError) throw err;
     throw err;

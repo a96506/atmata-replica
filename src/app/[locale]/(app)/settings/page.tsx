@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { navigation } from "@/config/navigation";
+import { getAppSession } from "@/lib/insforge/session";
+import { filterNavigation } from "@/lib/roles/nav-filter";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { pageMetadata } from "@/lib/metadata";
@@ -31,6 +33,7 @@ const DESCRIPTIONS: Record<string, string> = {
   "/settings/sequences": "Doc-number formats",
   "/settings/users": "Roles + permissions",
   "/settings/approval-rules": "Doc type × amount → chain",
+  "/settings/audit": "Company-wide document audit events",
 };
 
 export default async function SettingsPage({
@@ -40,12 +43,14 @@ export default async function SettingsPage({
 }) {
   const { locale } = await params;
   const t = await getTranslations("settings");
+  const { session } = await getAppSession();
+  const roles = session?.roles ?? [];
 
+  const settingsModule = filterNavigation(navigation, roles).find(
+    (m) => m.key === "settings",
+  );
   // Skip the leading "Overview" group — that is this page.
-  const groups =
-    navigation
-      .find((m) => m.key === "settings")
-      ?.groups.filter((g) => g.label) ?? [];
+  const groups = settingsModule?.groups.filter((g) => g.label) ?? [];
 
   return (
     <div className="flex flex-col gap-8">

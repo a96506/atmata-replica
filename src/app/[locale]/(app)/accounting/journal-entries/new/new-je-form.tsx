@@ -12,7 +12,7 @@ import { MoneyInput } from "@/components/form/MoneyInput";
 import { ApprovalRoutePreview } from "@/components/form/ApprovalRoutePreview";
 import { createJournalEntryAction } from "@/lib/actions/gl";
 import type { WriteIntent } from "@/lib/actions/validation/p2p";
-import { formatMoney } from "@/lib/money";
+import { amountsEqual, formatMoney, toMinorUnits } from "@/lib/money";
 import { previewSequence } from "@/lib/numbering";
 import type { Account } from "@/types";
 import type { ValidationError } from "@/components/form/ValidationSummary";
@@ -75,7 +75,9 @@ export function NewJeForm({
 
   const totalDr = lines.reduce((s, l) => s + l.debit, 0);
   const totalCr = lines.reduce((s, l) => s + l.credit, 0);
-  const balanced = Math.abs(totalDr - totalCr) < 0.001 && totalDr > 0;
+  // Compare true totals at currency precision — not rounded display strings.
+  const balanced =
+    amountsEqual(totalDr, totalCr, "KWD") && toMinorUnits(totalDr, "KWD") > 0;
 
   const errors: ValidationError[] = [];
   if (!date) errors.push({ field: "date", message: "Date required." });
@@ -132,7 +134,7 @@ export function NewJeForm({
         return;
       }
       const verb =
-        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Submitted";
+        intent === "save_draft" ? "Saved draft" : intent === "submit" ? "Submitted for approval" : "Submitted";
       toast.success(
         `${verb}: ${result.data.number} · ${result.data.state} · ${formatMoney(totalDr, "KWD")}`,
       );
@@ -152,12 +154,12 @@ export function NewJeForm({
       return;
     }
     const ok = await confirm({
-      title: `Post ${previewNumber}?`,
-      description: `Posts ${formatMoney(totalDr, "KWD")} in balanced journal lines.`,
-      confirmLabel: "Post JE",
+      title: `Submit ${previewNumber} for approval?`,
+      description: `Routes ${formatMoney(totalDr, "KWD")} in balanced journal lines for approval before posting.`,
+      confirmLabel: "Submit for approval",
     });
     if (!ok) return;
-    await runWrite("post");
+    await runWrite("submit");
   };
 
   return (
@@ -173,8 +175,10 @@ export function NewJeForm({
               : "border-status-pending-border bg-status-pending-muted text-status-pending-foreground")
           }
         >
-          <span className="font-medium">{balanced ? "Balanced" : "Unbalanced"}</span> ·
-          Dr {formatMoney(totalDr, "KWD")} · Cr {formatMoney(totalCr, "KWD")}
+          <span className="font-medium">
+            {balanced ? "Balanced" : "Unbalanced — not ready"}
+          </span>{" "}
+          · Dr {formatMoney(totalDr, "KWD")} · Cr {formatMoney(totalCr, "KWD")}
         </div>
       }
       header={
@@ -228,12 +232,14 @@ export function NewJeForm({
                 value={l.debit}
                 onChange={(v) => setLine(l.id, { debit: v, credit: v > 0 ? 0 : l.credit })}
                 currency="KWD"
+                error={!balanced ? "Debits and credits must balance." : null}
               />
               <MoneyInput
                 label="Credit"
                 value={l.credit}
                 onChange={(v) => setLine(l.id, { credit: v, debit: v > 0 ? 0 : l.debit })}
                 currency="KWD"
+                error={!balanced ? "Debits and credits must balance." : null}
               />
               <button
                 type="button"
@@ -262,7 +268,7 @@ export function NewJeForm({
       onSaveDraft={() => void runWrite("save_draft")}
       onCancel={() => router.back()}
       submitDisabled={errors.length > 0}
-      submitLabel="Post JE"
+      submitLabel="Submit for approval"
     />
   );
 }

@@ -3,19 +3,27 @@ import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
 import { NewDocButton } from "@/components/doc/CreateChildLinks";
-import { listDeliveryNotes, listSalesOrders } from "@/lib/api/q2c";
-import { listCustomers } from "@/lib/api/master";
+import {
+  listDeliveryNotesPage,
+  mapSalesOrderNumbersByIds,
+} from "@/lib/api/q2c";
+import { mapCustomerNamesByIds } from "@/lib/api/master";
+import { parseListPage } from "@/lib/db/read";
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ page?: string; limit?: string }>;
 }) {
   const { locale } = await params;
-  const [dns, customers, sos] = await Promise.all([
-    listDeliveryNotes(),
-    listCustomers(),
-    listSalesOrders(),
+  const { page, limit, offset } = parseListPage(await searchParams);
+
+  const paged = await listDeliveryNotesPage({ limit, offset });
+  const [customerNames, soNumbers] = await Promise.all([
+    mapCustomerNamesByIds([...new Set(paged.items.map((d) => d.customerId))]),
+    mapSalesOrderNumbersByIds([...new Set(paged.items.map((d) => d.soId))]),
   ]);
 
   return (
@@ -23,7 +31,8 @@ export default async function Page({
       title="Delivery notes"
       subtitle="Outbound shipments. Each posts a stock-out move."
       primaryAction={
-        <NewDocButton href={`/${locale}/sales/deliveries/new`} label="New Delivery" />
+        <NewDocButton href={`/${locale}/sales/deliveries/new`} label="New Delivery" 
+          operation="create_delivery_note"/>
       }
     >
       <DataTable
@@ -34,9 +43,8 @@ export default async function Page({
           { key: "date", label: "Date" },
           { key: "state", label: "Status" },
         ]}
-        rows={dns.map((d) => {
-          const cust = customers.find((c) => c.id === d.customerId);
-          const so = sos.find((s) => s.id === d.soId);
+        rows={paged.items.map((d) => {
+          const soNumber = soNumbers.get(d.soId);
           return [
             <Link
               key="n"
@@ -45,23 +53,28 @@ export default async function Page({
             >
               {d.number}
             </Link>,
-            so ? (
+            soNumber ? (
               <Link
                 key="s"
-                href={`/${locale}/sales/orders/${so.id}`}
+                href={`/${locale}/sales/orders/${d.soId}`}
                 className="text-primary hover:underline"
               >
-                {so.number}
+                {soNumber}
               </Link>
             ) : (
               "—"
             ),
-            cust?.name ?? "—",
+            customerNames.get(d.customerId) ?? "—",
             d.date,
             <StateBadge key="st" state={d.state} />,
           ];
         })}
         emptyMessage="No delivery notes yet."
+        serverPagination={{
+          page,
+          pageSize: paged.limit,
+          total: paged.total,
+        }}
       />
     </DocumentList>
   );

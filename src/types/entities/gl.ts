@@ -5,7 +5,8 @@ export type Account = {
   code: string;
   name: string;
   type: "asset" | "liability" | "equity" | "revenue" | "expense";
-  parent?: string;
+  parent?: string | null;
+  active?: boolean;
 };
 
 export type JournalLine = {

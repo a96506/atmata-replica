@@ -3,12 +3,13 @@ import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
 import { NewDocButton } from "@/components/doc/CreateChildLinks";
-import { ExportCsvButton } from "@/components/export/ExportCsvButton";
+import { JeExportClient } from "./je-export-client";
 import {
   ListStateFilter,
   normalizeListState,
 } from "@/components/list/ListStateFilter";
-import { listJournalEntries } from "@/lib/api/gl";
+import { listJournalEntriesPage } from "@/lib/api/gl";
+import { parseListPage } from "@/lib/list-paging";
 import { formatMoney } from "@/lib/money";
 import { pageMetadata } from "@/lib/metadata";
 
@@ -19,13 +20,17 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ state?: string }>;
+  searchParams: Promise<{ state?: string; page?: string; limit?: string }>;
 }) {
   const { locale } = await params;
-  const { state: stateParam } = await searchParams;
-  const all = await listJournalEntries();
-  const stateFilter = normalizeListState(stateParam);
-  const entries = stateFilter ? all.filter((j) => j.state === stateFilter) : all;
+  const sp = await searchParams;
+  const { page, limit, offset } = parseListPage(sp);
+  const stateFilter = normalizeListState(sp.state);
+  const { items: entries, total } = await listJournalEntriesPage({
+    limit,
+    offset,
+    state: stateFilter,
+  });
 
   return (
     <DocumentList
@@ -34,26 +39,11 @@ export default async function Page({
       primaryAction={
         <div className="flex flex-wrap items-center gap-2">
           <ListStateFilter current={stateFilter} />
-          <ExportCsvButton
-            rows={entries}
-            filename="journal-entries"
-            columns={[
-              { label: "Number", value: (j) => j.number },
-              { label: "Date", value: (j) => j.date },
-              { label: "Description", value: (j) => j.description },
-              { label: "Source type", value: (j) => j.sourceType },
-              { label: "Source id", value: (j) => j.sourceId },
-              {
-                label: "Amount",
-                value: (j) => j.lines.reduce((s, l) => s + l.debit, 0),
-              },
-              { label: "Currency", value: (j) => j.currency },
-              { label: "State", value: (j) => j.state },
-            ]}
-          />
+          <JeExportClient rows={entries} />
           <NewDocButton
             href={`/${locale}/accounting/journal-entries/new`}
             label="New JE"
+            operation="create_journal_entry"
           />
         </div>
       }
@@ -68,7 +58,7 @@ export default async function Page({
           { key: "state", label: "Status" },
         ]}
         rows={entries.map((j) => {
-          const total = j.lines.reduce((s, l) => s + l.debit, 0);
+          const totalAmt = j.lines.reduce((s, l) => s + l.debit, 0);
           return [
             <Link
               key="n"
@@ -85,12 +75,13 @@ export default async function Page({
               {j.sourceType} · {j.sourceId}
             </span>,
             <span key="t" className="tabular-nums">
-              {formatMoney(total, j.currency)}
+              {formatMoney(totalAmt, j.currency)}
             </span>,
             <StateBadge key="ss" state={j.state} />,
           ];
         })}
         emptyMessage="No journal entries yet."
+        serverPagination={{ page, pageSize: limit, total }}
       />
     </DocumentList>
   );

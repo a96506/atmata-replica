@@ -1,6 +1,17 @@
 import type { RFQ } from "@/types";
-import { getTable, listTable } from "@/lib/db/read";
+import {
+  getTable,
+  listPage,
+  listTable,
+  type ListPageResult,
+} from "@/lib/db/read";
 import { RFQ_SELECT } from "@/lib/db/selects";
+
+const rfqOrder = [
+  { column: "date", ascending: false },
+  { column: "number", ascending: false },
+  { column: "id" },
+];
 
 type RfqRow = Omit<RFQ, "prIds" | "invitedVendorIds" | "award" | "lines" | "quotes"> & {
   awardedVendorId: string | null;
@@ -62,13 +73,22 @@ export function assembleRfq(row: RfqRow): RFQ {
   };
 }
 
+/** Full list capped at 1000 via `listTable` / `allPages`. Prefer `listRfqsPage` for UI lists. */
 export async function listRfqs(): Promise<RFQ[]> {
-  const rows = await listTable<RfqRow>("rfqs", RFQ_SELECT, [
-    { column: "date", ascending: false },
-    { column: "number", ascending: false },
-    { column: "id" },
-  ]);
+  const rows = await listTable<RfqRow>("rfqs", RFQ_SELECT, rfqOrder);
   return rows.map(assembleRfq);
+}
+
+/** One server page of RFQs (same projection/order as {@link listRfqs}). */
+export async function listRfqsPage(params: {
+  limit?: number;
+  offset?: number;
+}): Promise<ListPageResult<RFQ>> {
+  const paged = await listPage<RfqRow>("rfqs", RFQ_SELECT, rfqOrder, [], {
+    limit: params.limit,
+    offset: params.offset,
+  });
+  return { ...paged, items: paged.items.map(assembleRfq) };
 }
 
 export async function getRfq(id: string): Promise<RFQ | null> {

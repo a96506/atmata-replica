@@ -12,6 +12,8 @@ import type { DocState } from "@/types";
 
 const STATES = [
   { id: "draft", label: "Draft" },
+  { id: "pending", label: "Pending" },
+  { id: "confirmed", label: "Confirmed" },
   { id: "posted", label: "Posted" },
 ];
 

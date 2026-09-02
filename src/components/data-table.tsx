@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { ArrowDown, ArrowUp, ChevronsUpDown, Inbox } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import {
   Table,
@@ -29,15 +31,30 @@ export type Column = {
   sortable?: boolean;
 };
 
+/** When set, `rows` is already one server page — do not client-slice. */
+export type ServerPagination = {
+  /** 1-based page from URL `?page=`. */
+  page: number;
+  pageSize: number;
+  total: number;
+};
+
 export type DataTableProps = {
   columns: Column[];
   /** Row cells, positionally matched to `columns`. */
   rows: React.ReactNode[][];
   emptyMessage?: string;
+  /** Overrides the default "Nothing here yet" title in the empty state. */
+  emptyTitle?: string;
   /** Sorting is on by default; pass false for pre-ordered data like ledgers. */
   sortable?: boolean;
-  /** Rows per page. `0` disables pagination. */
+  /** Rows per page. `0` disables pagination. Ignored when `serverPagination` is set. */
   pageSize?: number;
+  /**
+   * Server-driven paging: Previous/Next update URL `?page=` (preserve other
+   * searchParams). `rows` must already be the current page from the server.
+   */
+  serverPagination?: ServerPagination;
   /** Constrains body height and keeps the header pinned while scrolling. */
   maxBodyHeight?: number | string;
   className?: string;
@@ -50,13 +67,18 @@ export type DataTableProps = {
  * all 44 existing call sites work untouched, while adding the things an ERP
  * grid needs: client-side sorting, pagination, a sticky header, and numeric
  * alignment inferred from the column's own `text-right` class.
+ *
+ * Pass `serverPagination` for heavy lists so Next/Previous fetch the next
+ * page from the server via `?page=` instead of slicing a full client array.
  */
 export function DataTable({
   columns,
   rows,
   emptyMessage = "No data.",
+  emptyTitle = "Nothing here yet",
   sortable = true,
   pageSize = 0,
+  serverPagination,
   maxBodyHeight,
   className,
 }: DataTableProps) {
@@ -65,9 +87,12 @@ export function DataTable({
     dir: "asc" | "desc";
   } | null>(null);
   const [page, setPage] = React.useState(0);
+  const serverMode = serverPagination != null;
 
-  // Reset paging when the underlying data changes (filters, search).
-  React.useEffect(() => setPage(0), [rows.length]);
+  // Reset client paging when the underlying data changes (filters, search).
+  React.useEffect(() => {
+    if (!serverMode) setPage(0);
+  }, [rows.length, serverMode]);
 
   const sortedRows = React.useMemo(() => {
     if (!sort) return rows;
@@ -78,10 +103,22 @@ export function DataTable({
     );
   }, [rows, sort]);
 
-  const pageCount = pageSize > 0 ? Math.ceil(sortedRows.length / pageSize) : 1;
-  const safePage = Math.min(page, Math.max(pageCount - 1, 0));
-  const visibleRows =
-    pageSize > 0
+  // Server mode: `rows` is already one page — never slice a larger client list.
+  // Client sort stays on the current page only (day-one).
+  const pageCount = serverMode
+    ? Math.max(1, Math.ceil(serverPagination.total / serverPagination.pageSize))
+    : pageSize > 0
+      ? Math.ceil(sortedRows.length / pageSize)
+      : 1;
+  const safePage = serverMode
+    ? Math.min(
+        Math.max(serverPagination.page, 1),
+        pageCount,
+      )
+    : Math.min(page, Math.max(pageCount - 1, 0));
+  const visibleRows = serverMode
+    ? sortedRows
+    : pageSize > 0
       ? sortedRows.slice(safePage * pageSize, safePage * pageSize + pageSize)
       : sortedRows;
 
@@ -92,7 +129,7 @@ export function DataTable({
           <EmptyMedia variant="icon">
             <Inbox />
           </EmptyMedia>
-          <EmptyTitle>Nothing here yet</EmptyTitle>
+          <EmptyTitle>{emptyTitle}</EmptyTitle>
           <EmptyDescription>{emptyMessage}</EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -106,6 +143,12 @@ export function DataTable({
       return null;
     });
   };
+
+  const showClientPager = !serverMode && pageSize > 0 && pageCount > 1;
+  const showServerPager =
+    serverMode &&
+    (serverPagination.total > serverPagination.pageSize ||
+      serverPagination.page > 1);
 
   return (
     <div className={cn("flex flex-col gap-3", className)}>
@@ -203,7 +246,17 @@ export function DataTable({
         </Table>
       </div>
 
-      {pageSize > 0 && pageCount > 1 ? (
+      {showServerPager && serverPagination ? (
+        <React.Suspense fallback={null}>
+          <ServerPaginationBar
+            page={safePage}
+            pageSize={serverPagination.pageSize}
+            total={serverPagination.total}
+          />
+        </React.Suspense>
+      ) : null}
+
+      {showClientPager ? (
         <div className="flex items-center justify-between gap-2">
           <p className="text-muted-foreground text-xs tabular-nums">
             {safePage * pageSize + 1}–
@@ -230,6 +283,58 @@ export function DataTable({
           </div>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/** Previous/Next that only touch URL `?page=` (preserve other searchParams). */
+export function ServerPaginationBar({
+  page,
+  pageSize,
+  total,
+}: {
+  page: number;
+  pageSize: number;
+  total: number;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const from = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = Math.min(page * pageSize, total);
+
+  function goTo(nextPage: number) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextPage <= 1) params.delete("page");
+    else params.set("page", String(nextPage));
+    const suffix = params.toString();
+    router.replace(suffix ? `${pathname}?${suffix}` : pathname);
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <p className="text-muted-foreground text-xs tabular-nums">
+        {from}–{to} of {total}
+      </p>
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={page <= 1}
+          onClick={() => goTo(page - 1)}
+        >
+          Previous
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={page >= pageCount}
+          onClick={() => goTo(page + 1)}
+        >
+          Next
+        </Button>
+      </div>
     </div>
   );
 }

@@ -75,6 +75,7 @@ export default async function Page({
       onCreate={createBankAccountAction}
       onUpdate={updateBankAccountAction}
       onDelete={deleteBankAccountAction}
+      writeOperation="create_bank_account"
     />
   );
 }

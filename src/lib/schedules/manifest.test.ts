@@ -10,11 +10,11 @@ import {
 } from "./manifest";
 
 describe("schedule manifest", () => {
-  it("defines seven schedules and six jobs", () => {
-    expect(SCHEDULE_MANIFEST).toHaveLength(7);
-    expect(new Set(SCHEDULER_JOBS).size).toBe(6);
-    expect(new Set(SCHEDULE_MANIFEST.map((row) => row.name)).size).toBe(7);
-    expect(new Set(SCHEDULE_MANIFEST.map((row) => row.job)).size).toBe(6);
+  it("defines eight schedules and seven jobs", () => {
+    expect(SCHEDULE_MANIFEST).toHaveLength(8);
+    expect(new Set(SCHEDULER_JOBS).size).toBe(7);
+    expect(new Set(SCHEDULE_MANIFEST.map((row) => row.name)).size).toBe(8);
+    expect(new Set(SCHEDULE_MANIFEST.map((row) => row.job)).size).toBe(7);
   });
 
   it("uses the locked GMT cron expressions", () => {
@@ -28,6 +28,7 @@ describe("schedule manifest", () => {
       "erp-month-end-daily": "0 23 * * *",
       "erp-depreciation-daily": "30 23 * * *",
       "erp-inventory-alerts-daily": "0 3 * * *",
+      "erp-metrics-refresh-daily": "0 2 * * *",
     });
   });
 

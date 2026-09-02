@@ -1,68 +1,52 @@
 "use client";
 
+import { Link } from "@/i18n/navigation";
 import { useTranslations } from "next-intl";
-import { toast } from "@/components/toast";
 
-export function PoSuggestionActions({ id }: { id: string }) {
+const btnPrimary =
+  "inline-flex cursor-pointer items-center rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary/90";
+const btnMuted =
+  "inline-flex cursor-pointer items-center rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground hover:bg-muted/80";
+
+/** Open PR → new PO with from= param (real navigation, no demo toast). */
+export function PoSuggestionActions({ prId }: { prId: string }) {
   const t = useTranslations("purchasing.actions");
   return (
     <div className="flex flex-wrap justify-end gap-1">
-      <button
-        type="button"
-        className="cursor-pointer rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary"
-        onClick={() => toast.success(t("approvePo", { id }))}
+      <Link
+        href={`/purchasing/purchase-orders/new?from=${encodeURIComponent(prId)}`}
+        className={btnPrimary}
       >
-        {t("approve")}
-      </button>
-      <button
-        type="button"
-        className="cursor-pointer rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
-        onClick={() => toast.message(t("adjustPo", { id }))}
+        {t("createPo")}
+      </Link>
+      <Link
+        href={`/purchasing/purchase-requisitions/${prId}`}
+        className={btnMuted}
       >
-        {t("adjust")}
-      </button>
-      <button
-        type="button"
-        className="cursor-pointer rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-destructive"
-        onClick={() => toast.message(t("rejectPo", { id }))}
-      >
-        {t("reject")}
-      </button>
+        {t("openPr")}
+      </Link>
     </div>
   );
 }
 
-export function BillMatchActions({ id, status }: { id: string; status: string }) {
+/** Bill queue row → vendor bill detail. */
+export function BillMatchActions({ id }: { id: string; status?: string }) {
   const t = useTranslations("purchasing.actions");
   return (
     <div className="flex flex-wrap justify-end gap-1">
-      <button
-        type="button"
-        className="cursor-pointer rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground hover:bg-primary"
-        onClick={() => toast.success(t("approveBill", { id }))}
-      >
-        {t("approveMatch")}
-      </button>
-      <button
-        type="button"
-        className="cursor-pointer rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
-        onClick={() => toast.message(t("flagBill", { id, status }))}
-      >
-        {t("flag")}
-      </button>
+      <Link href={`/purchasing/bills/${id}`} className={btnPrimary}>
+        {t("openBill")}
+      </Link>
     </div>
   );
 }
 
-export function ReceivingDemoActions({ refCode }: { refCode: string }) {
+/** Receiving queue row → GRN detail. */
+export function ReceivingDemoActions({ grnId }: { grnId: string }) {
   const t = useTranslations("purchasing.actions");
   return (
-    <button
-      type="button"
-      className="cursor-pointer rounded-md bg-muted px-2 py-1 text-xs font-medium text-foreground hover:bg-muted"
-      onClick={() => toast.success(t("confirmReceipt", { ref: refCode }))}
-    >
-      {t("confirmReceiptBtn")}
-    </button>
+    <Link href={`/purchasing/goods-receipts/${grnId}`} className={btnMuted}>
+      {t("openGrn")}
+    </Link>
   );
 }

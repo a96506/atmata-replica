@@ -14,29 +14,52 @@ import { validateActionInput } from "@/lib/actions/validation";
 import { camelize, snakelize } from "@/lib/db/case";
 import { createInsForgeServerClient } from "@/lib/insforge/server";
 import {
+  createAccountSchema,
   createApprovalRuleSchema,
   createBankAccountSchema,
+  createCurrencySchema,
   createCustomerSchema,
   createPriceListSchema,
+  createPriceListItemSchema,
+  createLocationSchema,
   createProductSchema,
   createSupplierSchema,
+  createFxRateSchema,
   createTaxCodeSchema,
+  createWarehouseSchema,
+  deleteAccountSchema,
   deleteApprovalRuleSchema,
   deleteBankAccountSchema,
+  deleteCurrencySchema,
   deleteCustomerSchema,
+  deleteLocationSchema,
   deletePriceListSchema,
+  deletePriceListItemSchema,
   deleteProductSchema,
   deleteSupplierSchema,
+  deleteFxRateSchema,
   deleteTaxCodeSchema,
+  deleteWarehouseSchema,
+  resolvePriceListItemSchema,
+  updateAccountSchema,
   updateApprovalRuleSchema,
   updateBankAccountSchema,
   updateCompanyProfileSchema,
+  updateCurrencySchema,
   updateCustomerSchema,
+  updateLocationSchema,
   updatePriceListSchema,
+  updatePriceListItemSchema,
   updateProductSchema,
   updateSupplierSchema,
+  updateFxRateSchema,
   updateTaxCodeSchema,
+  updateWarehouseSchema,
 } from "@/lib/actions/validation/master";
+import {
+  resolvePriceListItem,
+  type ResolvedPriceListItem,
+} from "@/lib/api/master";
 
 /**
  * Master-data CRUD. No write RPCs exist for master tables, so we use the
@@ -51,6 +74,15 @@ type DbError = { message?: string; code?: string } | null;
 function revalidateSettings(locale: "en" | "ar", slug: string) {
   revalidatePath(`/${locale}/settings/${slug}`);
   revalidatePath(`/settings/${slug}`);
+}
+
+function revalidatePriceListDetail(
+  locale: "en" | "ar",
+  priceListId: string,
+) {
+  revalidateSettings(locale, "price-lists");
+  revalidatePath(`/${locale}/settings/price-lists/${priceListId}`);
+  revalidatePath(`/settings/price-lists/${priceListId}`);
 }
 
 /** Insert one row, returning the camelized new row. */
@@ -160,6 +192,105 @@ export async function deleteProductAction(
     if (!parsed.ok) return parsed;
     await deleteRow("products", parsed.data.id);
     revalidateSettings(parsed.data.locale, "products");
+    return { ok: true, data: { id: parsed.data.id } };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+
+// --- Warehouses ------------------------------------------------------------
+
+export async function createWarehouseAction(
+  input: unknown,
+): Promise<ActionResult<MasterRow>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(createWarehouseSchema, input, requestId);
+    if (!parsed.ok) return parsed;
+    const { locale, ...payload } = parsed.data;
+    const row = await insertRow<MasterRow>("warehouses", payload);
+    revalidateSettings(locale, "warehouses");
+    return { ok: true, data: row };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function updateWarehouseAction(
+  input: unknown,
+): Promise<ActionResult<MasterRow>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(updateWarehouseSchema, input, requestId);
+    if (!parsed.ok) return parsed;
+    const { locale, id, ...patch } = parsed.data;
+    const row = await updateRow<MasterRow>("warehouses", id, patch);
+    revalidateSettings(locale, "warehouses");
+    return { ok: true, data: row };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function deleteWarehouseAction(
+  input: unknown,
+): Promise<ActionResult<{ id: string }>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(deleteWarehouseSchema, input, requestId);
+    if (!parsed.ok) return parsed;
+    await deleteRow("warehouses", parsed.data.id);
+    revalidateSettings(parsed.data.locale, "warehouses");
+    return { ok: true, data: { id: parsed.data.id } };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+// --- Locations -------------------------------------------------------------
+
+export async function createLocationAction(
+  input: unknown,
+): Promise<ActionResult<MasterRow>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(createLocationSchema, input, requestId);
+    if (!parsed.ok) return parsed;
+    const { locale, ...payload } = parsed.data;
+    const row = await insertRow<MasterRow>("locations", payload);
+    revalidateSettings(locale, "warehouses");
+    return { ok: true, data: row };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function updateLocationAction(
+  input: unknown,
+): Promise<ActionResult<MasterRow>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(updateLocationSchema, input, requestId);
+    if (!parsed.ok) return parsed;
+    const { locale, id, ...patch } = parsed.data;
+    const row = await updateRow<MasterRow>("locations", id, patch);
+    revalidateSettings(locale, "warehouses");
+    return { ok: true, data: row };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function deleteLocationAction(
+  input: unknown,
+): Promise<ActionResult<{ id: string }>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(deleteLocationSchema, input, requestId);
+    if (!parsed.ok) return parsed;
+    await deleteRow("locations", parsed.data.id);
+    revalidateSettings(parsed.data.locale, "warehouses");
     return { ok: true, data: { id: parsed.data.id } };
   } catch (error) {
     return normalizeActionError(error, { requestId });
@@ -411,6 +542,171 @@ export async function deleteTaxCodeAction(
   }
 }
 
+export async function createFxRateAction(
+  input: unknown,
+): Promise<ActionResult<MasterRow>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(createFxRateSchema, input, requestId);
+    if (!parsed.ok) return parsed;
+    const { locale, ...payload } = parsed.data;
+    const row = await insertRow<MasterRow>("fx_rates", {
+      ...payload,
+      source: payload.source ?? "manual",
+    });
+    revalidateSettings(locale, "fx-rates");
+    return { ok: true, data: row };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function updateFxRateAction(
+  input: unknown,
+): Promise<ActionResult<MasterRow>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(updateFxRateSchema, input, requestId);
+    if (!parsed.ok) return parsed;
+    const { locale, id, ...patch } = parsed.data;
+    const row = await updateRow<MasterRow>("fx_rates", id, patch);
+    revalidateSettings(locale, "fx-rates");
+    return { ok: true, data: row };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function deleteFxRateAction(
+  input: unknown,
+): Promise<ActionResult<{ id: string }>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(deleteFxRateSchema, input, requestId);
+    if (!parsed.ok) return parsed;
+    const { locale, id } = parsed.data;
+    await deleteRow("fx_rates", id);
+    revalidateSettings(locale, "fx-rates");
+    return { ok: true, data: { id } };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function createCurrencyAction(
+  input: unknown,
+): Promise<ActionResult<MasterRow>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(createCurrencySchema, input, requestId);
+    if (!parsed.ok) return parsed;
+    const { locale, ...payload } = parsed.data;
+    const row = await insertRow<MasterRow>("currencies", payload);
+    revalidateSettings(locale, "currencies");
+    return { ok: true, data: row };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function updateCurrencyAction(
+  input: unknown,
+): Promise<ActionResult<MasterRow>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(updateCurrencySchema, input, requestId);
+    if (!parsed.ok) return parsed;
+    const { locale, id, ...patch } = parsed.data;
+    const row = await updateRow<MasterRow>("currencies", id, patch);
+    revalidateSettings(locale, "currencies");
+    return { ok: true, data: row };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function deleteCurrencyAction(
+  input: unknown,
+): Promise<ActionResult<{ id: string }>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(deleteCurrencySchema, input, requestId);
+    if (!parsed.ok) return parsed;
+    const { locale, id } = parsed.data;
+    await deleteRow("currencies", id);
+    revalidateSettings(locale, "currencies");
+    return { ok: true, data: { id } };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+
+
+// --- Chart of accounts -----------------------------------------------------
+
+async function accountHasJournalLines(accountId: string): Promise<boolean> {
+  const client = await createInsForgeServerClient();
+  const { count, error } = await client.database
+    .from("journal_entry_lines")
+    .select("id", { count: "exact", head: true })
+    .eq("account_id", accountId);
+  if (error) throwDb(error, "journal_entry_lines");
+  return (count ?? 0) > 0;
+}
+
+export async function createAccountAction(
+  input: unknown,
+): Promise<ActionResult<MasterRow>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(createAccountSchema, input, requestId);
+    if (!parsed.ok) return parsed;
+    const { locale, ...payload } = parsed.data;
+    const row = await insertRow<MasterRow>("accounts", payload);
+    revalidateSettings(locale, "coa");
+    return { ok: true, data: row };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function updateAccountAction(
+  input: unknown,
+): Promise<ActionResult<MasterRow>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(updateAccountSchema, input, requestId);
+    if (!parsed.ok) return parsed;
+    const { locale, id, ...patch } = parsed.data;
+    const row = await updateRow<MasterRow>("accounts", id, patch);
+    revalidateSettings(locale, "coa");
+    return { ok: true, data: row };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function deleteAccountAction(
+  input: unknown,
+): Promise<ActionResult<{ id: string }>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(deleteAccountSchema, input, requestId);
+    if (!parsed.ok) return parsed;
+    if (await accountHasJournalLines(parsed.data.id)) {
+      throw new KnownActionError("VALIDATION", {
+        messageKey: "errors.validation",
+      });
+    }
+    await deleteRow("accounts", parsed.data.id);
+    revalidateSettings(parsed.data.locale, "coa");
+    return { ok: true, data: { id: parsed.data.id } };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
 // --- Price lists -----------------------------------------------------------
 
 export async function createPriceListAction(
@@ -455,6 +751,90 @@ export async function deletePriceListAction(
     await deleteRow("price_lists", parsed.data.id);
     revalidateSettings(parsed.data.locale, "price-lists");
     return { ok: true, data: { id: parsed.data.id } };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+// --- Price list items ------------------------------------------------------
+
+export async function createPriceListItemAction(
+  input: unknown,
+): Promise<ActionResult<MasterRow>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(
+      createPriceListItemSchema,
+      input,
+      requestId,
+    );
+    if (!parsed.ok) return parsed;
+    const { locale, ...payload } = parsed.data;
+    const row = await insertRow<MasterRow>("price_list_items", payload);
+    revalidatePriceListDetail(locale, payload.priceListId);
+    return { ok: true, data: row };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function updatePriceListItemAction(
+  input: unknown,
+): Promise<ActionResult<MasterRow>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(
+      updatePriceListItemSchema,
+      input,
+      requestId,
+    );
+    if (!parsed.ok) return parsed;
+    const { locale, id, priceListId, ...patch } = parsed.data;
+    const row = await updateRow<MasterRow>("price_list_items", id, patch);
+    if (priceListId) revalidatePriceListDetail(locale, priceListId);
+    else revalidateSettings(locale, "price-lists");
+    return { ok: true, data: row };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+export async function deletePriceListItemAction(
+  input: unknown,
+): Promise<ActionResult<{ id: string }>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(
+      deletePriceListItemSchema,
+      input,
+      requestId,
+    );
+    if (!parsed.ok) return parsed;
+    await deleteRow("price_list_items", parsed.data.id);
+    revalidateSettings(parsed.data.locale, "price-lists");
+    return { ok: true, data: { id: parsed.data.id } };
+  } catch (error) {
+    return normalizeActionError(error, { requestId });
+  }
+}
+
+/**
+ * Client-callable wrapper around read-only RPC resolve_price_list_item.
+ * Soft-fails to null when no matching line (forms keep product default).
+ */
+export async function resolvePriceListItemAction(
+  input: unknown,
+): Promise<ActionResult<ResolvedPriceListItem | null>> {
+  const requestId = createRequestId();
+  try {
+    const parsed = validateActionInput(
+      resolvePriceListItemSchema,
+      input,
+      requestId,
+    );
+    if (!parsed.ok) return parsed;
+    const data = await resolvePriceListItem(parsed.data);
+    return { ok: true, data };
   } catch (error) {
     return normalizeActionError(error, { requestId });
   }

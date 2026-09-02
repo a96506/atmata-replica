@@ -3,10 +3,18 @@
 import * as React from "react";
 import { useTranslations } from "next-intl";
 import { AdoptionPicker } from "./AdoptionPicker";
-import { getAdoptableLines } from "@/lib/api/adoption";
+import { getAdoptableLines, getAdoptionMetrics } from "@/lib/api/adoption";
+import type { AdoptionMetricsStub } from "@/app/api/adoption/route";
 import { legalAdoptions } from "@/lib/state-machines";
 import { useSession } from "@/lib/session";
 import { toast } from "@/components/toast";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { showsDeferredRoadmap } from "@/lib/deferred-empty";
 import type {
   AdoptionParent,
   Currency,
@@ -50,13 +58,21 @@ type BulkMode = {
 export type AdoptToButtonProps = SinglyMode | BulkMode;
 
 export function AdoptToButton(props: AdoptToButtonProps) {
-  const { role } = useSession();
+  const { role, roles } = useSession();
   const t = useTranslations("adoption");
+  const td = useTranslations("deferred");
+  const showMetricsNote = showsDeferredRoadmap(role, roles);
   const [open, setOpen] = React.useState(false);
   const [targetType, setTargetType] = React.useState<DocType | null>(null);
   const [parents, setParents] = React.useState<AdoptionParent[]>([]);
   const [menuOpen, setMenuOpen] = React.useState(false);
   const [activeHops, setActiveHops] = React.useState(0);
+  const [metrics, setMetrics] = React.useState<AdoptionMetricsStub | null>(null);
+
+  React.useEffect(() => {
+    if (!showMetricsNote) return;
+    void getAdoptionMetrics().then(setMetrics);
+  }, [showMetricsNote]);
 
   const targets =
     props.mode === "single"
@@ -99,15 +115,31 @@ export function AdoptToButton(props: AdoptToButtonProps) {
   return (
     <>
       <div className="relative inline-block">
-        <button
-          type="button"
-          onClick={() => setMenuOpen((v) => !v)}
-          className="cursor-pointer rounded-md border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10"
-          aria-haspopup="menu"
-          aria-expanded={menuOpen}
-        >
-          {props.mode === "bulk" ? t("bulkTitle") : t("title")} ▾
-        </button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                className="cursor-pointer rounded-md border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10"
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                aria-describedby={showMetricsNote ? "adopt-metrics-deferred" : undefined}
+              >
+                {props.mode === "bulk" ? t("bulkTitle") : t("title")} ▾
+              </button>
+            </TooltipTrigger>
+            {showMetricsNote ? (
+              <TooltipContent id="adopt-metrics-deferred" className="max-w-xs">
+                {metrics && metrics.totalEdges > 0 ? (
+                  <p>{formatAdoptionMetrics(metrics, t)}</p>
+                ) : (
+                  <p>{td("adoptionMetricsTooltip")}</p>
+                )}
+              </TooltipContent>
+            ) : null}
+          </Tooltip>
+        </TooltipProvider>
         {menuOpen ? (
           <div
             role="menu"
@@ -199,6 +231,17 @@ function translateTarget(t: Translator, type: DocType): string {
   } catch {
     return humanTarget(type);
   }
+}
+
+
+function formatAdoptionMetrics(
+  metrics: AdoptionMetricsStub,
+  t: Translator,
+): string {
+  const parts = Object.entries(metrics.byTargetType)
+    .sort(([, a], [, b]) => b - a)
+    .map(([type, count]) => `${translateTarget(t, type as DocType)} (${count})`);
+  return `Last 30 days: ${parts.join(", ")}`;
 }
 
 function humanTarget(t: DocType): string {

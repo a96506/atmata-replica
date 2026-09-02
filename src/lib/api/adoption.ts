@@ -1,3 +1,4 @@
+import type { AdoptionMetricsStub } from "@/app/api/adoption/route";
 import type {
   AdoptionContext,
   AdoptionEdge,
@@ -7,7 +8,16 @@ import type {
 } from "@/types";
 import { browserGet, browserRemove, browserSet } from "@/lib/browser-store";
 
-/** Client-safe authenticated facade. Server Components use adoption.server.ts. */
+/**
+ * Client-safe authenticated facade. Server Components use adoption.server.ts.
+ *
+ * Intentional: the adoptable-line *graph* (which lines remain available on a
+ * parent) is computed at read time from document state — not a persisted
+ * `adoption_edges` table. Browser scratch (`atmata.adoption.log` /
+ * `atmata.adopting.*`) is draft UX only. Completed adoptions POST to
+ * `/api/adoption` → `adoption_events` for metrics.
+ */
+
 export async function getAdoptableLines(
   parentType: DocType,
   parentId: string,
@@ -18,8 +28,23 @@ export async function getAdoptableLines(
     credentials: "same-origin",
   });
   if (!response.ok) throw new Error("Unable to read adoptable lines.");
-  const body = (await response.json()) as { parent: AdoptionParent | null };
+  const body = (await response.json()) as {
+    parent: AdoptionParent | null;
+    metrics?: AdoptionMetricsStub;
+  };
   return body.parent;
+}
+
+export async function getAdoptionMetrics(): Promise<AdoptionMetricsStub> {
+  const response = await fetch("/api/adoption?metricsOnly=1", {
+    cache: "no-store",
+    credentials: "same-origin",
+  });
+  if (!response.ok) {
+    return { totalEdges: 0, multiHopCount: 0, byTargetType: {} };
+  }
+  const body = (await response.json()) as { metrics?: AdoptionMetricsStub };
+  return body.metrics ?? { totalEdges: 0, multiHopCount: 0, byTargetType: {} };
 }
 
 /** Tree reads are server-only; these declarations preserve the public contract. */
@@ -45,7 +70,17 @@ export async function recordAdoptions(edges: AdoptionEdge[]): Promise<void> {
     const prev: AdoptionEdge[] = JSON.parse(browserGet(ADOPTION_LOG_KEY) ?? "[]");
     browserSet(ADOPTION_LOG_KEY, JSON.stringify([...prev, ...edges]));
   } catch {
-    // Local draft compatibility only; writes owns persistence.
+    // Local draft compatibility only.
+  }
+  try {
+    await fetch("/api/adoption", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ edges }),
+    });
+  } catch {
+    // SQL persistence is optional until migration is applied.
   }
 }
 

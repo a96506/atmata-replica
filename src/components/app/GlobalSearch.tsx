@@ -8,6 +8,7 @@ import {
   type DatabaseSearchResult,
 } from "@/lib/api/search";
 import { fuzzy, type ScoredResult } from "@/lib/search/match";
+import { useSession } from "@/lib/session";
 import { browserGet, browserSet } from "@/lib/browser-store";
 import type { SearchKind, SearchResult } from "@/types/search";
 
@@ -37,6 +38,7 @@ export function GlobalSearch({
   const router = useRouter();
   const params = useParams<{ locale?: string }>();
   const locale = params?.locale ?? "en";
+  const { roles } = useSession();
   const [index, setIndex] = React.useState<SearchResult[]>([]);
   const [databaseResults, setDatabaseResults] = React.useState<SearchResult[]>([]);
   const [query, setQuery] = React.useState("");
@@ -46,7 +48,7 @@ export function GlobalSearch({
 
   React.useEffect(() => {
     if (!open) return;
-    buildSearchIndex().then(setIndex);
+    buildSearchIndex(roles).then(setIndex);
     try {
       const raw = browserGet(RECENT_KEY);
       if (raw) {
@@ -63,7 +65,7 @@ export function GlobalSearch({
     setTimeout(() => inputRef.current?.focus(), 10);
     // eslint-disable-next-line no-console
     console.info("atmata:event", "globalSearch.open");
-  }, [open]);
+  }, [open, roles]);
 
   React.useEffect(() => {
     const trimmed = query.trim();

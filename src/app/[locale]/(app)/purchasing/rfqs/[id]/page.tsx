@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { DocumentLayout } from "@/components/doc/DocumentLayout";
+import { DocActionBar } from "@/components/doc/DocActionBar";
 import { RelatedDocs } from "@/components/doc/RelatedDocs";
 import { HistoryTab } from "@/components/doc/HistoryTab";
 import { attachmentsTab } from "@/components/doc/docAttachmentsTab";
@@ -12,6 +13,7 @@ import { listAuditEvents } from "@/lib/api/audit";
 import { getAncestry, getDescendants } from "@/lib/api/adoption.server";
 import { getAiSuggestions } from "@/lib/api/ai";
 import { AiCopilotRail } from "@/components/ai/AiCopilotRail";
+import { RfqAwardButtons } from "./rfq-award-buttons";
 
 const STATES = [
   { id: "draft", label: "Draft" },
@@ -27,6 +29,7 @@ export default async function Page({
   params: Promise<{ id: string; locale: string }>;
 }) {
   const { id, locale } = await params;
+  const lk = locale === "ar" ? "ar" : "en";
   const rfq = await getRfq(id);
   if (!rfq) notFound();
   const [suppliers, related, history, ancestry, descendants, ai] = await Promise.all([
@@ -39,6 +42,10 @@ export default async function Page({
   ]);
 
   const awardedQuoteId = rfq.award?.quoteId;
+  const quoteCols = rfq.quotes.map((q) => {
+    const sup = suppliers.find((s) => s.id === q.vendorId);
+    return { id: q.id, vendorLabel: sup?.name ?? q.vendorId };
+  });
 
   return (
     <DocumentLayout
@@ -47,6 +54,17 @@ export default async function Page({
       subtitle={`Issued ${rfq.date} · Quotes by ${rfq.expectedQuoteBy}${rfq.notes ? ` · ${rfq.notes}` : ""}`}
       states={STATES}
       currentState={rfq.state}
+      actionBar={
+        <DocActionBar
+          locale={lk}
+          docType="rfq"
+          docId={rfq.id}
+          expectedRowVersion={rfq.rowVersion}
+          docDate={rfq.date}
+          docNumber={rfq.number}
+          currentState={rfq.state}
+        />
+      }
       tabs={[
         {
           id: "lines",
@@ -108,7 +126,6 @@ export default async function Page({
                 </thead>
                 <tbody className="divide-y divide-border">
                   {rfq.lines.map((line) => {
-                    // Find lowest unit price across vendors for this line.
                     const prices = rfq.quotes
                       .map((q) => q.lineQuotes.find((lq) => lq.rfqLineId === line.id)?.unitPrice)
                       .filter((p): p is number => p !== undefined);
@@ -156,6 +173,14 @@ export default async function Page({
                       </td>
                     ))}
                   </tr>
+                  <RfqAwardButtons
+                    locale={lk}
+                    rfqId={rfq.id}
+                    expectedRowVersion={rfq.rowVersion}
+                    rfqState={rfq.state}
+                    awardedQuoteId={awardedQuoteId}
+                    quotes={quoteCols}
+                  />
                 </tbody>
               </table>
             </div>

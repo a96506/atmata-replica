@@ -1,3 +1,4 @@
+/** Adoption graph is computed client-side; completed edges persist via /api/adoption → adoption_events. */
 "use client";
 
 import * as React from "react";

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { DocumentLayout } from "@/components/doc/DocumentLayout";
 import { RelatedDocs } from "@/components/doc/RelatedDocs";
 import { HistoryTab } from "@/components/doc/HistoryTab";
@@ -17,6 +18,8 @@ import { getAiSuggestions } from "@/lib/api/ai";
 import { AiCopilotRail } from "@/components/ai/AiCopilotRail";
 import { DocPdfActions } from "@/components/doc/DocPdfActions";
 import { formatMoney } from "@/lib/money";
+import { ApplyCreditTab } from "@/components/doc/ApplyCreditTab";
+import { listCreditNotes } from "@/lib/api/returns";
 
 const STATES = [
   { id: "draft", label: "Draft" },
@@ -31,9 +34,10 @@ export default async function Page({
   params: Promise<{ id: string; locale: string }>;
 }) {
   const { id, locale } = await params;
+  const t = await getTranslations("sales.customerInvoice");
   const inv = await getCustomerInvoice(id);
   if (!inv) notFound();
-  const [customer, taxCodes, related, history, ancestry, descendants, ai] =
+  const [customer, taxCodes, related, history, ancestry, descendants, ai, allCredits] =
     await Promise.all([
       getCustomer(inv.customerId),
       listTaxCodes(),
@@ -42,7 +46,19 @@ export default async function Page({
       getAncestry("customer_invoice", inv.id),
       getDescendants("customer_invoice", inv.id),
       getAiSuggestions({ kind: "doc", docType: "customer_invoice", docId: inv.id }, locale === "ar" ? "ar" : "en"),
+      listCreditNotes(),
     ]);
+
+  const openCredits = allCredits.filter(
+    (c) =>
+      c.customerId === inv.customerId &&
+      c.state === "posted" &&
+      c.total - c.applied > 0.001 &&
+      (c.invoiceId == null || c.invoiceId === inv.id),
+  );
+  const appliedCredits = allCredits.filter(
+    (c) => c.invoiceId === inv.id && c.applied > 0,
+  );
 
   const balance = inv.total - inv.paid;
 
@@ -100,6 +116,40 @@ export default async function Page({
           id: "history",
           label: "History",
           content: <HistoryTab events={history} />,
+        },
+        {
+          id: "apply-credit",
+          label: t("applyCreditTab"),
+          content: (
+            <ApplyCreditTab
+              locale={locale}
+              invoiceId={inv.id}
+              invoiceBalance={balance}
+              currency={inv.currency}
+              invoiceState={inv.state}
+              openCredits={openCredits}
+              appliedCredits={appliedCredits}
+              labels={{
+                appliedCredits: t("appliedCredits"),
+                noAppliedCredits: t("noAppliedCredits"),
+                openCredits: t("openCredits"),
+                noOpenCredits: t("noOpenCredits"),
+                applySection: t("applySection"),
+                selectCredit: t("selectCredit"),
+                amount: t("amount"),
+                apply: t("apply"),
+                maxHint: t("maxHint"),
+                postGl: t("postGl"),
+                colNumber: t("colNumber"),
+                colReturn: t("colReturn"),
+                colDate: t("colDate"),
+                colTotal: t("colTotal"),
+                colRemaining: t("colRemaining"),
+                colApplied: t("colApplied"),
+                colStatus: t("colStatus"),
+              }}
+            />
+          ),
         },
         attachmentsTab("customer_invoice", inv.id),
       ]}

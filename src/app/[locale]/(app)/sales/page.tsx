@@ -5,11 +5,20 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { listCustomers } from "@/lib/api/master";
 import { getSalesOverview } from "@/lib/api/sales-overview";
+import { listOpportunitiesPage } from "@/lib/api/q2c";
+import { parseListPage } from "@/lib/db/read";
 import { formatKwd } from "@/lib/utils";
 import { pageMetadata } from "@/lib/metadata";
 import { SalesQuickQuoteDemo } from "./sales-quick-quote-demo";
+import { SalesPipelineTab } from "./sales-pipeline-tab";
+import {
+  parseSalesOverviewTab,
+  SalesOverviewTabs,
+} from "./sales-overview-tabs";
+import { RoleHomeActions } from "@/components/app/RoleHomeActions";
 
 export const generateMetadata = pageMetadata("nav", "sales");
 
@@ -26,11 +35,29 @@ function Kpi({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-export default async function SalesPage() {
+export default async function SalesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; limit?: string; tab?: string }>;
+}) {
   const t = await getTranslations("sales");
+  const th = await getTranslations("sales.homeActions");
   const locale = await getLocale();
   const lk = locale === "ar" ? "ar" : "en";
-  const d = await getSalesOverview();
+  const resolvedSearchParams = await searchParams;
+  const { page, limit, offset } = parseListPage(resolvedSearchParams);
+  const activeTab = parseSalesOverviewTab(resolvedSearchParams.tab);
+
+  const [d, customerOptions, pipelinePage] = await Promise.all([
+    getSalesOverview(),
+    listCustomers().catch(() => []),
+    listOpportunitiesPage({ limit, offset, activeOnly: true }).catch(() => ({
+      items: [],
+      total: 0,
+      limit,
+      offset,
+    })),
+  ]);
 
   const payBadge = (status: string) => {
     const tone =
@@ -64,7 +91,35 @@ export default async function SalesPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader title={t("title")} description={t("subtitle")} />
+      <PageHeader
+        title={t("title")}
+        description={t("subtitle")}
+        actions={
+          <RoleHomeActions
+            actions={[
+              {
+                label: th("newQuote"),
+                href: `/${locale}/sales/quotes/new`,
+                operation: "create_quote",
+                primary: true,
+              },
+              {
+                label: th("openQuotes"),
+                href: `/${locale}/sales/quotes`,
+              },
+              {
+                label: th("newSo"),
+                href: `/${locale}/sales/orders/new`,
+                operation: "create_sales_order",
+              },
+              {
+                label: th("creditCheck"),
+                href: `/${locale}/settings/customers`,
+              },
+            ]}
+          />
+        }
+      />
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Kpi label={t("kpiQuotes")} value={d.summary.pending_quotes} />
@@ -93,7 +148,7 @@ export default async function SalesPage() {
 
       {/* Four datasets share one surface via tabs so the overview stays a
           single screen instead of four stacked tables. */}
-      <Tabs defaultValue="quotes">
+      <SalesOverviewTabs activeTab={activeTab}>
         <TabsList>
           <TabsTrigger value="quotes">{t("secQuotes")}</TabsTrigger>
           <TabsTrigger value="orders">{t("secOrders")}</TabsTrigger>
@@ -189,39 +244,52 @@ export default async function SalesPage() {
         </TabsContent>
 
         <TabsContent value="pipeline">
-          <DataTable
-            columns={[
-              { key: "deal", label: t("colDeal") },
-              { key: "stage", label: t("colStage") },
-              {
-                key: "value",
-                label: t("colValue"),
-                className: "text-right tabular-nums",
+          <SalesPipelineTab
+            locale={locale}
+            items={pipelinePage.items}
+            emptyMessage={t("pipeline.emptyMessage")}
+            serverPagination={{
+              page,
+              pageSize: pipelinePage.limit,
+              total: pipelinePage.total,
+            }}
+            createRationale={t("pipeline.createRationale")}
+            customers={customerOptions.map((c) => ({ id: c.id, name: c.name }))}
+            columnLabels={{
+              deal: t("colDeal"),
+              stage: t("colStage"),
+              value: t("colValue"),
+              probability: t("colProbability"),
+              daysIdle: t("colDaysIdle"),
+              nextAction: t("colNextAction"),
+              actions: t("pipeline.actions"),
+            }}
+            labels={{
+              formTitle: t("pipeline.formTitle"),
+              formHint: t("pipeline.formHint"),
+              name: t("pipeline.name"),
+              customer: t("colCustomer"),
+              stage: t("colStage"),
+              amount: t("pipeline.amount"),
+              submit: t("pipeline.submit"),
+              success: t("pipeline.success"),
+              updateSuccess: t("pipeline.updateSuccess"),
+              deleteSuccess: t("pipeline.deleteSuccess"),
+              deleteConfirmTitle: t("pipeline.deleteConfirmTitle"),
+              deleteConfirmDescription: t("pipeline.deleteConfirmDescription"),
+              deleteConfirmLabel: t("pipeline.deleteConfirmLabel"),
+              selectCustomer: t("pipeline.selectCustomer"),
+              stages: {
+                qualified: t("pipeline.stages.qualified"),
+                proposal: t("pipeline.stages.proposal"),
+                negotiation: t("pipeline.stages.negotiation"),
+                won: t("pipeline.stages.won"),
+                lost: t("pipeline.stages.lost"),
               },
-              {
-                key: "prob",
-                label: t("colProbability"),
-                className: "text-right",
-              },
-              {
-                key: "idle",
-                label: t("colDaysIdle"),
-                className: "text-right tabular-nums",
-              },
-              { key: "next", label: t("colNextAction") },
-            ]}
-            rows={d.pipeline.map((p) => [
-              p.deal,
-              p.stage,
-              formatKwd(p.value, lk),
-              `${Math.round(p.probability * 100)}%`,
-              p.days_idle,
-              p.next_action,
-            ])}
-            emptyMessage="No open opportunities."
+            }}
           />
         </TabsContent>
-      </Tabs>
+      </SalesOverviewTabs>
 
       <SalesQuickQuoteDemo products={d.quick_quote_products} localeKey={lk} />
     </div>

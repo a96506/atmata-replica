@@ -5,6 +5,7 @@ export const SCHEDULER_JOBS = [
   "month_end",
   "inventory_alerts",
   "depreciation",
+  "metrics_refresh",
 ] as const;
 
 export type SchedulerJob = (typeof SCHEDULER_JOBS)[number];
@@ -82,6 +83,13 @@ export const SCHEDULE_MANIFEST: ScheduleManifestEntry[] = [
     kuwaitTime: "06:00",
     job: "inventory_alerts",
     body: { job: "inventory_alerts" },
+  },
+  {
+    name: "erp-metrics-refresh-daily",
+    cron: "0 2 * * *",
+    kuwaitTime: "05:00",
+    job: "metrics_refresh",
+    body: { job: "metrics_refresh" },
   },
 ];
 

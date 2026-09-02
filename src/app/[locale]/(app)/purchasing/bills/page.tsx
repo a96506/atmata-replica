@@ -1,12 +1,14 @@
 import { DocumentList } from "@/components/doc/DocumentList";
-import { NewDocButton } from "@/components/doc/CreateChildLinks";
+import { RoleHomeActions } from "@/components/app/RoleHomeActions";
 import {
   ListStateFilter,
   normalizeListState,
 } from "@/components/list/ListStateFilter";
-import { listVendorBills } from "@/lib/api/p2p";
-import { listSuppliers } from "@/lib/api/master";
+import { listVendorBills, listVendorBillsPage } from "@/lib/api/p2p";
+import { mapSupplierNamesByIds } from "@/lib/api/master";
+import { parseListPage } from "@/lib/db/read";
 import { BillListClient } from "./bill-list-client";
+import { getTranslations } from "next-intl/server";
 import { pageMetadata } from "@/lib/metadata";
 
 export const generateMetadata = pageMetadata("nav", "vendor_bills");
@@ -16,16 +18,32 @@ export default async function Page({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ state?: string }>;
+  searchParams: Promise<{ state?: string; page?: string; limit?: string }>;
 }) {
   const { locale } = await params;
-  const { state: stateParam } = await searchParams;
-  const [allBills, suppliers] = await Promise.all([
-    listVendorBills(),
-    listSuppliers(),
+  const th = await getTranslations("purchasing.homeActions");
+  const sp = await searchParams;
+  const stateFilter = normalizeListState(sp.state);
+  const { page, limit, offset } = parseListPage(sp);
+
+  const [paged, exportBills] = await Promise.all([
+    listVendorBillsPage({
+      limit,
+      offset,
+      state: stateFilter,
+    }),
+    // Capped full list for CSV (prior UX). Table uses `paged` only.
+    listVendorBills({ state: stateFilter }),
   ]);
-  const stateFilter = normalizeListState(stateParam);
-  const bills = stateFilter ? allBills.filter((b) => b.state === stateFilter) : allBills;
+
+  const pageSupplierIds = paged.items.map((b) => b.supplierId);
+  const exportSupplierIds = [
+    ...new Set([
+      ...pageSupplierIds,
+      ...exportBills.map((b) => b.supplierId),
+    ]),
+  ];
+  const supplierNames = await mapSupplierNamesByIds(exportSupplierIds);
 
   return (
     <DocumentList
@@ -34,14 +52,38 @@ export default async function Page({
       primaryAction={
         <div className="flex flex-wrap items-center gap-2">
           <ListStateFilter current={stateFilter} />
-          <NewDocButton
-            href={`/${locale}/purchasing/bills/new`}
-            label="New Bill"
+          <RoleHomeActions
+            actions={[
+              {
+                label: th("scanPdf"),
+                href: `/${locale}/purchasing/scan`,
+              },
+              {
+                label: th("newBill"),
+                href: `/${locale}/purchasing/bills/new`,
+                operation: "create_vendor_bill",
+                primary: true,
+              },
+              {
+                label: th("billFromGrn"),
+                href: `/${locale}/purchasing/goods-receipts`,
+              },
+            ]}
           />
         </div>
       }
     >
-      <BillListClient locale={locale} bills={bills} suppliers={suppliers} />
+      <BillListClient
+        locale={locale}
+        bills={paged.items}
+        exportBills={exportBills}
+        supplierNames={Object.fromEntries(supplierNames)}
+        serverPagination={{
+          page,
+          pageSize: paged.limit,
+          total: paged.total,
+        }}
+      />
     </DocumentList>
   );
 }

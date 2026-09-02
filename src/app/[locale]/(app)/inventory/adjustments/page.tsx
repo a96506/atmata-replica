@@ -3,15 +3,23 @@ import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
 import { NewDocButton } from "@/components/doc/CreateChildLinks";
-import { listStockAdjustments } from "@/lib/api/inventory-tx";
+import { listStockAdjustmentsPage } from "@/lib/api/inventory-tx";
+import { parseListPage } from "@/lib/db/read";
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ page?: string; limit?: string }>;
 }) {
   const { locale } = await params;
-  const adjustments = await listStockAdjustments();
+  const { page, limit, offset } = parseListPage(await searchParams);
+
+  const { items: adjustments, total } = await listStockAdjustmentsPage({
+    limit,
+    offset,
+  });
 
   return (
     <DocumentList
@@ -21,6 +29,7 @@ export default async function Page({
         <NewDocButton
           href={`/${locale}/inventory/adjustments/new`}
           label="New Adjustment"
+          operation="create_stock_adjustment"
         />
       }
     >
@@ -58,6 +67,7 @@ export default async function Page({
           ];
         })}
         emptyMessage="No adjustments yet."
+        serverPagination={{ page, pageSize: limit, total }}
       />
     </DocumentList>
   );

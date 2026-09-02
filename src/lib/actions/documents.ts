@@ -67,6 +67,7 @@ const APPROVAL_DOC_TYPES = new Set([
   "customer_invoice",
   "customer_receipt",
   "credit_note",
+  "journal_entry",
 ]);
 
 async function findPendingApprovalRequestId(

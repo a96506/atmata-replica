@@ -1,5 +1,12 @@
 import type { AuditEvent, AuditActor, DocType } from "@/types";
-import { getReadClient, listTable, mapRows, requireData } from "@/lib/db/read";
+import {
+  getReadClient,
+  listPage,
+  listTable,
+  mapRows,
+  requireData,
+  type ListPageResult,
+} from "@/lib/db/read";
 
 /**
  * Audit-event reads. The `by` column stores a raw user UUID; we resolve it to
@@ -87,6 +94,30 @@ export async function listRecentAuditEvents(
   ]);
   const withActors = await attachActors(rows);
   return withActors.slice(0, limit);
+}
+
+/** Company-wide audit feed for `/settings/audit` (newest first, server-paged). */
+export async function listCompanyAuditEventsPage(params: {
+  limit: number;
+  offset: number;
+}): Promise<ListPageResult<AuditEvent>> {
+  const projection = (await wideProjectionAvailable())
+    ? AUDIT_SELECT_WIDE
+    : AUDIT_SELECT_NARROW;
+  const page = await listPage<AuditEvent>(
+    "audit_events",
+    projection,
+    [
+      { column: "at", ascending: false },
+      { column: "id", ascending: false },
+    ],
+    [],
+    params,
+  );
+  return {
+    ...page,
+    items: await attachActors(page.items),
+  };
 }
 
 /**

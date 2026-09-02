@@ -1,3 +1,4 @@
+import { refreshMetricsIfStale } from "@/lib/api/metrics-refresh";
 import {
   listProducts,
   listSuppliers,
@@ -8,10 +9,13 @@ import {
   listPurchaseRequisitions,
   listVendorBills,
 } from "@/lib/api/p2p";
+import { listTable } from "@/lib/db/read";
+import { PURCHASING_SELECTS } from "@/lib/db/selects";
 
 export type PurchasingOverview = {
   po_suggestions: Array<{
     id: string;
+    prId: string;
     product: string;
     vendor: string;
     qty: number;
@@ -26,15 +30,13 @@ export type PurchasingOverview = {
     status: "matched" | "discrepancy" | "review";
     discrepancy: string | null;
   }>;
-  /**
-   * No backend — deferred: no price_alerts table/RPC
-   * (price_list_items are static; no change history).
-   */
   price_alerts: Array<{
     vendor: string;
     product: string;
     change_pct: number;
     note: string;
+    alert_type: string;
+    detected_at: string;
   }>;
   purchase_history: Array<{
     date: string;
@@ -42,18 +44,15 @@ export type PurchasingOverview = {
     vendor: string;
     amount: number;
   }>;
-  /**
-   * No backend — deferred: suppliers have no score/rating columns
-   * (unlike customers.credit_score).
-   */
   vendor_scores: Array<{
     vendor: string;
     score: number;
-    lead_days: number;
-    quality: "high" | "medium";
-    price_rank: number;
+    on_time_pct: number;
+    quality_pct: number;
+    computed_at: string;
   }>;
   receiving: Array<{
+    id: string;
     ref: string;
     po: string;
     status: "partial" | "ready";
@@ -77,15 +76,54 @@ function suggestionSeverity(
   return "low";
 }
 
+type VendorScoreRow = {
+  supplierId: string;
+  score: number;
+  onTimePct: number;
+  qualityPct: number;
+  computedAt: string;
+};
+
+async function listVendorScores(): Promise<VendorScoreRow[]> {
+  return listTable<VendorScoreRow>(
+    "vendor_scores",
+    PURCHASING_SELECTS.vendor_scores,
+    [{ column: "score", ascending: false }],
+  ).catch(() => []);
+}
+
+type PriceAlertRow = {
+  productId: string;
+  sku: string;
+  supplierId: string;
+  alertType: string;
+  message: string;
+  changePct: number;
+  detectedAt: string;
+};
+
+async function listPriceAlerts(): Promise<PriceAlertRow[]> {
+  return listTable<PriceAlertRow>(
+    "price_alerts",
+    PURCHASING_SELECTS.price_alerts,
+    [{ column: "detected_at", ascending: false }],
+  ).catch(() => []);
+}
+
 export async function getPurchasingOverview(): Promise<PurchasingOverview> {
-  const [prs, pos, bills, grns, suppliers, products] = await Promise.all([
-    listPurchaseRequisitions().catch(() => []),
-    listPurchaseOrders().catch(() => []),
-    listVendorBills().catch(() => []),
-    listGoodsReceipts().catch(() => []),
-    listSuppliers().catch(() => []),
-    listProducts().catch(() => []),
-  ]);
+  await refreshMetricsIfStale().catch(() => {});
+
+  const [prs, pos, bills, grns, suppliers, products, scoreRows, alertRows] =
+    await Promise.all([
+      listPurchaseRequisitions().catch(() => []),
+      listPurchaseOrders().catch(() => []),
+      listVendorBills().catch(() => []),
+      listGoodsReceipts().catch(() => []),
+      listSuppliers().catch(() => []),
+      listProducts().catch(() => []),
+      listVendorScores(),
+      listPriceAlerts(),
+    ]);
 
   const supplierName = new Map(suppliers.map((s) => [s.id, s.name]));
   const poNumber = new Map(pos.map((p) => [p.id, p.number]));
@@ -96,6 +134,7 @@ export async function getPurchasingOverview(): Promise<PurchasingOverview> {
     .flatMap((pr) =>
       (pr.lines ?? []).map((line, idx) => ({
         id: `${pr.number}-${idx + 1}`,
+        prId: pr.id,
         product:
           line.description ||
           productName.get(line.productId) ||
@@ -139,6 +178,7 @@ export async function getPurchasingOverview(): Promise<PurchasingOverview> {
       const flag: "short" | null =
         received > 0 && received < expected ? "short" : null;
       return {
+        id: g.id,
         ref: g.number,
         po: poNumber.get(g.poId) ?? g.poId,
         status,
@@ -148,12 +188,29 @@ export async function getPurchasingOverview(): Promise<PurchasingOverview> {
       };
     });
 
+  const vendor_scores = scoreRows.map((row) => ({
+    vendor: supplierName.get(row.supplierId) ?? "—",
+    score: Number(row.score),
+    on_time_pct: Number(row.onTimePct),
+    quality_pct: Number(row.qualityPct),
+    computed_at: row.computedAt,
+  }));
+
+  const price_alerts = alertRows.map((row) => ({
+    vendor: supplierName.get(row.supplierId) ?? "—",
+    product: productName.get(row.productId) ?? row.sku,
+    change_pct: Number(row.changePct),
+    note: row.message,
+    alert_type: row.alertType,
+    detected_at: row.detectedAt,
+  }));
+
   return {
     po_suggestions,
     bill_matches,
-    price_alerts: [],
+    price_alerts,
     purchase_history,
-    vendor_scores: [],
+    vendor_scores,
     receiving,
   };
 }

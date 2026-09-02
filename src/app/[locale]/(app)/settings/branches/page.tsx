@@ -2,10 +2,12 @@ import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { listBranches, listCompanies } from "@/lib/api/master";
 
+// DONE(role-ux): read-only by design — branches are provisioned with the company; no MasterCrud planned.
+
 export default async function Page() {
   const [rows, companies] = await Promise.all([listBranches(), listCompanies()]);
   return (
-    <DocumentList title="Branches" subtitle="Operating branches per company.">
+    <DocumentList title="Branches" subtitle="Operating branches per company. Read-only by design.">
       <DataTable
         columns={[
           { key: "name", label: "Name" },

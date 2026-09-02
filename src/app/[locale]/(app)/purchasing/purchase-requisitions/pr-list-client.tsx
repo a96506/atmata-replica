@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { SelectableDataTable } from "@/components/data-table-selectable";
+import {
+  SelectableDataTable,
+  type ServerPagination,
+} from "@/components/data-table-selectable";
 import { StateBadge } from "@/components/doc/StateBadge";
 import { BulkAdoptButton } from "@/components/doc/BulkAdoptButton";
 import type { DocState, PurchaseRequisition } from "@/types";
@@ -9,9 +12,11 @@ import type { DocState, PurchaseRequisition } from "@/types";
 export function PrListClient({
   locale,
   prs,
+  serverPagination,
 }: {
   locale: string;
   prs: PurchaseRequisition[];
+  serverPagination: ServerPagination;
 }) {
   // Group selectable rows by their state so bulk actions can compute legal
   // targets cleanly. The picker handles the rest.
@@ -42,6 +47,7 @@ export function PrListClient({
         <StateBadge key="s" state={p.state} />,
       ])}
       emptyMessage="No purchase requisitions yet."
+      serverPagination={serverPagination}
       renderBulkActions={(ids, clear) => (
         <BulkAdoptButton
           parentType="pr"

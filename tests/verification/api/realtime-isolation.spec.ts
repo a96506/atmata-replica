@@ -1,17 +1,19 @@
 import { test, expect } from "@playwright/test";
 
 /**
- * Realtime channel isolation. The app advertises no realtime subscriptions
- * (zero `channel.subscribe` calls), so this spec fails loudly until a
- * realtime harness + channel isolation is actually implemented. It must
- * NOT be skipped — a skip hides the missing feature.
+ * Tenant realtime channel isolation harness (deferred).
+ *
+ * Platform job-queue realtime is already used in-process (worker wakes on
+ * NOTIFY). This spec still fails loudly until a dual-subscriber tenant
+ * channel-isolation harness exists. It must NOT be skipped — a skip hides
+ * the missing isolation check.
  */
 test("realtime isolation", async () => {
-  // The app has no realtime subscriptions today; assert that realtime
-  // isolation is implemented. This will fail until the feature lands.
-  const realtimeImplemented = false;
+  // Tenant channel isolation harness is not implemented yet; platform
+  // job-queue realtime usage does not satisfy this gate.
+  const tenantChannelIsolationHarness = false;
   expect(
-    realtimeImplemented,
-    "Realtime channel isolation is not implemented: the app has zero realtime subscriptions. Implement channel-scoped subscriptions and a dual-subscriber isolation harness before re-enabling this spec.",
+    tenantChannelIsolationHarness,
+    "Tenant realtime channel isolation harness is not implemented (platform job-queue realtime is used separately). Add channel-scoped subscriptions and a dual-subscriber isolation harness before re-enabling this spec.",
   ).toBe(true);
 });

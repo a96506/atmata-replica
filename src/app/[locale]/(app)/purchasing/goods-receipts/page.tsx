@@ -3,19 +3,27 @@ import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
 import { NewDocButton } from "@/components/doc/CreateChildLinks";
-import { listGoodsReceipts, listPurchaseOrders } from "@/lib/api/p2p";
-import { listSuppliers } from "@/lib/api/master";
+import {
+  listGoodsReceiptsPage,
+  mapPurchaseOrderNumbersByIds,
+} from "@/lib/api/p2p";
+import { mapSupplierNamesByIds } from "@/lib/api/master";
+import { parseListPage } from "@/lib/db/read";
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ page?: string; limit?: string }>;
 }) {
   const { locale } = await params;
-  const [grns, suppliers, pos] = await Promise.all([
-    listGoodsReceipts(),
-    listSuppliers(),
-    listPurchaseOrders(),
+  const { page, limit, offset } = parseListPage(await searchParams);
+
+  const paged = await listGoodsReceiptsPage({ limit, offset });
+  const [supplierNames, poNumbers] = await Promise.all([
+    mapSupplierNamesByIds([...new Set(paged.items.map((g) => g.supplierId))]),
+    mapPurchaseOrderNumbersByIds([...new Set(paged.items.map((g) => g.poId))]),
   ]);
 
   return (
@@ -26,7 +34,8 @@ export default async function Page({
         <NewDocButton
           href={`/${locale}/purchasing/goods-receipts/new`}
           label="New GRN"
-        />
+        
+          operation="create_goods_receipt"/>
       }
     >
       <DataTable
@@ -37,9 +46,8 @@ export default async function Page({
           { key: "date", label: "Date" },
           { key: "state", label: "Status" },
         ]}
-        rows={grns.map((g) => {
-          const sup = suppliers.find((s) => s.id === g.supplierId);
-          const po = pos.find((p) => p.id === g.poId);
+        rows={paged.items.map((g) => {
+          const poNumber = poNumbers.get(g.poId);
           return [
             <Link
               key="n"
@@ -48,23 +56,28 @@ export default async function Page({
             >
               {g.number}
             </Link>,
-            po ? (
+            poNumber ? (
               <Link
                 key="p"
-                href={`/${locale}/purchasing/purchase-orders/${po.id}`}
+                href={`/${locale}/purchasing/purchase-orders/${g.poId}`}
                 className="text-primary hover:underline"
               >
-                {po.number}
+                {poNumber}
               </Link>
             ) : (
               "—"
             ),
-            sup?.name ?? "—",
+            supplierNames.get(g.supplierId) ?? "—",
             g.date,
             <StateBadge key="s" state={g.state} />,
           ];
         })}
         emptyMessage="No goods receipts yet."
+        serverPagination={{
+          page,
+          pageSize: paged.limit,
+          total: paged.total,
+        }}
       />
     </DocumentList>
   );

@@ -18,7 +18,9 @@ import { ApprovalRoutePreview } from "@/components/form/ApprovalRoutePreview";
 import { CreditHoldBanner, CreditLimitWarning } from "@/components/banners";
 import { createSalesOrderAction } from "@/lib/actions/q2c";
 import type { WriteIntent } from "@/lib/actions/validation/p2p";
+import { applyResolvedLinePrices } from "@/lib/apply-resolved-line-prices";
 import { previewSequence } from "@/lib/numbering";
+import type { PriceListRow } from "@/lib/price-lists";
 import type {
   Currency,
   Customer,
@@ -38,6 +40,7 @@ export function NewSoForm({
   taxCodes,
   warehouses,
   quote,
+  priceLists,
 }: {
   locale: string;
   customers: Customer[];
@@ -45,6 +48,7 @@ export function NewSoForm({
   taxCodes: TaxCode[];
   warehouses: Warehouse[];
   quote: Quote | null;
+  priceLists: PriceListRow[];
 }) {
   const router = useRouter();
   const confirm = useConfirm();
@@ -80,6 +84,34 @@ export function NewSoForm({
       setDirty(true);
       setter(v);
     };
+
+  const onLinesChange = (next: LineDraft[]) => {
+    setDirty(true);
+    setLines(next);
+    void applyResolvedLinePrices({
+      lines: next,
+      customerId,
+      currency,
+      onDate: date,
+      priceLists,
+    }).then((resolved) => {
+      if (resolved !== next) setLines(resolved);
+    });
+  };
+
+  const onCustomerChange = (id: string) => {
+    setDirty(true);
+    setCustomerId(id);
+    void applyResolvedLinePrices({
+      lines,
+      customerId: id,
+      currency,
+      onDate: date,
+      priceLists,
+    }).then((resolved) => {
+      if (resolved !== lines) setLines(resolved);
+    });
+  };
 
   const customer = customers.find((c) => c.id === customerId);
   const onCreditHold = customer?.paymentStatus === "on_hold";
@@ -212,7 +244,7 @@ export function NewSoForm({
             label="Customer"
             required
             value={customerId || null}
-            onChange={wrap(setCustomerId)}
+            onChange={onCustomerChange}
             options={customers.map((c) => ({
               value: c.id,
               label: c.name,
@@ -259,7 +291,7 @@ export function NewSoForm({
       lines={
         <ProductLinesEditor
           lines={lines}
-          onChange={wrap(setLines)}
+          onChange={onLinesChange}
           products={products}
           taxCodes={taxCodes}
           currency={currency}

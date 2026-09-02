@@ -5,12 +5,10 @@ import { headers } from "next/headers";
 /**
  * Best-effort, in-memory, IP-scoped sliding-window throttle.
  *
- * LIMITATION: state lives in the Node.js process heap only. On serverless
- * platforms (Vercel) each function instance keeps its own counter, so the
- * effective limit is `limit * instance_count` and counters reset on cold
- * starts. This is a brute-force speed-bump, not a hard guarantee. A durable,
- * DB- or Redis-backed throttle is the production answer; see
- * https://securestartkit.com/blog/how-to-rate-limit-nextjs-server-actions-before-they-get-abused
+ * Day-one: an in-memory `Map` is OK on Railway with one replica (shared heap
+ * for that process). When a second replica is added, move to a durable store
+ * (DB or Redis); until then counters are not shared across instances.
+ * See https://securestartkit.com/blog/how-to-rate-limit-nextjs-server-actions-before-they-get-abused
  */
 type Bucket = { count: number; resetAt: number };
 
@@ -30,8 +28,8 @@ function gc(now: number) {
 
 export async function getClientIp(): Promise<string> {
   const h = await headers();
-  // Vercel sets x-forwarded-for; fall back to a sentinel so we still throttle
-  // when no proxy header is present (e.g. local dev).
+  // Reverse proxies (including Railway) set x-forwarded-for; fall back to a
+  // sentinel so we still throttle when no proxy header is present (e.g. local).
   const fwd = h.get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0]!.trim();
   return h.get("x-real-ip") ?? "unknown";

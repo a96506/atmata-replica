@@ -3,23 +3,32 @@ import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
 import { NewDocButton } from "@/components/doc/CreateChildLinks";
-import { listVendorReturns } from "@/lib/api/returns";
-import { listSuppliers } from "@/lib/api/master";
+import { listVendorReturnsPage } from "@/lib/api/returns";
+import { mapSupplierNamesByIds } from "@/lib/api/master";
+import { parseListPage } from "@/lib/db/read";
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ page?: string; limit?: string }>;
 }) {
   const { locale } = await params;
-  const [returns, suppliers] = await Promise.all([listVendorReturns(), listSuppliers()]);
+  const { page, limit, offset } = parseListPage(await searchParams);
+
+  const paged = await listVendorReturnsPage({ limit, offset });
+  const supplierNames = await mapSupplierNamesByIds([
+    ...new Set(paged.items.map((v) => v.supplierId)),
+  ]);
 
   return (
     <DocumentList
       title="Vendor returns"
       subtitle="Reverse a received shipment. A Debit Note is generated on post and applied against the source bill."
       primaryAction={
-        <NewDocButton href={`/${locale}/purchasing/vendor-returns/new`} label="New return" />
+        <NewDocButton href={`/${locale}/purchasing/vendor-returns/new`} label="New return" 
+          operation="create_vendor_return"/>
       }
     >
       <DataTable
@@ -31,30 +40,32 @@ export default async function Page({
           { key: "qty", label: "Lines" },
           { key: "state", label: "Status" },
         ]}
-        rows={returns.map((v) => {
-          const sup = suppliers.find((s) => s.id === v.supplierId);
-          return [
-            <Link
-              key="n"
-              href={`/${locale}/purchasing/vendor-returns/${v.id}`}
-              className="font-medium text-primary hover:underline"
-            >
-              {v.number}
-            </Link>,
-            <Link
-              key="g"
-              href={`/${locale}/purchasing/goods-receipts/${v.grnId}`}
-              className="text-primary hover:underline"
-            >
-              {v.grnId}
-            </Link>,
-            sup?.name ?? "—",
-            v.date,
-            v.lines.length,
-            <StateBadge key="s" state={v.state} />,
-          ];
-        })}
+        rows={paged.items.map((v) => [
+          <Link
+            key="n"
+            href={`/${locale}/purchasing/vendor-returns/${v.id}`}
+            className="font-medium text-primary hover:underline"
+          >
+            {v.number}
+          </Link>,
+          <Link
+            key="g"
+            href={`/${locale}/purchasing/goods-receipts/${v.grnId}`}
+            className="text-primary hover:underline"
+          >
+            {v.grnId}
+          </Link>,
+          supplierNames.get(v.supplierId) ?? "—",
+          v.date,
+          v.lines.length,
+          <StateBadge key="s" state={v.state} />,
+        ])}
         emptyMessage="No vendor returns yet."
+        serverPagination={{
+          page,
+          pageSize: paged.limit,
+          total: paged.total,
+        }}
       />
     </DocumentList>
   );

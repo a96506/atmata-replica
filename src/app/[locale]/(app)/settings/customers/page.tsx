@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { DataTable, type Column } from "@/components/data-table";
+import { type Column } from "@/components/data-table";
 import { MasterCrud, type MasterField } from "@/components/master/MasterCrud";
-import { ExportCsvButton } from "@/components/export/ExportCsvButton";
-import { listCustomers } from "@/lib/api/master";
+import { CustomersExportClient } from "./customers-export-client";
+import { listCustomersPage } from "@/lib/api/master";
+import { parseListPage } from "@/lib/db/read";
 import { pageMetadata } from "@/lib/metadata";
 import {
   createCustomerAction,
@@ -23,11 +24,14 @@ const COLUMNS: Column[] = [
 
 export default async function Page({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ page?: string | string[]; limit?: string | string[] }>;
 }) {
   const { locale } = await params;
-  const rows = await listCustomers();
+  const { page, limit, offset } = parseListPage(await searchParams);
+  const { items: rows, total } = await listCustomersPage({ limit, offset });
 
   const fields: MasterField[] = [
     { name: "name", label: "Name", type: "text", required: true },
@@ -82,19 +86,10 @@ export default async function Page({
       onCreate={createCustomerAction}
       onUpdate={updateCustomerAction}
       onDelete={deleteCustomerAction}
+      writeOperation="create_customer"
+      serverPagination={{ page, pageSize: limit, total }}
       extraActions={
-        <ExportCsvButton
-          rows={rows}
-          filename="customers"
-          columns={[
-            { label: "Name", value: (c) => c.name },
-            { label: "VAT number", value: (c) => c.vatNumber ?? "" },
-            { label: "Credit limit", value: (c) => c.creditLimit },
-            { label: "Exposure", value: (c) => c.exposure },
-            { label: "Payment status", value: (c) => c.paymentStatus },
-            { label: "Credit score", value: (c) => c.creditScore },
-          ]}
-        />
+        <CustomersExportClient rows={rows} />
       }
     />
   );

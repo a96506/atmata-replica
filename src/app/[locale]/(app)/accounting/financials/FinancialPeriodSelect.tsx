@@ -14,11 +14,18 @@ export function FinancialPeriodSelect({
   type,
   periods,
   currentPeriodId,
+  accountId,
+  fromDate,
+  toDate,
 }: {
   locale: string;
   type: string;
   periods: FiscalPeriod[];
   currentPeriodId?: string;
+  /** Preserved when switching period (trial balance / GL filters). */
+  accountId?: string;
+  fromDate?: string;
+  toDate?: string;
 }) {
   const router = useRouter();
   const options = React.useMemo(
@@ -40,8 +47,12 @@ export function FinancialPeriodSelect({
         value={currentPeriodId ?? ""}
         onChange={(e) => {
           const value = e.target.value;
-          const periodParam = value ? `&period=${value}` : "";
-          router.push(`/${locale}/accounting/financials?type=${type}${periodParam}`);
+          const params = new URLSearchParams({ type });
+          if (value) params.set("period", value);
+          if (accountId) params.set("account", accountId);
+          if (fromDate) params.set("from", fromDate);
+          if (toDate) params.set("to", toDate);
+          router.push(`/${locale}/accounting/financials?${params.toString()}`);
         }}
         className="rounded-md border border-input bg-card px-2 py-1.5 text-sm focus:border-ring focus:ring-1 focus:ring-ring focus:outline-none"
       >

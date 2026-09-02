@@ -11,37 +11,58 @@
     {
       "name": "erp-fx-daily",
       "cron": "15 21 * * *",
-      "body": { "job": "fx_ingest" }
+      "body": {
+        "job": "fx_ingest"
+      }
     },
     {
       "name": "erp-fx-daily-retry",
       "cron": "45 21 * * *",
-      "body": { "job": "fx_ingest" }
+      "body": {
+        "job": "fx_ingest"
+      }
     },
     {
       "name": "erp-aging-daily",
       "cron": "0 22 * * *",
-      "body": { "job": "aging_refresh" }
+      "body": {
+        "job": "aging_refresh"
+      }
     },
     {
       "name": "erp-stale-drafts-daily",
       "cron": "20 22 * * *",
-      "body": { "job": "stale_drafts" }
+      "body": {
+        "job": "stale_drafts"
+      }
     },
     {
       "name": "erp-month-end-daily",
       "cron": "0 23 * * *",
-      "body": { "job": "month_end" }
+      "body": {
+        "job": "month_end"
+      }
     },
     {
       "name": "erp-depreciation-daily",
       "cron": "30 23 * * *",
-      "body": { "job": "depreciation" }
+      "body": {
+        "job": "depreciation"
+      }
     },
     {
       "name": "erp-inventory-alerts-daily",
       "cron": "0 3 * * *",
-      "body": { "job": "inventory_alerts" }
+      "body": {
+        "job": "inventory_alerts"
+      }
+    },
+    {
+      "name": "erp-metrics-refresh-daily",
+      "cron": "0 2 * * *",
+      "body": {
+        "job": "metrics_refresh"
+      }
     }
   ]
 }
