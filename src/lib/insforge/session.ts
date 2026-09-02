@@ -2,6 +2,7 @@ import "server-only";
 
 import type { Role } from "@/types";
 import type { Session } from "@/lib/session";
+import { resolvePrimaryRole } from "@/lib/roles/landing";
 import { createInsForgeServerClient } from "@/lib/insforge/server";
 
 type MemberRow = {
@@ -56,7 +57,7 @@ export async function getAppSession(): Promise<AppSessionResult> {
   }
 
   const roles = member.roles;
-  const role = roles.includes("admin") ? "admin" : (roles[0] ?? "viewer");
+  const role = resolvePrimaryRole(roles);
 
   return {
     reason: null,

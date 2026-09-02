@@ -15,12 +15,21 @@ export const MASTER_SELECTS = {
   payment_terms: "id,code,name_en,name_ar,net_days",
   bank_accounts: "id,company_id,name,iban,currency,account_id",
   fiscal_periods: "id,company_id,year,month,start,end,status",
+  currencies: "id,code,name,symbol,decimal_places,active",
   fx_rates:
     "id,base_currency,quote_currency,rate,rate_date,source",
   approval_rules:
     "id,doc_type,min_amount,max_amount,approver_roles,sequence,active",
   price_lists: "id,name,currency,active,starts_on,ends_on",
+  price_list_items: "id,price_list_id,product_id,unit_price,min_qty",
   document_sequences: "id,doc_type,prefix,year,padding,next_number",
+} as const;
+
+export const PURCHASING_SELECTS = {
+  vendor_scores:
+    "company_id,supplier_id,score,on_time_pct,quality_pct,computed_at",
+  price_alerts:
+    "company_id,product_id,sku,supplier_id,alert_type,message,change_pct,detected_at",
 } as const;
 
 export const P2P_SELECTS = {
@@ -66,6 +75,8 @@ export const RETURN_SELECTS = {
 } as const;
 
 export const INVENTORY_SELECTS = {
+  inventory_forecasts:
+    "company_id,product_id,warehouse_id,forecast_qty,horizon_days,computed_at",
   stockMoves:
     "id,number,date,product_id,warehouse_id,direction,qty,cost_per_unit,lot_number,source_type,source_id",
   internalTransfers:
@@ -75,7 +86,7 @@ export const INVENTORY_SELECTS = {
 } as const;
 
 export const GL_SELECTS = {
-  accounts: "id,code,name,type,parent",
+  accounts: "id,code,name,type,parent,active",
   journalEntries:
     "id,row_version,number,company_id,date,currency,state,source_type,source_id,description,lines:journal_entry_lines(id,account_id,description,debit,credit,line_order)",
 } as const;
@@ -83,6 +94,8 @@ export const GL_SELECTS = {
 export const INBOX_SELECTS = {
   notifications:
     "id,kind,title,body,doc_type,doc_id,read_at,created_at",
+  operationalAlerts:
+    "id,kind,subject_type,subject_id,severity,status,payload,first_seen_at,last_seen_at,created_at",
 } as const;
 
 export const RECON_SELECTS = {

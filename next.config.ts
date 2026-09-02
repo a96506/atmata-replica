@@ -3,6 +3,10 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
+const insforgeOrigin = new URL(
+  process.env.NEXT_PUBLIC_INSFORGE_URL as string,
+).origin;
+
 const securityHeaders = [
   // CSP — no-nonce variant. Inline scripts/styles are still required by
   // next-intl + styled-jsx, so 'unsafe-inline' is retained for those
@@ -14,7 +18,7 @@ const securityHeaders = [
       "script-src 'self' 'unsafe-inline'",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
-      "connect-src 'self' https://yfmw4i43.eu-central.insforge.app https://cdn.insforge.dev",
+      `connect-src 'self' ${insforgeOrigin} https://cdn.insforge.dev`,
       "font-src 'self' data:",
       "object-src 'none'",
       "base-uri 'self'",

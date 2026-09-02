@@ -33,3 +33,22 @@ export function parseMoney(input: string): number {
   const n = Number.parseFloat(cleaned);
   return Number.isFinite(n) ? n : 0;
 }
+
+/** Minor units at currency precision (e.g. fils for KWD). Not display rounding. */
+export function toMinorUnits(
+  amount: number,
+  currency: Currency = "KWD",
+): number {
+  const scale = 10 ** CURRENCY_LOCALE[currency].fractionDigits;
+  return Math.round(amount * scale);
+}
+
+/** Compare true amounts at currency precision — not formatted display strings. */
+export function amountsEqual(
+  a: number,
+  b: number,
+  currency: Currency = "KWD",
+): boolean {
+  return toMinorUnits(a, currency) === toMinorUnits(b, currency);
+}
+

@@ -38,6 +38,8 @@ export function ListStateFilter({ current }: { current: ListStateValue }) {
       } else {
         params.set("state", value);
       }
+      // Fresh filter → first page (server pagination uses ?page=).
+      params.delete("page");
       const qs = params.toString();
       router.replace(qs ? `${pathname}?${qs}` : pathname);
     },
@@ -57,6 +59,57 @@ export function ListStateFilter({ current }: { current: ListStateValue }) {
         {OPTIONS.map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+/**
+ * Warehouse filter for inventory lists. Mirrors `?warehouse=` (warehouse id).
+ * Same URL-replace pattern as ListStateFilter — server component re-reads.
+ */
+export function ListWarehouseFilter({
+  current,
+  warehouses,
+}: {
+  current: string | null;
+  warehouses: Array<{ id: string; name: string }>;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const onChange = React.useCallback(
+    (value: string) => {
+      const params = new URLSearchParams(searchParams?.toString() ?? "");
+      if (value === "all") {
+        params.delete("warehouse");
+      } else {
+        params.set("warehouse", value);
+      }
+      params.delete("page");
+      const qs = params.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname);
+    },
+    [router, pathname, searchParams],
+  );
+
+  const value = current ?? "all";
+
+  return (
+    <label className="flex items-center gap-2 text-xs text-muted-foreground">
+      <span className="font-medium uppercase tracking-wide">Warehouse</span>
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded-md border border-input bg-card px-2 py-1 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <option value="all">All</option>
+        {warehouses.map((w) => (
+          <option key={w.id} value={w.id}>
+            {w.name}
           </option>
         ))}
       </select>

@@ -1,21 +1,12 @@
-import {
-  can,
-  rolesForOperation,
-  type WriteCapability,
-} from "@/lib/roles/capabilities";
+import { can } from "@/lib/roles/capabilities";
 import type { DocState, DocType, Role } from "@/types";
+import { capRoles, withCap, type ActionDef } from "./helpers";
 
-export type Action = {
-  id: string;
-  label: string;
-  toState: DocState;
-  roles: Role[];
-  /** When set, legalActions filters via can(role, capability). */
-  capability?: WriteCapability;
-  destructive?: boolean;
-};
+export type Action = ActionDef;
 
 type Transitions = Partial<Record<DocState, Action[]>>;
+
+const QUOTE_SO_DRAFT_ROLES = capRoles("sales_rep", "ar_clerk");
 
 const DEFAULT: Transitions = {
   draft: [
@@ -34,18 +25,16 @@ const DEFAULT: Transitions = {
     },
   ],
   pending: [
-    {
+    withCap("approver", {
       id: "approve",
       label: "common.actions.approve",
       toState: "confirmed",
-      roles: ["approver", "admin"],
-    },
-    {
+    }),
+    withCap("approver", {
       id: "reject",
       label: "common.actions.reject",
       toState: "draft",
-      roles: ["approver", "admin"],
-    },
+    }),
     {
       id: "recall",
       label: "common.actions.recall",
@@ -60,51 +49,90 @@ const DEFAULT: Transitions = {
       toState: "posted",
       roles: [],
     },
-    {
+    withCap("approver", {
       id: "cancel",
       label: "common.actions.cancel",
       toState: "cancelled",
-      roles: ["approver", "admin"],
       destructive: true,
-    },
+    }),
   ],
   posted: [
-    {
+    withCap("accountant", {
       id: "reverse",
       label: "common.actions.reverse",
       toState: "cancelled",
-      roles: ["accountant", "admin"],
       destructive: true,
-    },
+    }),
   ],
 };
 
 const PO: Transitions = {
   ...DEFAULT,
   draft: [
-    { id: "submit", label: "common.actions.submit", toState: "pending", roles: ["buyer", "admin"] },
-    { id: "cancel", label: "common.actions.cancel", toState: "cancelled", roles: ["buyer", "admin"], destructive: true },
+    withCap("buyer", {
+      id: "submit",
+      label: "common.actions.submit",
+      toState: "pending",
+    }),
+    withCap("buyer", {
+      id: "cancel",
+      label: "common.actions.cancel",
+      toState: "cancelled",
+      destructive: true,
+    }),
+  ],
+};
+
+const PR: Transitions = {
+  ...DEFAULT,
+  draft: [
+    withCap("buyer", {
+      id: "submit",
+      label: "common.actions.submit",
+      toState: "pending",
+    }),
+    withCap("buyer", {
+      id: "cancel",
+      label: "common.actions.cancel",
+      toState: "cancelled",
+      destructive: true,
+    }),
   ],
 };
 
 const VENDOR_BILL: Transitions = {
   ...DEFAULT,
   draft: [
-    { id: "submit", label: "common.actions.submit", toState: "pending", roles: ["ap_clerk", "admin"] },
-    { id: "cancel", label: "common.actions.cancel", toState: "cancelled", roles: ["ap_clerk", "admin"], destructive: true },
+    withCap("ap_clerk", {
+      id: "submit",
+      label: "common.actions.submit",
+      toState: "pending",
+    }),
+    withCap("ap_clerk", {
+      id: "cancel",
+      label: "common.actions.cancel",
+      toState: "cancelled",
+      destructive: true,
+    }),
   ],
 };
 
 const CUSTOMER_INVOICE: Transitions = {
   ...DEFAULT,
   draft: [
-    { id: "submit", label: "common.actions.submit", toState: "pending", roles: ["ar_clerk", "admin"] },
-    { id: "cancel", label: "common.actions.cancel", toState: "cancelled", roles: ["ar_clerk", "admin"], destructive: true },
+    withCap("ar_clerk", {
+      id: "submit",
+      label: "common.actions.submit",
+      toState: "pending",
+    }),
+    withCap("ar_clerk", {
+      id: "cancel",
+      label: "common.actions.cancel",
+      toState: "cancelled",
+      destructive: true,
+    }),
   ],
 };
-
-/** Quote/SO draft submit: sales_rep OR ar_clerk (dual create capability). */
-const QUOTE_SO_DRAFT_ROLES = rolesForOperation("create_quote");
 
 const QUOTE: Transitions = {
   ...DEFAULT,
@@ -146,42 +174,169 @@ const SO: Transitions = {
 
 const RFQ: Transitions = {
   draft: [
-    { id: "send", label: "common.actions.send", toState: "sent", roles: ["buyer", "admin"] },
-    { id: "cancel", label: "common.actions.cancel", toState: "cancelled", roles: ["buyer", "admin"], destructive: true },
+    withCap("buyer", {
+      id: "send",
+      label: "common.actions.send",
+      toState: "sent",
+    }),
+    withCap("buyer", {
+      id: "cancel",
+      label: "common.actions.cancel",
+      toState: "cancelled",
+      destructive: true,
+    }),
   ],
   sent: [
-    { id: "record_quotes", label: "rfq.actions.record_quotes", toState: "quotes_received", roles: ["buyer", "admin"] },
-    { id: "cancel", label: "common.actions.cancel", toState: "cancelled", roles: ["buyer", "admin"], destructive: true },
+    withCap("buyer", {
+      id: "record_quotes",
+      label: "rfq.actions.record_quotes",
+      toState: "quotes_received",
+    }),
+    withCap("buyer", {
+      id: "cancel",
+      label: "common.actions.cancel",
+      toState: "cancelled",
+      destructive: true,
+    }),
   ],
   quotes_received: [
-    { id: "award", label: "rfq.actions.award", toState: "awarded", roles: ["buyer", "admin"] },
-    { id: "cancel", label: "common.actions.cancel", toState: "cancelled", roles: ["buyer", "admin"], destructive: true },
+    withCap("buyer", {
+      id: "award",
+      label: "rfq.actions.award",
+      toState: "awarded",
+    }),
+    withCap("buyer", {
+      id: "cancel",
+      label: "common.actions.cancel",
+      toState: "cancelled",
+      destructive: true,
+    }),
   ],
   awarded: [
-    { id: "close", label: "common.actions.close", toState: "closed", roles: ["buyer", "admin"] },
+    withCap("buyer", {
+      id: "close",
+      label: "common.actions.close",
+      toState: "closed",
+    }),
   ],
 };
 
 const RETURN_DOC: Transitions = {
   draft: [
-    { id: "submit", label: "common.actions.submit", toState: "pending", roles: ["warehouse", "admin"] },
-    { id: "cancel", label: "common.actions.cancel", toState: "cancelled", roles: ["warehouse", "admin"], destructive: true },
+    withCap("warehouse", {
+      id: "submit",
+      label: "common.actions.submit",
+      toState: "pending",
+    }),
+    withCap("warehouse", {
+      id: "cancel",
+      label: "common.actions.cancel",
+      toState: "cancelled",
+      destructive: true,
+    }),
   ],
   pending: [
-    { id: "approve", label: "common.actions.approve", toState: "confirmed", roles: ["approver", "admin"] },
-    { id: "reject", label: "common.actions.reject", toState: "draft", roles: ["approver", "admin"] },
-    { id: "recall", label: "common.actions.recall", toState: "draft", roles: [] },
+    withCap("approver", {
+      id: "approve",
+      label: "common.actions.approve",
+      toState: "confirmed",
+    }),
+    withCap("approver", {
+      id: "reject",
+      label: "common.actions.reject",
+      toState: "draft",
+    }),
+    {
+      id: "recall",
+      label: "common.actions.recall",
+      toState: "draft",
+      roles: [],
+    },
   ],
   confirmed: [
-    { id: "post", label: "common.actions.post", toState: "posted", roles: ["warehouse", "accountant", "admin"] },
-    { id: "cancel", label: "common.actions.cancel", toState: "cancelled", roles: ["approver", "admin"], destructive: true },
+    {
+      id: "post",
+      label: "common.actions.post",
+      toState: "posted",
+      roles: capRoles("warehouse", "accountant"),
+    },
+    withCap("approver", {
+      id: "cancel",
+      label: "common.actions.cancel",
+      toState: "cancelled",
+      destructive: true,
+    }),
   ],
   posted: [
-    { id: "reverse", label: "common.actions.reverse", toState: "cancelled", roles: ["accountant", "admin"], destructive: true },
+    withCap("accountant", {
+      id: "reverse",
+      label: "common.actions.reverse",
+      toState: "cancelled",
+      destructive: true,
+    }),
+  ],
+};
+
+
+const JOURNAL_ENTRY: Transitions = {
+  draft: [
+    withCap("accountant", {
+      id: "submit",
+      label: "common.actions.submit",
+      toState: "pending",
+    }),
+    withCap("accountant", {
+      id: "cancel",
+      label: "common.actions.cancel",
+      toState: "cancelled",
+      destructive: true,
+    }),
+  ],
+  pending: [
+    {
+      id: "approve",
+      label: "common.actions.approve",
+      toState: "confirmed",
+      roles: ["approver", "accountant"],
+    },
+    {
+      id: "reject",
+      label: "common.actions.reject",
+      toState: "draft",
+      roles: ["approver", "accountant"],
+    },
+    {
+      id: "recall",
+      label: "common.actions.recall",
+      toState: "draft",
+      roles: [],
+    },
+  ],
+  confirmed: [
+    withCap("accountant", {
+      id: "post",
+      label: "common.actions.post",
+      toState: "posted",
+    }),
+    withCap("approver", {
+      id: "cancel",
+      label: "common.actions.cancel",
+      toState: "cancelled",
+      destructive: true,
+    }),
+  ],
+  posted: [
+    withCap("accountant", {
+      id: "reverse",
+      label: "common.actions.reverse",
+      toState: "cancelled",
+      destructive: true,
+    }),
   ],
 };
 
 const TRANSITIONS: Partial<Record<DocType, Transitions>> = {
+  pr: PR,
   po: PO,
   vendor_bill: VENDOR_BILL,
   customer_invoice: CUSTOMER_INVOICE,
@@ -190,6 +345,7 @@ const TRANSITIONS: Partial<Record<DocType, Transitions>> = {
   rfq: RFQ,
   vendor_return: RETURN_DOC,
   customer_return: RETURN_DOC,
+  journal_entry: JOURNAL_ENTRY,
 };
 
 export function legalActions(
