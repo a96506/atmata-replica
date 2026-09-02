@@ -1,8 +1,7 @@
 "use client";
 
 import * as React from "react";
-import NextLink from "next/link";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { DataTable } from "@/components/data-table";
 import { DemoUpload } from "./demo-upload";
@@ -19,23 +18,21 @@ const STATUS_BADGE: Record<string, string> = {
   failed: "bg-status-danger-muted text-destructive",
 };
 
-const COLUMNS = [
-  { key: "file", label: "File" },
-  { key: "vendor", label: "Vendor" },
-  { key: "total", label: "Total" },
-  { key: "confidence", label: "Confidence" },
-  { key: "status", label: "Status" },
-  { key: "actions", label: "", className: "text-right" },
-];
-
 export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJob[] }) {
   const t = useTranslations("accounting.manual");
-  const locale = useLocale();
+  const tPage = useTranslations("accounting.invoicesPage");
   const [docs] = React.useState<DocumentJob[]>(initialInvoices);
   const [modalOpen, setModalOpen] = React.useState(false);
-  // Manual create stays available in dev as an honest empty state until OCR exists;
-  // it must not inject fake DocumentJob rows into the live table.
   const showManualModal = process.env.NODE_ENV === "development";
+
+  const columns = [
+    { key: "file", label: tPage("colFile") },
+    { key: "vendor", label: tPage("colVendor") },
+    { key: "total", label: tPage("colTotal") },
+    { key: "confidence", label: tPage("colConfidence") },
+    { key: "status", label: tPage("colStatus") },
+    { key: "actions", label: "", className: "text-right" },
+  ];
 
   const rows = docs.map((doc) => {
     const isManual = doc.file_name.startsWith("Manual ·");
@@ -71,15 +68,15 @@ export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJ
             href={`/accounting/invoices/${doc.public_id}`}
             className="font-medium text-primary hover:underline"
           >
-            Review
+            {tPage("review")}
           </Link>
           {linkedBillId ? (
-            <NextLink
-              href={`/${locale}/purchasing/bills/${linkedBillId}`}
+            <Link
+              href={`/purchasing/bills/${linkedBillId}`}
               className="rounded bg-status-success-muted px-2 py-0.5 font-medium text-status-success-foreground hover:bg-status-success/90"
             >
-              → Bill
-            </NextLink>
+              {tPage("toBill")}
+            </Link>
           ) : null}
         </span>
       ),
@@ -90,8 +87,8 @@ export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJ
     <div className="space-y-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Invoices</h1>
-          <p className="text-sm text-foreground">Upload PDFs for AI extraction, then review and approve.</p>
+          <h1 className="text-2xl font-semibold text-foreground">{tPage("title")}</h1>
+          <p className="text-sm text-foreground">{tPage("subtitle")}</p>
         </div>
         {showManualModal ? (
           <button
@@ -107,9 +104,9 @@ export function InvoicesClient({ initialInvoices }: { initialInvoices: DocumentJ
       <DemoUpload />
 
       <DataTable
-        columns={COLUMNS}
+        columns={columns}
         rows={rows}
-        emptyMessage="No invoices yet. Upload a PDF to get started."
+        emptyMessage={tPage("empty")}
       />
 
       {showManualModal ? (

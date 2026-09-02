@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
@@ -37,6 +39,7 @@ export function NewPaymentForm({
   banks: BankAccount[];
   sourceBill: VendorBill | null;
 }) {
+  const tCommon = useTranslations("common.toast");
   const router = useRouter();
   const confirm = useConfirm();
   const actionToast = useActionToast();
@@ -108,7 +111,7 @@ export function NewPaymentForm({
   const runWrite = async (intent: WriteIntent) => {
     if (pending) return;
     if (errors.length > 0) {
-      toast.error(`Fix ${errors.length} validation error${errors.length === 1 ? "" : "s"} first.`);
+      toast.error(tCommon("formValidation", { count: errors.length }));
       return;
     }
     setPending(true);
@@ -154,7 +157,7 @@ export function NewPaymentForm({
 
   const onSubmit = async () => {
     if (errors.length > 0) {
-      toast.error(`Fix ${errors.length} validation error${errors.length === 1 ? "" : "s"} first.`);
+      toast.error(tCommon("formValidation", { count: errors.length }));
       return;
     }
     const ok = await confirm({

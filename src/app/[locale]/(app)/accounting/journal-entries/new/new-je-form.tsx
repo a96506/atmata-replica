@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
 import { useActionToast } from "@/hooks/use-action-toast";
@@ -35,6 +36,8 @@ export function NewJeForm({
   const router = useRouter();
   const confirm = useConfirm();
   const actionToast = useActionToast();
+  const t = useTranslations("accounting.jeForm");
+  const tToast = useTranslations("common.toast");
   const today = new Date().toISOString().slice(0, 10);
   const writeLocale = locale === "ar" ? "ar" : "en";
   const idempotencyKeyRef = React.useRef(crypto.randomUUID());
@@ -75,31 +78,33 @@ export function NewJeForm({
 
   const totalDr = lines.reduce((s, l) => s + l.debit, 0);
   const totalCr = lines.reduce((s, l) => s + l.credit, 0);
-  // Compare true totals at currency precision — not rounded display strings.
   const balanced =
     amountsEqual(totalDr, totalCr, "KWD") && toMinorUnits(totalDr, "KWD") > 0;
 
   const errors: ValidationError[] = [];
-  if (!date) errors.push({ field: "date", message: "Date required." });
+  if (!date) errors.push({ field: "date", message: t("dateRequired") });
   if (!description.trim())
-    errors.push({ field: "description", message: "Description required." });
+    errors.push({ field: "description", message: t("descriptionRequired") });
   if (!balanced)
     errors.push({
       field: "balance",
-      message: `Unbalanced — Dr ${totalDr.toFixed(3)} ≠ Cr ${totalCr.toFixed(3)}.`,
+      message: t("unbalanced", {
+        debit: totalDr.toFixed(3),
+        credit: totalCr.toFixed(3),
+      }),
     });
   lines.forEach((l, i) => {
     if (!l.accountId)
-      errors.push({ field: `line ${i + 1} · account`, message: "Pick an account." });
+      errors.push({ field: `line ${i + 1} · account`, message: t("pickAccount") });
     if (l.debit > 0 && l.credit > 0)
       errors.push({
         field: `line ${i + 1} · side`,
-        message: "Line can only be debit OR credit, not both.",
+        message: t("debitOrCreditOnly"),
       });
     if (l.debit === 0 && l.credit === 0)
       errors.push({
         field: `line ${i + 1} · amount`,
-        message: "Enter a debit or credit.",
+        message: t("enterDebitOrCredit"),
       });
   });
 
@@ -108,7 +113,7 @@ export function NewJeForm({
   const runWrite = async (intent: WriteIntent) => {
     if (pending) return;
     if (errors.length > 0) {
-      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      toast.error(tToast("formValidation", { count: errors.length }));
       return;
     }
     setPending(true);
@@ -134,9 +139,18 @@ export function NewJeForm({
         return;
       }
       const verb =
-        intent === "save_draft" ? "Saved draft" : intent === "submit" ? "Submitted for approval" : "Submitted";
+        intent === "save_draft"
+          ? t("savedDraft")
+          : intent === "submit"
+            ? t("submittedForApproval")
+            : t("submitted");
       toast.success(
-        `${verb}: ${result.data.number} · ${result.data.state} · ${formatMoney(totalDr, "KWD")}`,
+        t("writeSuccess", {
+          verb,
+          number: result.data.number,
+          state: result.data.state,
+          amount: formatMoney(totalDr, "KWD"),
+        }),
       );
       idempotencyKeyRef.current = crypto.randomUUID();
       setDirty(false);
@@ -150,13 +164,15 @@ export function NewJeForm({
 
   const onSubmit = async () => {
     if (errors.length > 0) {
-      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      toast.error(tToast("formValidation", { count: errors.length }));
       return;
     }
     const ok = await confirm({
-      title: `Submit ${previewNumber} for approval?`,
-      description: `Routes ${formatMoney(totalDr, "KWD")} in balanced journal lines for approval before posting.`,
-      confirmLabel: "Submit for approval",
+      title: t("submitConfirmTitle", { number: previewNumber }),
+      description: t("submitConfirmDescription", {
+        amount: formatMoney(totalDr, "KWD"),
+      }),
+      confirmLabel: t("submitConfirmLabel"),
     });
     if (!ok) return;
     await runWrite("submit");
@@ -164,8 +180,8 @@ export function NewJeForm({
 
   return (
     <DocForm
-      title={`New journal entry · ${previewNumber}`}
-      subtitle="Backend issues the final number on save."
+      title={t("title", { number: previewNumber })}
+      subtitle={t("subtitle")}
       banner={
         <div
           className={
@@ -176,23 +192,23 @@ export function NewJeForm({
           }
         >
           <span className="font-medium">
-            {balanced ? "Balanced" : "Unbalanced — not ready"}
+            {balanced ? t("balanced") : t("unbalancedBanner")}
           </span>{" "}
           · Dr {formatMoney(totalDr, "KWD")} · Cr {formatMoney(totalCr, "KWD")}
         </div>
       }
       header={
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-          <DatePicker label="JE date" required value={date} onChange={wrap(setDate)} />
+          <DatePicker label={t("jeDate")} required value={date} onChange={wrap(setDate)} />
           <div className="md:col-span-2">
             <label className="text-xs font-medium text-foreground">
-              Description <span className="text-destructive">*</span>
+              {t("description")} <span className="text-destructive">*</span>
             </label>
             <input
               type="text"
               value={description}
               onChange={(e) => wrap(setDescription)(e.target.value)}
-              placeholder="What is this entry for?"
+              placeholder={t("descriptionPlaceholder")}
               className="mt-1 w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
@@ -207,7 +223,7 @@ export function NewJeForm({
             >
               <div className="text-xs text-muted-foreground">{i + 1}</div>
               <SearchSelect
-                label="Account"
+                label={t("account")}
                 required
                 value={l.accountId || null}
                 onChange={(v) => setLine(l.id, { accountId: v })}
@@ -219,7 +235,7 @@ export function NewJeForm({
                 }))}
               />
               <div className="flex flex-col gap-1">
-                <label className="text-xs font-medium text-foreground">Description</label>
+                <label className="text-xs font-medium text-foreground">{t("description")}</label>
                 <input
                   type="text"
                   value={l.description}
@@ -228,18 +244,18 @@ export function NewJeForm({
                 />
               </div>
               <MoneyInput
-                label="Debit"
+                label={t("debit")}
                 value={l.debit}
                 onChange={(v) => setLine(l.id, { debit: v, credit: v > 0 ? 0 : l.credit })}
                 currency="KWD"
-                error={!balanced ? "Debits and credits must balance." : null}
+                error={!balanced ? t("mustBalance") : null}
               />
               <MoneyInput
-                label="Credit"
+                label={t("credit")}
                 value={l.credit}
                 onChange={(v) => setLine(l.id, { credit: v, debit: v > 0 ? 0 : l.debit })}
                 currency="KWD"
-                error={!balanced ? "Debits and credits must balance." : null}
+                error={!balanced ? t("mustBalance") : null}
               />
               <button
                 type="button"
@@ -247,7 +263,7 @@ export function NewJeForm({
                 disabled={lines.length <= 2}
                 className="cursor-pointer rounded-md text-xs text-destructive hover:underline disabled:cursor-not-allowed disabled:text-muted-foreground"
               >
-                Remove
+                {t("remove")}
               </button>
             </div>
           ))}
@@ -256,7 +272,7 @@ export function NewJeForm({
             onClick={addLine}
             className="cursor-pointer rounded-md border border-dashed border-input bg-card px-3 py-2 text-sm text-foreground hover:border-ring"
           >
-            + Add line
+            {t("addLine")}
           </button>
         </div>
       }
@@ -268,7 +284,7 @@ export function NewJeForm({
       onSaveDraft={() => void runWrite("save_draft")}
       onCancel={() => router.back()}
       submitDisabled={errors.length > 0}
-      submitLabel="Submit for approval"
+      submitLabel={t("submitLabel")}
     />
   );
 }

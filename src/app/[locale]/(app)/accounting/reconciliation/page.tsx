@@ -1,4 +1,5 @@
 import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 import { DemoStartSession } from "./demo-start";
 import { ReconTabs } from "./recon-tabs";
 import { listBankStatementsPage } from "@/lib/api/reconciliation";
@@ -18,16 +19,16 @@ export default async function ReconciliationPage({
     offset,
     openOnly: true,
   }).catch(() => ({ items: [], total: 0, limit, offset }));
+  const t = await getTranslations("accounting.recon");
 
   return (
     <div className="space-y-6">
       <header>
         <h1 className="text-2xl font-semibold text-foreground">
-          Bank Reconciliation
+          {t("title")}
         </h1>
         <p className="text-sm text-foreground">
-          Import a bank statement, define matching rules, and accept suggested
-          matches against open bills and invoices.
+          {t("subtitle")}
         </p>
       </header>
 
@@ -37,20 +38,20 @@ export default async function ReconciliationPage({
 
       {statements.length === 0 && page <= 1 ? (
         <Empty
-          title="No open statements"
-          description="Import a bank statement to start a reconciliation workspace."
+          title={t("noOpenTitle")}
+          description={t("noOpenDescription")}
         />
       ) : (
         <div className="space-y-2">
           <h2 className="text-lg font-semibold text-foreground">
-            Bank statements
+            {t("statementsHeading")}
           </h2>
           <DataTable
             columns={[
-              { key: "number", label: "Number" },
-              { key: "status", label: "Status" },
-              { key: "period", label: "Period" },
-              { key: "created", label: "Created" },
+              { key: "number", label: t("colNumber") },
+              { key: "status", label: t("colStatus") },
+              { key: "period", label: t("colPeriod") },
+              { key: "created", label: t("colCreated") },
               { key: "open", label: "", className: "text-right" },
             ]}
             rows={statements.map((s) => [
@@ -62,7 +63,10 @@ export default async function ReconciliationPage({
               </span>,
               <span key="p" className="text-xs text-muted-foreground">
                 {s.periodStart || s.periodEnd
-                  ? `${s.periodStart ?? "?"} → ${s.periodEnd ?? "?"}`
+                  ? t("periodRange", {
+                      start: s.periodStart ?? "?",
+                      end: s.periodEnd ?? "?",
+                    })
                   : "—"}
               </span>,
               <span key="c" className="text-xs text-muted-foreground">
@@ -73,10 +77,10 @@ export default async function ReconciliationPage({
                 href={`/accounting/reconciliation/${s.id}`}
                 className="text-sm font-medium text-primary hover:underline"
               >
-                Open
+                {t("open")}
               </Link>,
             ])}
-            emptyMessage="No open statements."
+            emptyMessage={t("emptyStatements")}
             serverPagination={{ page, pageSize: limit, total }}
           />
         </div>

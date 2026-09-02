@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
 import { useActionToast } from "@/hooks/use-action-toast";
@@ -38,6 +39,8 @@ export function NewQuoteForm({
   taxCodes: TaxCode[];
   priceLists: PriceListRow[];
 }) {
+  const tToast = useTranslations("common.toast");
+  const tSalesToast = useTranslations("sales.toast");
   const router = useRouter();
   const confirm = useConfirm();
   const actionToast = useActionToast();
@@ -133,7 +136,7 @@ export function NewQuoteForm({
   const runWrite = async (intent: WriteIntent) => {
     if (pending) return;
     if (errors.length > 0) {
-      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      toast.error(tToast("formValidation", { count: errors.length }));
       return;
     }
     setPending(true);
@@ -155,9 +158,19 @@ export function NewQuoteForm({
         return;
       }
       const verb =
-        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Submitted";
+        intent === "save_draft"
+          ? tSalesToast("verbSavedDraft")
+          : intent === "post"
+            ? tSalesToast("verbPosted")
+            : tSalesToast("verbSubmitted");
       toast.success(
-        `${verb}: ${result.data.number} · ${result.data.state} · ${currency} ${total.toFixed(3)}`,
+        tSalesToast("successMoney", {
+          verb,
+          number: result.data.number,
+          state: result.data.state,
+          currency,
+          total: total.toFixed(3),
+        }),
       );
       idempotencyKeyRef.current = crypto.randomUUID();
       setDirty(false);
@@ -171,7 +184,7 @@ export function NewQuoteForm({
 
   const onSubmit = async () => {
     if (errors.length > 0) {
-      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      toast.error(tToast("formValidation", { count: errors.length }));
       return;
     }
     const ok = await confirm({

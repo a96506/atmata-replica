@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
@@ -15,6 +16,7 @@ export default async function Page({
   searchParams: Promise<{ page?: string; limit?: string }>;
 }) {
   const { locale } = await params;
+  const t = await getTranslations("sales");
   const { page, limit, offset } = parseListPage(await searchParams);
 
   const paged = await listCustomerReturnsPage({ limit, offset });
@@ -43,14 +45,14 @@ export default async function Page({
         rows={paged.items.map((c) => [
           <Link
             key="n"
-            href={`/${locale}/sales/returns/${c.id}`}
+            href={`/sales/returns/${c.id}`}
             className="font-medium text-primary hover:underline"
           >
             {c.number}
           </Link>,
           <Link
             key="d"
-            href={`/${locale}/sales/deliveries/${c.dnId}`}
+            href={`/sales/deliveries/${c.dnId}`}
             className="text-primary hover:underline"
           >
             {c.dnId}
@@ -60,7 +62,7 @@ export default async function Page({
           c.lines.length,
           <StateBadge key="s" state={c.state} />,
         ])}
-        emptyMessage="No customer returns yet."
+        emptyMessage={t("empty.returns")}
         serverPagination={{
           page,
           pageSize: paged.limit,

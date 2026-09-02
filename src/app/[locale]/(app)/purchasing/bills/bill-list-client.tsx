@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import {
   SelectableDataTable,
   type ServerPagination,
@@ -27,6 +28,7 @@ export function BillListClient({
   supplierNames: Record<string, string>;
   serverPagination: ServerPagination;
 }) {
+  const t = useTranslations("purchasing");
   const supplierName = (id: string) => supplierNames[id] ?? "—";
   return (
     <div className="space-y-3">
@@ -66,7 +68,7 @@ export function BillListClient({
         rows={bills.map((b) => [
           <Link
             key="n"
-            href={`/${locale}/purchasing/bills/${b.id}`}
+            href={`/purchasing/bills/${b.id}`}
             className="font-medium text-primary hover:underline"
           >
             {b.number}
@@ -75,7 +77,7 @@ export function BillListClient({
           b.poId ? (
             <Link
               key="p"
-              href={`/${locale}/purchasing/purchase-orders/${b.poId}`}
+              href={`/purchasing/purchase-orders/${b.poId}`}
               className="text-primary hover:underline"
             >
               {b.poId}
@@ -90,7 +92,7 @@ export function BillListClient({
           <StateBadge key="m" state={b.threeWayMatch} />,
           <StateBadge key="s" state={b.state} />,
         ])}
-        emptyMessage="No vendor bills yet."
+        emptyMessage={t("empty.bills")}
         serverPagination={serverPagination}
         renderBulkActions={(ids, clear) => {
           const first = bills.find((b) => b.id === ids[0]);

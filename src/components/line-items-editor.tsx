@@ -63,16 +63,16 @@ export function LineItemsEditor({ items, onChange, readOnly, labels }: LineItems
   return (
     <div className="space-y-2">
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
-        <table className="w-full text-left text-sm">
+        <table className="w-full text-start text-sm">
           <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-foreground uppercase">
             <tr>
               <th className="w-10 px-3 py-2">{labels.itemNo}</th>
               <th className="min-w-[140px] px-3 py-2">{labels.description}</th>
               <th className="w-24 px-3 py-2">{labels.qty}</th>
               <th className="w-28 px-3 py-2">{labels.unitPrice}</th>
-              <th className="w-28 px-3 py-2 text-right">{labels.total}</th>
+              <th className="w-28 px-3 py-2 text-end">{labels.total}</th>
               {!ro && (
-                <th className="w-24 px-3 py-2 text-right text-muted-foreground">{labels.actionsHeader}</th>
+                <th className="w-24 px-3 py-2 text-end text-muted-foreground">{labels.actionsHeader}</th>
               )}
             </tr>
           </thead>
@@ -117,11 +117,11 @@ export function LineItemsEditor({ items, onChange, readOnly, labels }: LineItems
                       className="w-full rounded border border-input px-2 py-1 text-sm tabular-nums disabled:bg-muted/50"
                     />
                   </td>
-                  <td className="px-3 py-2 text-right tabular-nums font-medium text-foreground">
+                  <td className="px-3 py-2 text-end tabular-nums font-medium text-foreground">
                     {lineTotal.toFixed(3)}
                   </td>
                   {!ro && (
-                    <td className="px-3 py-2 text-right">
+                    <td className="px-3 py-2 text-end">
                       <button
                         type="button"
                         disabled={items.length <= 1}
@@ -138,10 +138,10 @@ export function LineItemsEditor({ items, onChange, readOnly, labels }: LineItems
           </tbody>
           <tfoot className="border-t border-border bg-muted/50">
             <tr>
-              <td colSpan={4} className="px-3 py-2 text-right text-xs font-medium text-muted-foreground uppercase">
+              <td colSpan={4} className="px-3 py-2 text-end text-xs font-medium text-muted-foreground uppercase">
                 {labels.footerGrandTotal}
               </td>
-              <td className="px-3 py-2 text-right text-sm font-semibold tabular-nums text-foreground">
+              <td className="px-3 py-2 text-end text-sm font-semibold tabular-nums text-foreground">
                 {footerTotal.toFixed(3)}
               </td>
               {!ro && <td />}

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type { ReactNode } from "react";
+import { useTranslations } from "next-intl";
 import {
   ServerPaginationBar,
   type ServerPagination,
@@ -34,16 +35,18 @@ export function SelectableDataTable({
   columns,
   rows,
   rowIds,
-  emptyMessage = "No data.",
+  emptyMessage,
   renderBulkActions,
   serverPagination,
 }: SelectableDataTableProps) {
+  const t = useTranslations("common.dataTable");
+  const resolvedEmptyMessage = emptyMessage ?? t("emptyMessage");
   const [selected, setSelected] = React.useState<Set<string>>(() => new Set());
 
   if (rows.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-input bg-card p-8 text-center text-sm text-foreground">
-        {emptyMessage}
+        {resolvedEmptyMessage}
       </div>
     );
   }
@@ -87,7 +90,7 @@ export function SelectableDataTable({
             <button
               type="button"
               onClick={clear}
-              className="ml-2 cursor-pointer text-xs text-primary hover:underline"
+              className="ms-2 cursor-pointer text-xs text-primary hover:underline"
             >
               Clear
             </button>
@@ -96,7 +99,7 @@ export function SelectableDataTable({
         </div>
       ) : null}
       <div className="overflow-x-auto rounded-xl border border-border bg-card">
-        <table className="w-full text-left text-sm">
+        <table className="w-full text-start text-sm">
           <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-foreground uppercase">
             <tr>
               <th className="w-10 px-4 py-3">
@@ -107,7 +110,7 @@ export function SelectableDataTable({
                     if (el) el.indeterminate = someSelected;
                   }}
                   onChange={toggleAll}
-                  aria-label="Select all rows"
+                  aria-label={t("selectAllRows")}
                 />
               </th>
               {columns.map((col) => (
@@ -131,7 +134,7 @@ export function SelectableDataTable({
                       type="checkbox"
                       checked={isSel}
                       onChange={() => toggle(id)}
-                      aria-label={`Select row ${id}`}
+                      aria-label={t("selectRow", { id })}
                     />
                   </td>
                   {cells.map((cell, j) => (

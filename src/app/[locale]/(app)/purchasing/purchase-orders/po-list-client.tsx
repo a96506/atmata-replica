@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import {
   SelectableDataTable,
   type ServerPagination,
@@ -22,6 +23,7 @@ export function PoListClient({
   supplierNames: Record<string, string>;
   serverPagination: ServerPagination;
 }) {
+  const t = useTranslations("purchasing");
   const supplierName = (id: string) => supplierNames[id] ?? "—";
 
   return (
@@ -37,7 +39,7 @@ export function PoListClient({
       rows={pos.map((po) => [
         <Link
           key="n"
-          href={`/${locale}/purchasing/purchase-orders/${po.id}`}
+          href={`/purchasing/purchase-orders/${po.id}`}
           className="font-medium text-primary hover:underline"
         >
           {po.number}
@@ -49,7 +51,7 @@ export function PoListClient({
         </span>,
         <StateBadge key="s" state={po.state} />,
       ])}
-      emptyMessage={<bdi>No purchase orders yet.</bdi>}
+      emptyMessage={<bdi>{t("empty.purchaseOrders")}</bdi>}
       serverPagination={serverPagination}
       renderBulkActions={(ids, clear) => {
         const first = pos.find((p) => p.id === ids[0]);

@@ -1,4 +1,5 @@
 import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 import { DataTable } from "@/components/data-table";
 import { Empty } from "@/components/state/Empty";
 import {
@@ -28,16 +29,6 @@ function confidenceBadge(v: number) {
   );
 }
 
-const COLUMNS = [
-  { key: "bank_ref", label: "Bank ref" },
-  { key: "bank_amount", label: "Amount", className: "text-right" },
-  { key: "match", label: "Matched entry" },
-  { key: "match_amount", label: "Entry amount", className: "text-right" },
-  { key: "confidence", label: "Confidence" },
-  { key: "type", label: "Type" },
-  { key: "actions", label: "", className: "text-right" },
-];
-
 export default async function ReconciliationWorkspacePage({
   params,
 }: {
@@ -48,6 +39,17 @@ export default async function ReconciliationWorkspacePage({
   const suggestions = statement
     ? await listSuggestedMatches(statementId).catch(() => [])
     : [];
+  const t = await getTranslations("accounting.recon");
+
+  const columns = [
+    { key: "bank_ref", label: t("colBankRef") },
+    { key: "bank_amount", label: t("colAmount"), className: "text-right" },
+    { key: "match", label: t("colMatchedEntry") },
+    { key: "match_amount", label: t("colEntryAmount"), className: "text-right" },
+    { key: "confidence", label: t("colConfidence") },
+    { key: "type", label: t("colType") },
+    { key: "actions", label: "", className: "text-right" },
+  ];
 
   const rows = suggestions.map((s) => [
     <span key="ref" className="font-medium text-foreground">
@@ -81,45 +83,47 @@ export default async function ReconciliationWorkspacePage({
           href="/accounting/reconciliation"
           className="text-sm text-foreground hover:underline"
         >
-          &larr; Reconciliation
+          {t("back")}
         </Link>
         <h1 className="mt-1 text-2xl font-semibold text-foreground">
-          {statement
-            ? `Statement ${statement.number}`
-            : `Statement ${statementId}`}
+          {t("statementTitle", {
+            number: statement ? statement.number : statementId,
+          })}
         </h1>
         <p className="text-sm text-foreground">
           {statement ? (
             <>
-              Status: {statement.status}
+              {t("statusLine", { status: statement.status })}
               {statement.periodStart || statement.periodEnd
-                ? ` · ${statement.periodStart ?? "?"} → ${statement.periodEnd ?? "?"}`
+                ? ` · ${t("periodRange", {
+                    start: statement.periodStart ?? "?",
+                    end: statement.periodEnd ?? "?",
+                  })}`
                 : null}
               {" · "}
-              {suggestions.length} suggestion
-              {suggestions.length !== 1 ? "s" : ""}
+              {t("suggestionCount", { count: suggestions.length })}
             </>
           ) : (
-            "Bank statement not found."
+            t("notFoundBody")
           )}
         </p>
       </header>
 
       {!statement ? (
         <Empty
-          title="Statement not found"
-          description="Open a statement from the reconciliation list. The URL id is the bank_statement_id."
+          title={t("notFoundTitle")}
+          description={t("notFoundDescription")}
         />
       ) : suggestions.length === 0 ? (
         <Empty
-          title="No suggested matches"
-          description="Run matching rules or wait for suggestions on unmatched lines."
+          title={t("noMatchesTitle")}
+          description={t("noMatchesDescription")}
         />
       ) : (
         <DataTable
-          columns={COLUMNS}
+          columns={columns}
           rows={rows}
-          emptyMessage="No suggestions for this statement."
+          emptyMessage={t("emptySuggestions")}
         />
       )}
     </div>

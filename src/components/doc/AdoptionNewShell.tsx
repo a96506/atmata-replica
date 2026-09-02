@@ -157,14 +157,14 @@ export function AdoptionNewShell({
         <div className="border-b border-border px-4 py-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
           Lines adopted
         </div>
-        <table className="w-full text-left text-sm">
+        <table className="w-full text-start text-sm">
           <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-muted-foreground uppercase">
             <tr>
               <th className="px-4 py-3">#</th>
               <th className="px-4 py-3">Description</th>
-              <th className="px-4 py-3 text-right">Qty</th>
-              <th className="px-4 py-3 text-right">Unit</th>
-              <th className="px-4 py-3 text-right">Total</th>
+              <th className="px-4 py-3 text-end">Qty</th>
+              <th className="px-4 py-3 text-end">Unit</th>
+              <th className="px-4 py-3 text-end">Total</th>
               <th className="px-4 py-3">From</th>
             </tr>
           </thead>
@@ -173,11 +173,11 @@ export function AdoptionNewShell({
               <tr key={l.lineId}>
                 <td className="px-4 py-3 text-muted-foreground">{i + 1}</td>
                 <td className="px-4 py-3">{l.description}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{l.qty}</td>
-                <td className="px-4 py-3 text-right tabular-nums">
+                <td className="px-4 py-3 text-end tabular-nums">{l.qty}</td>
+                <td className="px-4 py-3 text-end tabular-nums">
                   {l.unitPrice.toFixed(3)}
                 </td>
-                <td className="px-4 py-3 text-right font-medium tabular-nums">
+                <td className="px-4 py-3 text-end font-medium tabular-nums">
                   {(l.qty * l.unitPrice).toFixed(3)}
                 </td>
                 <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
@@ -190,11 +190,11 @@ export function AdoptionNewShell({
             <tr>
               <td
                 colSpan={4}
-                className="px-4 py-2 text-right font-medium text-foreground"
+                className="px-4 py-2 text-end font-medium text-foreground"
               >
                 Subtotal
               </td>
-              <td className="px-4 py-2 text-right font-semibold tabular-nums">
+              <td className="px-4 py-2 text-end font-semibold tabular-nums">
                 {subtotal.toFixed(3)}
               </td>
               <td />

@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
@@ -14,6 +15,7 @@ export default async function Page({
   searchParams: Promise<{ page?: string; limit?: string }>;
 }) {
   const { locale } = await params;
+  const t = await getTranslations("inventory");
   const { page, limit, offset } = parseListPage(await searchParams);
 
   const { items: adjustments, total } = await listStockAdjustmentsPage({
@@ -66,7 +68,7 @@ export default async function Page({
             <StateBadge key="s" state={a.state} />,
           ];
         })}
-        emptyMessage="No adjustments yet."
+        emptyMessage={t("empty.adjustments")}
         serverPagination={{ page, pageSize: limit, total }}
       />
     </DocumentList>

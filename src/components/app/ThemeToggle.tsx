@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Monitor, Moon, Sun } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,6 +23,7 @@ import { useDensity } from "@/components/providers/density-provider";
  * lists want more rows per screen than the comfortable default.
  */
 export function ThemeToggle() {
+  const t = useTranslations("chrome");
   const { theme, setTheme } = useTheme();
   const { density, setDensity } = useDensity();
   const [mounted, setMounted] = React.useState(false);
@@ -31,12 +33,12 @@ export function ThemeToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Appearance">
+        <Button variant="ghost" size="icon" aria-label={t("appearance")}>
           {mounted && theme === "dark" ? <Moon /> : <Sun />}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
-        <DropdownMenuLabel>Theme</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("theme")}</DropdownMenuLabel>
         <DropdownMenuGroup>
           <DropdownMenuRadioGroup
             value={mounted ? theme : undefined}
@@ -44,22 +46,22 @@ export function ThemeToggle() {
           >
             <DropdownMenuRadioItem value="light">
               <Sun data-icon="inline-start" />
-              Light
+              {t("themeLight")}
             </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="dark">
               <Moon data-icon="inline-start" />
-              Dark
+              {t("themeDark")}
             </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="system">
               <Monitor data-icon="inline-start" />
-              System
+              {t("themeSystem")}
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuGroup>
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuLabel>Density</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("density")}</DropdownMenuLabel>
         <DropdownMenuGroup>
           <DropdownMenuRadioGroup
             value={density}
@@ -68,10 +70,10 @@ export function ThemeToggle() {
             }
           >
             <DropdownMenuRadioItem value="comfortable">
-              Comfortable
+              {t("densityComfortable")}
             </DropdownMenuRadioItem>
             <DropdownMenuRadioItem value="compact">
-              Compact
+              {t("densityCompact")}
             </DropdownMenuRadioItem>
           </DropdownMenuRadioGroup>
         </DropdownMenuGroup>

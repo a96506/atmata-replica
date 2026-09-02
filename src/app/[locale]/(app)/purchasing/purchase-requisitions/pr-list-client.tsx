@@ -1,6 +1,7 @@
 "use client";
 
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import {
   SelectableDataTable,
   type ServerPagination,
@@ -18,6 +19,7 @@ export function PrListClient({
   prs: PurchaseRequisition[];
   serverPagination: ServerPagination;
 }) {
+  const t = useTranslations("purchasing");
   // Group selectable rows by their state so bulk actions can compute legal
   // targets cleanly. The picker handles the rest.
   const eligibleState: DocState = "posted"; // most seeded PRs are posted
@@ -35,7 +37,7 @@ export function PrListClient({
       rows={prs.map((p) => [
         <Link
           key="n"
-          href={`/${locale}/purchasing/purchase-requisitions/${p.id}`}
+          href={`/purchasing/purchase-requisitions/${p.id}`}
           className="font-medium text-primary hover:underline"
         >
           {p.number}
@@ -46,7 +48,7 @@ export function PrListClient({
         p.lines.length,
         <StateBadge key="s" state={p.state} />,
       ])}
-      emptyMessage="No purchase requisitions yet."
+      emptyMessage={t("empty.prs")}
       serverPagination={serverPagination}
       renderBulkActions={(ids, clear) => (
         <BulkAdoptButton

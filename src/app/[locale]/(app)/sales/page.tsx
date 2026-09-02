@@ -176,7 +176,7 @@ export default async function SalesPage({
               quoteStatusLabel(q.status),
               q.valid_until,
             ])}
-            emptyMessage="No quotes yet."
+            emptyMessage={t("empty.quotes")}
           />
         </TabsContent>
 
@@ -211,7 +211,7 @@ export default async function SalesPage({
                 <span className="text-muted-foreground">—</span>
               ),
             ])}
-            emptyMessage="No sales orders yet."
+            emptyMessage={t("empty.orders")}
           />
         </TabsContent>
 
@@ -239,7 +239,7 @@ export default async function SalesPage({
               scoreBadge(c.score),
               payBadge(c.payment_status),
             ])}
-            emptyMessage="No customers yet."
+            emptyMessage={t("empty.customers")}
           />
         </TabsContent>
 

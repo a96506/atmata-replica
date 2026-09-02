@@ -12,7 +12,45 @@
     "role": "مسؤول",
     "signOut": "تسجيل الخروج",
     "locale": "اللغة",
-    "skipToContent": "تخطّي إلى المحتوى"
+    "skipToContent": "تخطّي إلى المحتوى",
+    "search": {
+      "placeholder": "ابحث في المستندات والمنتجات والإجراءات… (Esc للإغلاق)",
+      "ariaLabel": "بحث عام",
+      "trigger": "بحث",
+      "openAria": "فتح البحث العام",
+      "noMatches": "لا توجد نتائج.",
+      "typeToSearch": "اكتب للبحث، أو اختر من الأخيرة.",
+      "recent": "الأخيرة",
+      "hint": "↑ ↓ للتنقل · Enter للاختيار · Esc للإغلاق",
+      "itemsIndexed": "{count} عنصر مفهرس",
+      "kinds": {
+        "doc": "مستند",
+        "product": "منتج",
+        "action": "إجراء",
+        "settings": "إعدادات"
+      }
+    },
+    "appearance": "المظهر",
+    "theme": "السمة",
+    "themeLight": "فاتح",
+    "themeDark": "داكن",
+    "themeSystem": "النظام",
+    "density": "الكثافة",
+    "densityComfortable": "مريح",
+    "densityCompact": "مضغوط",
+    "notifications": {
+      "title": "الإشعارات",
+      "aria": "الإشعارات",
+      "ariaUnread": "الإشعارات، {unread} غير مقروء",
+      "markAllRead": "تعليم الكل كمقروء",
+      "inboxSection": "صندوق الوارد ({count})",
+      "botSection": "مقترح من البوت ({count})",
+      "recentAudit": "تدقيق حديث",
+      "emptyQueued": "لا توجد إجراءات في الانتظار بعد.",
+      "emptyAudit": "لا توجد أحداث تدقيق.",
+      "openInbox": "فتح صندوق الوارد كاملاً",
+      "botProposedSubtitle": "مقترح من البوت · {when}"
+    }
   },
   "nav": {
     "inbox": "صندوق الذكاء الاصطناعي",
@@ -251,6 +289,168 @@
       "colDebit": "مدين",
       "colCredit": "دائن",
       "colBalance": "الرصيد"
+    },
+    "journalEntries": {
+      "title": "قيود اليومية",
+      "subtitle": "قيد يومية واحد لكل مستند أعمال مرحّل. يجب أن يتساوى المدين مع الدائن.",
+      "newJe": "قيد جديد",
+      "colNumber": "الرقم",
+      "colDate": "التاريخ",
+      "colDescription": "الوصف",
+      "colSource": "المصدر",
+      "colAmount": "المبلغ",
+      "colStatus": "الحالة",
+      "empty": "لا توجد قيود يومية بعد."
+    },
+    "jeForm": {
+      "dateRequired": "التاريخ مطلوب.",
+      "descriptionRequired": "الوصف مطلوب.",
+      "unbalanced": "غير متوازن — مدين {debit} ≠ دائن {credit}.",
+      "pickAccount": "اختر حساباً.",
+      "debitOrCreditOnly": "السطر يجب أن يكون مديناً أو دائناً فقط، وليس الاثنين.",
+      "enterDebitOrCredit": "أدخل مبلغ مدين أو دائن.",
+      "savedDraft": "تم حفظ المسودة",
+      "submittedForApproval": "أُرسل للاعتماد",
+      "submitted": "تم الإرسال",
+      "writeSuccess": "{verb}: {number} · {state} · {amount}",
+      "submitConfirmTitle": "إرسال {number} للاعتماد؟",
+      "submitConfirmDescription": "يرسل {amount} من أسطر القيد المتوازنة للاعتماد قبل الترحيل.",
+      "submitConfirmLabel": "إرسال للاعتماد",
+      "title": "قيد يومية جديد · {number}",
+      "subtitle": "الخادم يصدر الرقم النهائي عند الحفظ.",
+      "balanced": "متوازن",
+      "unbalancedBanner": "غير متوازن — غير جاهز",
+      "jeDate": "تاريخ القيد",
+      "description": "الوصف",
+      "descriptionPlaceholder": "ما الغرض من هذا القيد؟",
+      "account": "الحساب",
+      "debit": "مدين",
+      "credit": "دائن",
+      "mustBalance": "يجب أن يتوازن المدين والدائن.",
+      "remove": "إزالة",
+      "addLine": "+ إضافة سطر",
+      "submitLabel": "إرسال للاعتماد"
+    },
+    "invoicesPage": {
+      "title": "الفواتير",
+      "subtitle": "ارفع ملفات PDF للاستخراج بالذكاء الاصطناعي، ثم راجع واعتمد.",
+      "colFile": "الملف",
+      "colVendor": "المورد",
+      "colTotal": "الإجمالي",
+      "colConfidence": "الثقة",
+      "colStatus": "الحالة",
+      "review": "مراجعة",
+      "toBill": "→ فاتورة",
+      "empty": "لا توجد فواتير بعد. ارفع ملف PDF للبدء.",
+      "fileTooLarge": "الملف كبير جداً (الحد الأقصى 50 ميجابايت).",
+      "uploadedOcr": "تم رفع {name} — في قائمة OCR.",
+      "uploading": "جارٍ الرفع…",
+      "upload": "رفع",
+      "draftBillCreated": "تم إنشاء مسودة فاتورة {number}",
+      "invoiceRejected": "رُفضت الفاتورة #{jobId}",
+      "openVendorBill": "فتح فاتورة المورد",
+      "approve": "اعتماد",
+      "approving": "جارٍ الاعتماد…",
+      "reject": "رفض",
+      "rejecting": "جارٍ الرفض…"
+    },
+    "recon": {
+      "title": "تسوية البنك",
+      "subtitle": "استورد كشف حساب، عرّف قواعد المطابقة، واقبل الاقتراحات مقابل الفواتير المفتوحة.",
+      "noOpenTitle": "لا توجد كشوف مفتوحة",
+      "noOpenDescription": "استورد كشف حساب بنكي لبدء مساحة التسوية.",
+      "statementsHeading": "كشوف الحساب",
+      "colNumber": "الرقم",
+      "colStatus": "الحالة",
+      "colPeriod": "الفترة",
+      "colCreated": "تاريخ الإنشاء",
+      "open": "فتح",
+      "emptyStatements": "لا توجد كشوف مفتوحة.",
+      "sessionDisabled": "بدء الجلسة معطّل في وضع الواجهة فقط.",
+      "journalId": "معرّف القيد",
+      "journalIdPlaceholder": "مثال: 7",
+      "startSession": "بدء الجلسة",
+      "back": "← التسوية",
+      "statementTitle": "كشف {number}",
+      "statusLine": "الحالة: {status}",
+      "periodRange": "{start} → {end}",
+      "suggestionCount": "{count, plural, one {اقتراح واحد} other {# اقتراحات}}",
+      "notFoundBody": "كشف الحساب غير موجود.",
+      "notFoundTitle": "الكشف غير موجود",
+      "notFoundDescription": "افتح كشفاً من قائمة التسوية. معرّف الرابط هو bank_statement_id.",
+      "noMatchesTitle": "لا توجد مطابقات مقترحة",
+      "noMatchesDescription": "شغّل قواعد المطابقة أو انتظر الاقتراحات للأسطر غير المطابقة.",
+      "emptySuggestions": "لا توجد اقتراحات لهذا الكشف.",
+      "colBankRef": "مرجع البنك",
+      "colAmount": "المبلغ",
+      "colMatchedEntry": "القيد المطابق",
+      "colEntryAmount": "مبلغ القيد",
+      "colConfidence": "الثقة",
+      "colType": "النوع",
+      "noMatchId": "لا يتوفر معرّف مطابقة لهذا الاقتراح.",
+      "matchAccepted": "تم قبول المطابقة.",
+      "noLineId": "لا يتوفر معرّف سطر للتخطي.",
+      "lineSkipped": "تم تخطي السطر.",
+      "match": "مطابقة",
+      "skip": "تخطي",
+      "lineIdRequired": "معرّف السطر مطلوب",
+      "selectBankAccount": "اختر حساباً بنكياً أولاً.",
+      "csvNoLines": "ملف CSV لا يحتوي على أسطر كشف.",
+      "csvHeaderInvalid": "يجب أن يتضمن رأس CSV: date, description, [reference], amount",
+      "importedLines": "تم استيراد {count, plural, one {سطر كشف واحد} other {# أسطر كشف}}.",
+      "aiMatchingFailed": "فشلت مطابقة الذكاء الاصطناعي. حاول مجدداً.",
+      "aiSuggestionsGenerated": "تم إنشاء {count} اقتراحات مطابقة بالذكاء الاصطناعي.",
+      "bankAccount": "الحساب البنكي",
+      "noBankAccounts": "لا توجد حسابات بنكية",
+      "statementNumber": "رقم الكشف",
+      "importCsv": "استيراد كشف حساب CSV",
+      "importHint": "الرأس المتوقع: date, description, [reference], amount. يُحلل في المتصفح ويُستورد عبر import_bank_statement.",
+      "findingMatches": "جارٍ البحث عن مطابقات…",
+      "suggestAiMatches": "اقتراح مطابقات بالذكاء الاصطناعي",
+      "colDate": "التاريخ",
+      "colDescription": "الوصف",
+      "colReference": "المرجع",
+      "colSuggestedMatch": "المطابقة المقترحة",
+      "aiProposal": "اقتراح ذكاء اصطناعي · للمراجعة فقط",
+      "noSuggestion": "لا اقتراح",
+      "ruleSaved": "تم حفظ القاعدة.",
+      "ruleRemoved": "تم حذف القاعدة.",
+      "targetDocRequired": "معرّف المستند الهدف مطلوب.",
+      "conditionRequired": "أضف شرطاً واحداً على الأقل (مرجع أو نطاق مبلغ).",
+      "newRule": "قاعدة جديدة",
+      "newRuleHint": "إذا احتوى المرجع ووقع المبلغ في [حد أدنى، حد أقصى] ← اقترح مطابقة للمستند الهدف.",
+      "refContains": "المرجع يحتوي",
+      "amountMin": "الحد الأدنى للمبلغ",
+      "amountMax": "الحد الأقصى للمبلغ",
+      "targetDocId": "معرّف المستند الهدف",
+      "optional": "(اختياري)",
+      "addRule": "إضافة قاعدة",
+      "activeRules": "القواعد النشطة ({count})",
+      "loadingRules": "جارٍ تحميل القواعد…",
+      "noRules": "لا توجد قواعد بعد. أضف واحدة أعلاه ثم استورد كشفاً لرؤية الاقتراحات.",
+      "refContainsLabel": "المرجع يحتوي",
+      "amountIn": "المبلغ ∈ [{min}, {max}]",
+      "remove": "إزالة",
+      "placeholderRef": "مثال: PCG/2026",
+      "placeholderTarget": "مثال: bill_1 / inv_1"
+    },
+    "closeActions": {
+      "noFiscalPeriodStart": "لا يوجد معرّف فترة مالية لهذا الشهر — تعذر بدء الإغلاق.",
+      "noFiscalPeriod": "لا يوجد معرّف فترة مالية لهذا الشهر.",
+      "fiscalPeriodNotFound": "لم تُعثر على فترة مالية لهذا الشهر",
+      "startConfirmTitle": "بدء الإغلاق للفترة {period}؟",
+      "startConfirmDescription": "يُغلق الفترة مالياً إغلاقاً ناعماً بحيث يقتصر الترحيل على مستخدمي `period_adjust`، ثم ينشئ قائمة الإغلاق ذات الخطوات العشر. أعد فتحها من الإعدادات ← التقويم المالي إن احتجت ترحيلاً إضافياً.",
+      "startConfirmDescriptionShort": "يُغلق الفترة مالياً إغلاقاً ناعماً بحيث يقتصر الترحيل على مستخدمي `period_adjust`، ثم ينشئ قائمة الإغلاق ذات الخطوات العشر.",
+      "startConfirmLabel": "بدء الإغلاق",
+      "closeStarted": "بدأ الإغلاق للفترة {period}.",
+      "runClose": "تشغيل الإغلاق",
+      "runCloseFor": "تشغيل الإغلاق لـ {period}",
+      "rescanned": "أُعيد فحص {period}.",
+      "rescan": "إعادة فحص",
+      "taskIdRequired": "معرّف المهمة مطلوب",
+      "cannotCompleteStep": "تعذر إكمال الخطوة — لا يوجد معرّف period_close_tasks.",
+      "stepComplete": "اكتملت الخطوة {stepName} · {period}",
+      "markComplete": "تعليم كمكتمل"
     }
   },
   "sales": {
@@ -372,6 +572,26 @@
       "newInvoice": "فاتورة جديدة",
       "newReceipt": "سند قبض جديد",
       "creditNotes": "إشعارات دائن"
+    },
+    "empty": {
+      "quotes": "لا توجد عروض أسعار بعد.",
+      "orders": "لا توجد أوامر بيع بعد.",
+      "customers": "لا يوجد عملاء بعد.",
+      "invoices": "لا توجد فواتير بعد.",
+      "deliveries": "لا توجد إشعارات تسليم بعد.",
+      "receipts": "لا توجد سندات قبض بعد.",
+      "returns": "لا توجد مرتجعات عملاء بعد.",
+      "creditNotes": "لا توجد إشعارات دائن بعد."
+    },
+    "toast": {
+      "creditHoldBlocked": "العميل قيد تعليق الائتمان — تأكيد أمر البيع محظور.",
+      "successMoney": "{verb}: {number} · {state} · {currency} {total}",
+      "successUnits": "{verb}: {number} · {state} · {qty} وحدات",
+      "successAmount": "{verb}: {number} · {state} · {amount}",
+      "verbSavedDraft": "حُفظ كمسودة",
+      "verbPosted": "مرحّل",
+      "verbSubmitted": "مُرسل",
+      "verbConfirmed": "مؤكد"
     }
   },
   "purchasing": {
@@ -497,6 +717,26 @@
     "alertType": {
       "price_increase": "ارتفاع السعر",
       "price_watch": "مراقبة السعر"
+    },
+    "empty": {
+      "openPrs": "لا توجد طلبات شراء مفتوحة.",
+      "bills": "لا توجد فواتير موردين بعد.",
+      "goodsReceipts": "لا توجد إيصالات بضائع بعد.",
+      "prs": "لا توجد طلبات شراء بعد.",
+      "rfqs": "لا توجد طلبات عروض أسعار بعد.",
+      "payments": "لا توجد مدفوعات موردين بعد.",
+      "vendorReturns": "لا توجد مرتجعات موردين بعد.",
+      "debitNotes": "لا توجد إشعارات مدينة بعد.",
+      "purchaseOrders": "لا توجد أوامر شراء بعد."
+    },
+    "toast": {
+      "awarded": "تمت الترسية · {vendor}"
+    },
+    "placeholder": {
+      "prNotes": "سبب الطلب…",
+      "poNotes": "ملاحظات داخلية (ظاهرة للمعتمد)…",
+      "grnNotes": "ملاحظات الحالة، مشاكل التغليف، إلخ.",
+      "billInvoiceNumber": "كما هو مطبوع على فاتورة المورد"
     }
   },
   "inventory": {
@@ -549,7 +789,28 @@
       "stockMoves": "حركات المخزون",
       "newTransfer": "تحويل جديد"
     },
-    "colWarehouse": "المستودع"
+    "colWarehouse": "المستودع",
+    "empty": {
+      "products": "لا منتجات بعد.",
+      "adjustments": "لا تسويات بعد.",
+      "transfers": "لا تحويلات بعد.",
+      "stockMoves": "لا حركات مخزون بعد.",
+      "inbound": "لا إيصالات واردة مفتوحة.",
+      "outbound": "لا تسليمات صادرة مفتوحة."
+    },
+    "toast": {
+      "saved": "{verb}: {number} · {state}",
+      "savedWithQty": "{verb}: {number} · {state} · {qty} وحدة",
+      "verbDraft": "تم حفظ المسودة",
+      "verbPosted": "تم الترحيل",
+      "verbSubmitted": "تم الإرسال"
+    },
+    "form": {
+      "lotRequired": "مطلوب",
+      "lotEmpty": "—",
+      "transferNotes": "سبب التحويل…",
+      "adjustmentNotes": "شرح التسوية…"
+    }
   },
   "settings": {
     "overviewTitle": "الإعدادات",
@@ -626,6 +887,29 @@
         "viewer": "عرض",
         "ai_agent": "وكيل الذكاء الاصطناعي"
       }
+    },
+    "coa": {
+      "title": "دليل الحسابات",
+      "subtitle": "شجرة الحسابات حسب الفئة. كل حساب يحمل اسماً بالإنجليزية والعربية. تستخدمه كل وثيقة مرحّلة لكتابة قيد اليومية.",
+      "entity": "حساب",
+      "code": "الرمز",
+      "nameEn": "الاسم (EN)",
+      "nameAr": "الاسم (AR)",
+      "type": "النوع",
+      "parent": "الأصل",
+      "parentAccount": "الحساب الأصل",
+      "parentHelp": "اختياري — يضع هذا الحساب تحت حساب أصل في الشجرة.",
+      "codePlaceholder": "مثال: 1200",
+      "active": "نشط",
+      "yes": "نعم",
+      "no": "لا",
+      "types": {
+        "asset": "أصل",
+        "liability": "التزام",
+        "equity": "حقوق ملكية",
+        "revenue": "إيراد",
+        "expense": "مصروف"
+      }
     }
   },
   "deferred": {
@@ -673,6 +957,18 @@
     "error": {
       "title": "حدث خطأ",
       "retry": "إعادة المحاولة"
+    },
+    "dataTable": {
+      "emptyTitle": "لا يوجد شيء هنا بعد",
+      "emptyMessage": "لا توجد بيانات.",
+      "previous": "السابق",
+      "next": "التالي",
+      "range": "{from}–{to} من {total}",
+      "selectAllRows": "تحديد كل الصفوف",
+      "selectRow": "تحديد الصف {id}"
+    },
+    "toast": {
+      "formValidation": "أصلح {count} مشكلة تحقق أولاً."
     }
   },
   "adoption": {
@@ -951,5 +1247,22 @@
       "EMAIL_DELIVERY_FAILED": "تعذر إرسال البريد.",
       "INTERNAL": "حدث خطأ."
     }
+  },
+  "masterCrud": {
+    "deleteTitle": "حذف {entity}؟",
+    "deleteDescription": "لا يمكن التراجع عن هذا الإجراء.",
+    "deleteConfirm": "حذف",
+    "empty": "لا توجد {entity} بعد.",
+    "newEntity": "{entity} جديد",
+    "editEntity": "تعديل {entity}",
+    "formCreateHint": "أدخل الحقول أدناه.",
+    "formEditHint": "حدّث الحقول أدناه.",
+    "saving": "جارٍ الحفظ…",
+    "saveChanges": "حفظ التغييرات",
+    "toastCreated": "تم إنشاء {entity}",
+    "toastUpdated": "تم تحديث {entity}",
+    "toastDeleted": "تم حذف {entity}",
+    "ariaEdit": "تعديل {entity}",
+    "ariaDelete": "حذف {entity}"
   }
 }

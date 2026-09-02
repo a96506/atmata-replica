@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
 import { useActionToast } from "@/hooks/use-action-toast";
@@ -21,11 +21,12 @@ export function ReconLineActions({
   const writeLocale = locale === "ar" ? "ar" : "en";
   const router = useRouter();
   const actionToast = useActionToast();
+  const t = useTranslations("accounting.recon");
   const [pending, setPending] = React.useState(false);
 
   const onAccept = async () => {
     if (!matchId) {
-      toast.error("No match id available for this suggestion.");
+      toast.error(t("noMatchId"));
       return;
     }
     setPending(true);
@@ -39,7 +40,7 @@ export function ReconLineActions({
         actionToast.error(result.error);
         return;
       }
-      toast.success("Match accepted.");
+      toast.success(t("matchAccepted"));
       router.refresh();
     } catch {
       actionToast.network();
@@ -50,7 +51,7 @@ export function ReconLineActions({
 
   const onSkip = async () => {
     if (!lineId) {
-      toast.error("No line id available to skip.");
+      toast.error(t("noLineId"));
       return;
     }
     setPending(true);
@@ -64,7 +65,7 @@ export function ReconLineActions({
         actionToast.error(result.error);
         return;
       }
-      toast.success("Line skipped.");
+      toast.success(t("lineSkipped"));
       router.refresh();
     } catch {
       actionToast.network();
@@ -82,17 +83,17 @@ export function ReconLineActions({
           className="cursor-pointer rounded bg-status-success-muted text-status-success-foreground ring-1 ring-status-success-border px-3 py-1 text-xs font-medium hover:bg-status-success/20 disabled:opacity-50"
           onClick={() => void onAccept()}
         >
-          Match
+          {t("match")}
         </button>
       ) : null}
       <button
         type="button"
         disabled={pending || !lineId}
-        title={!lineId ? "Line id required" : undefined}
+        title={!lineId ? t("lineIdRequired") : undefined}
         className="cursor-pointer rounded bg-muted px-3 py-1 text-xs font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
         onClick={() => void onSkip()}
       >
-        Skip
+        {t("skip")}
       </button>
     </div>
   );

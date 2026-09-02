@@ -201,13 +201,13 @@ export function AdoptionPicker({
                     <span className="font-mono text-foreground">{parent.docNumber}</span>
                     <span className="text-muted-foreground">{parent.docType.toUpperCase()}</span>
                   </div>
-                  <table className="w-full text-left text-sm">
+                  <table className="w-full text-start text-sm">
                     <thead className="border-b border-border text-xs text-muted-foreground">
                       <tr>
                         <th className="w-8 px-3 py-2"></th>
                         <th className="px-3 py-2">Description</th>
-                        <th className="px-3 py-2 text-right">Adopt qty</th>
-                        <th className="px-3 py-2 text-right">/ max</th>
+                        <th className="px-3 py-2 text-end">Adopt qty</th>
+                        <th className="px-3 py-2 text-end">/ max</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -232,7 +232,7 @@ export function AdoptionPicker({
                                 <div className="text-xs text-muted-foreground">{t("fullyConsumed")}</div>
                               ) : null}
                             </td>
-                            <td className="px-3 py-2 text-right tabular-nums">
+                            <td className="px-3 py-2 text-end tabular-nums">
                               <input
                                 type="number"
                                 min={0}
@@ -247,10 +247,10 @@ export function AdoptionPicker({
                                   );
                                   update(idx, { qty: v });
                                 }}
-                                className="w-24 rounded-md border border-input px-2 py-1 text-right text-sm"
+                                className="w-24 rounded-md border border-input px-2 py-1 text-end text-sm"
                               />
                             </td>
-                            <td className="px-3 py-2 text-right text-xs text-muted-foreground tabular-nums">
+                            <td className="px-3 py-2 text-end text-xs text-muted-foreground tabular-nums">
                               / {d.maxQty}
                             </td>
                           </tr>

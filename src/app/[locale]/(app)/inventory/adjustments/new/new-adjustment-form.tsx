@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
 import { useActionToast } from "@/hooks/use-action-toast";
@@ -42,6 +43,9 @@ export function NewAdjustmentForm({
   products: Product[];
   warehouses: Warehouse[];
 }) {
+  const tToast = useTranslations("common.toast");
+  const tInvToast = useTranslations("inventory.toast");
+  const tForm = useTranslations("inventory.form");
   const router = useRouter();
   const confirm = useConfirm();
   const actionToast = useActionToast();
@@ -115,7 +119,7 @@ export function NewAdjustmentForm({
   const runWrite = async (intent: WriteIntent) => {
     if (pending) return;
     if (errors.length > 0) {
-      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      toast.error(tToast("formValidation", { count: errors.length }));
       return;
     }
     setPending(true);
@@ -140,8 +144,18 @@ export function NewAdjustmentForm({
         return;
       }
       const verb =
-        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Submitted";
-      toast.success(`${verb}: ${result.data.number} · ${result.data.state}`);
+        intent === "save_draft"
+          ? tInvToast("verbDraft")
+          : intent === "post"
+            ? tInvToast("verbPosted")
+            : tInvToast("verbSubmitted");
+      toast.success(
+        tInvToast("saved", {
+          verb,
+          number: result.data.number,
+          state: result.data.state,
+        }),
+      );
       idempotencyKeyRef.current = crypto.randomUUID();
       setDirty(false);
       router.push(`/${locale}/inventory/adjustments/${result.data.id}`);
@@ -154,7 +168,7 @@ export function NewAdjustmentForm({
 
   const onSubmit = async () => {
     if (errors.length > 0) {
-      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      toast.error(tToast("formValidation", { count: errors.length }));
       return;
     }
     const intent: WriteIntent = needsApproval ? "submit" : "post";
@@ -260,7 +274,7 @@ export function NewAdjustmentForm({
           rows={3}
           value={notes}
           onChange={(e) => wrap(setNotes)(e.target.value)}
-          placeholder="Explanation for the adjustment…"
+          placeholder={tForm("adjustmentNotes")}
           className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       }

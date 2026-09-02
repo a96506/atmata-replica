@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
@@ -31,18 +32,19 @@ export default async function Page({
     offset,
     state: stateFilter,
   });
+  const t = await getTranslations("accounting.journalEntries");
 
   return (
     <DocumentList
-      title="Journal entries"
-      subtitle="One JE per posted business document. Every Dr must equal Cr."
+      title={t("title")}
+      subtitle={t("subtitle")}
       primaryAction={
         <div className="flex flex-wrap items-center gap-2">
           <ListStateFilter current={stateFilter} />
           <JeExportClient rows={entries} />
           <NewDocButton
             href={`/${locale}/accounting/journal-entries/new`}
-            label="New JE"
+            label={t("newJe")}
             operation="create_journal_entry"
           />
         </div>
@@ -50,19 +52,19 @@ export default async function Page({
     >
       <DataTable
         columns={[
-          { key: "number", label: "Number" },
-          { key: "date", label: "Date" },
-          { key: "desc", label: "Description" },
-          { key: "source", label: "Source" },
-          { key: "amount", label: "Amount", className: "text-right" },
-          { key: "state", label: "Status" },
+          { key: "number", label: t("colNumber") },
+          { key: "date", label: t("colDate") },
+          { key: "desc", label: t("colDescription") },
+          { key: "source", label: t("colSource") },
+          { key: "amount", label: t("colAmount"), className: "text-right" },
+          { key: "state", label: t("colStatus") },
         ]}
         rows={entries.map((j) => {
           const totalAmt = j.lines.reduce((s, l) => s + l.debit, 0);
           return [
             <Link
               key="n"
-              href={`/${locale}/accounting/journal-entries/${j.id}`}
+              href={`/accounting/journal-entries/${j.id}`}
               className="font-medium text-primary hover:underline"
             >
               {j.number}
@@ -80,7 +82,7 @@ export default async function Page({
             <StateBadge key="ss" state={j.state} />,
           ];
         })}
-        emptyMessage="No journal entries yet."
+        emptyMessage={t("empty")}
         serverPagination={{ page, pageSize: limit, total }}
       />
     </DocumentList>

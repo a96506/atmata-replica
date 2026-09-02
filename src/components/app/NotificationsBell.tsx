@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Bell } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { listQueuedActions, type QueuedActionRecord } from "@/lib/api/ai";
 import type { InboxNotification } from "@/lib/api/inbox";
 import type { AuditEvent } from "@/types";
@@ -51,6 +52,8 @@ export function NotificationsBell({
   initialNotifications?: InboxNotification[];
   initialAudit?: AuditEvent[];
 }) {
+  const t = useTranslations("chrome.notifications");
+  const tInbox = useTranslations("inbox");
   const router = useRouter();
   const params = useParams<{ locale?: string }>();
   const locale = params?.locale ?? "en";
@@ -120,7 +123,7 @@ export function NotificationsBell({
           size="icon"
           className="relative"
           aria-label={
-            unread > 0 ? `Notifications, ${unread} unread` : "Notifications"
+            unread > 0 ? t("ariaUnread", { unread }) : t("aria")
           }
         >
           <Bell />
@@ -134,7 +137,7 @@ export function NotificationsBell({
 
       <PopoverContent align="end" className="w-[22rem] p-0">
         <div className="flex items-center justify-between px-3 py-2">
-          <span className="text-sm font-semibold">Notifications</span>
+          <span className="text-sm font-semibold">{t("title")}</span>
           {unreadInbox > 0 ? (
             <Button
               variant="link"
@@ -143,16 +146,16 @@ export function NotificationsBell({
               disabled={marking}
               onClick={markAllRead}
             >
-              Mark all read
+              {t("markAllRead")}
             </Button>
           ) : null}
         </div>
         <Separator />
 
         <ScrollArea className="max-h-[60vh]">
-          <Section title={`Inbox (${inboxItems.length})`}>
+          <Section title={t("inboxSection", { count: inboxItems.length })}>
             {inboxItems.length === 0 ? (
-              <EmptyRow>All caught up.</EmptyRow>
+              <EmptyRow>{tInbox("empty")}</EmptyRow>
             ) : (
               inboxItems.map((i) => (
                 <Row
@@ -168,15 +171,15 @@ export function NotificationsBell({
             )}
           </Section>
 
-          <Section title={`Bot-proposed (${queued.length})`}>
+          <Section title={t("botSection", { count: queued.length })}>
             {queued.length === 0 ? (
-              <EmptyRow>No queued actions yet.</EmptyRow>
+              <EmptyRow>{t("emptyQueued")}</EmptyRow>
             ) : (
               queued.slice(0, 6).map((q) => (
                 <Row
                   key={q.id}
                   title={q.label}
-                  subtitle={`bot-proposed · ${new Date(q.queuedAt).toLocaleString()}`}
+                  subtitle={t("botProposedSubtitle", { when: new Date(q.queuedAt).toLocaleString() })}
                   tone="warning"
                   onClick={() => go(`/${locale}/inbox`)}
                 />
@@ -184,9 +187,9 @@ export function NotificationsBell({
             )}
           </Section>
 
-          <Section title="Recent audit">
+          <Section title={t("recentAudit")}>
             {recentAudit.length === 0 ? (
-              <EmptyRow>No audit events.</EmptyRow>
+              <EmptyRow>{t("emptyAudit")}</EmptyRow>
             ) : (
               recentAudit.map((e) => {
                 const hrefFn = DOC_HREF[e.docType];
@@ -213,7 +216,7 @@ export function NotificationsBell({
             className="w-full"
             onClick={() => go(`/${locale}/inbox`)}
           >
-            Open full inbox
+            {t("openInbox")}
           </Button>
         </div>
       </PopoverContent>

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
 import { useActionToast } from "@/hooks/use-action-toast";
@@ -34,6 +35,7 @@ export function RfqAwardButtons({
   awardedQuoteId?: string;
   quotes: QuoteCol[];
 }) {
+  const t = useTranslations("purchasing");
   const router = useRouter();
   const { roles } = useSession();
   const confirm = useConfirm();
@@ -72,7 +74,7 @@ export function RfqAwardButtons({
         return;
       }
       idempotencyKeyRef.current = crypto.randomUUID();
-      toast.success(`Awarded · ${vendorLabel}`);
+      toast.success(t("toast.awarded", { vendor: vendorLabel }));
       router.refresh();
     } catch {
       actionToast.network();

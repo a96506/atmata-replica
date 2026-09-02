@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { Button } from "@/components/ui/button";
 import { Kbd } from "@/components/ui/kbd";
 import { GlobalSearch } from "./GlobalSearch";
@@ -39,6 +40,7 @@ export function useGlobalSearch() {
 
 export function GlobalSearchTrigger() {
   const ctx = useGlobalSearch();
+  const t = useTranslations("chrome.search");
   if (!ctx) return null;
   return (
     <>
@@ -49,7 +51,7 @@ export function GlobalSearchTrigger() {
         className="text-muted-foreground hidden h-8 w-56 justify-start gap-2 px-2.5 font-normal lg:flex"
       >
         <Search />
-        <span>Search</span>
+        <span>{t("trigger")}</span>
         <Kbd className="ms-auto" dir="ltr">
           <bdi>⌘K</bdi>
         </Kbd>
@@ -60,7 +62,7 @@ export function GlobalSearchTrigger() {
         size="icon"
         onClick={ctx.open}
         className="lg:hidden"
-        aria-label="Open global search"
+        aria-label={t("openAria")}
       >
         <Search />
       </Button>

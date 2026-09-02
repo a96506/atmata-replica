@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
@@ -46,6 +48,8 @@ export function NewGrnForm({
   warehouses: Warehouse[];
   suppliers: Supplier[];
 }) {
+  const t = useTranslations("purchasing");
+  const tCommon = useTranslations("common.toast");
   const router = useRouter();
   const confirm = useConfirm();
   const actionToast = useActionToast();
@@ -122,7 +126,7 @@ export function NewGrnForm({
   const runWrite = async (intent: WriteIntent) => {
     if (pending || !po) return;
     if (errors.length > 0) {
-      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      toast.error(tCommon("formValidation", { count: errors.length }));
       return;
     }
     setPending(true);
@@ -159,7 +163,7 @@ export function NewGrnForm({
 
   const onSubmit = async () => {
     if (errors.length > 0) {
-      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      toast.error(tCommon("formValidation", { count: errors.length }));
       return;
     }
     if (overReceiving) {
@@ -258,7 +262,7 @@ export function NewGrnForm({
         <textarea
           value={notes}
           onChange={(e) => wrap(setNotes)(e.target.value)}
-          placeholder="Condition notes, packaging issues, etc."
+          placeholder={t("placeholder.grnNotes")}
           rows={3}
           className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />

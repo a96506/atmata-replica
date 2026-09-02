@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
 import { useActionToast } from "@/hooks/use-action-toast";
@@ -26,6 +26,7 @@ export function InvoiceActions({
   const locale = useLocale();
   const router = useRouter();
   const actionToast = useActionToast();
+  const t = useTranslations("accounting.invoicesPage");
   const idempotencyKeyRef = React.useRef(crypto.randomUUID());
   const [pending, setPending] = React.useState<"approve" | "reject" | null>(
     null,
@@ -48,7 +49,7 @@ export function InvoiceActions({
         idempotencyKeyRef.current = crypto.randomUUID();
         return;
       }
-      toast.success(`Draft bill ${result.data.number} created`);
+      toast.success(t("draftBillCreated", { number: result.data.number }));
       idempotencyKeyRef.current = crypto.randomUUID();
       router.push(`/${locale}/purchasing/bills/${result.data.id}`);
       router.refresh();
@@ -74,7 +75,7 @@ export function InvoiceActions({
         idempotencyKeyRef.current = crypto.randomUUID();
         return;
       }
-      toast.message(`Invoice #${jobId} rejected`);
+      toast.message(t("invoiceRejected", { jobId }));
       idempotencyKeyRef.current = crypto.randomUUID();
       router.refresh();
     } catch {
@@ -90,7 +91,7 @@ export function InvoiceActions({
         href={`/${locale}/purchasing/bills/${alreadyLinkedBillId}`}
         className="rounded-md bg-status-success-muted px-4 py-2 text-sm font-medium text-status-success-foreground ring-1 ring-status-success-border hover:bg-status-success/20"
       >
-        Open vendor bill
+        {t("openVendorBill")}
       </a>
     );
   }
@@ -105,7 +106,7 @@ export function InvoiceActions({
           className="cursor-pointer rounded-md bg-status-success-muted text-status-success-foreground ring-1 ring-status-success-border px-4 py-2 text-sm font-medium transition-colors hover:bg-status-success/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
           onClick={() => void onApprove()}
         >
-          {pending === "approve" ? "Approving…" : "Approve"}
+          {pending === "approve" ? t("approving") : t("approve")}
         </button>
         <button
           type="button"
@@ -113,7 +114,7 @@ export function InvoiceActions({
           className="cursor-pointer rounded-md bg-destructive px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-destructive/90 focus:outline-none focus-visible:ring-2 focus-visible:ring-destructive disabled:cursor-not-allowed disabled:opacity-50"
           onClick={() => void onReject()}
         >
-          {pending === "reject" ? "Rejecting…" : "Reject"}
+          {pending === "reject" ? t("rejecting") : t("reject")}
         </button>
       </div>
       {!canApprove && blockedReason ? (

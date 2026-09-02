@@ -667,22 +667,33 @@ export function findLeaf(pathname: string): NavLeaf | undefined {
     .sort((a, b) => b.href.length - a.href.length)[0];
 }
 
-export type Crumb = { href?: string; label: string };
+export type Crumb = { href?: string; label: string; labelKey?: string };
 
 /**
  * Breadcrumb trail for a pathname: module → section → record.
  * Unknown trailing segments (record ids, `new`) become a final non-link crumb.
+ * `labelKey` resolves against `nav` (same as the sidebar); `label` is fallback.
  */
 export function buildBreadcrumbs(pathname: string): Crumb[] {
   const path = stripLocale(pathname);
   const module = findModule(path);
   if (!module) return [];
 
-  const crumbs: Crumb[] = [{ href: module.href, label: module.label }];
+  const crumbs: Crumb[] = [
+    {
+      href: module.href,
+      label: module.label,
+      labelKey: module.labelKey ?? module.key,
+    },
+  ];
 
   const leaf = findLeaf(path);
   if (leaf && leaf.href !== module.href) {
-    crumbs.push({ href: leaf.href, label: leaf.label });
+    crumbs.push({
+      href: leaf.href,
+      label: leaf.label,
+      labelKey: leaf.labelKey,
+    });
   }
 
   const base = leaf?.href ?? module.href;

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { PackageX } from "lucide-react";
 import { DataTable } from "@/components/data-table";
@@ -151,7 +151,7 @@ export default async function InventoryPage() {
               s.max ?? "—",
               <AbcBadge key={s.sku} abc={s.abc} />,
             ])}
-            emptyMessage="No products yet."
+            emptyMessage={t("empty.products")}
           />
         </TabsContent>
 
@@ -203,7 +203,7 @@ export default async function InventoryPage() {
               r.eta,
               t(`inboundState.${r.state}`),
             ])}
-            emptyMessage="No open inbound receipts."
+            emptyMessage={t("empty.inbound")}
           />
         </TabsContent>
 
@@ -229,7 +229,7 @@ export default async function InventoryPage() {
                 "—"
               ),
             ])}
-            emptyMessage="No open outbound deliveries."
+            emptyMessage={t("empty.outbound")}
           />
         </TabsContent>
       </Tabs>

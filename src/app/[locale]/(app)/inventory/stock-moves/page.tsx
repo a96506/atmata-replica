@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
 import { RoleHomeActions } from "@/components/app/RoleHomeActions";
 import { DocumentList } from "@/components/doc/DocumentList";
@@ -61,6 +61,7 @@ export default async function Page({
 }) {
   const { locale } = await params;
   const th = await getTranslations("inventory.homeActions");
+  const t = await getTranslations("inventory");
   const sp = await searchParams;
   const { page, limit, offset } = parseListPage(sp);
   const sku = typeof sp.sku === "string" ? sp.sku : undefined;
@@ -125,7 +126,7 @@ export default async function Page({
               { key: "source", label: "Source" },
             ]}
             rows={[]}
-            emptyMessage="No stock moves yet."
+            emptyMessage={t("empty.stockMoves")}
             serverPagination={{ page, pageSize: limit, total: 0 }}
           />
         </DocumentList>
@@ -255,7 +256,7 @@ export default async function Page({
             ),
           ];
         })}
-        emptyMessage="No stock moves yet."
+        emptyMessage={t("empty.stockMoves")}
         serverPagination={{ page, pageSize: limit, total }}
       />
     </DocumentList>

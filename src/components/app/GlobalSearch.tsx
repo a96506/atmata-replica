@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import {
   buildSearchIndex,
   hydrateDatabaseSearchResult,
@@ -13,13 +14,6 @@ import { browserGet, browserSet } from "@/lib/browser-store";
 import type { SearchKind, SearchResult } from "@/types/search";
 
 const RECENT_KEY = "atmata.search.recent";
-
-const KIND_LABEL: Record<SearchKind, string> = {
-  doc: "Doc",
-  product: "Product",
-  action: "Action",
-  settings: "Settings",
-};
 
 const KIND_TONE: Record<SearchKind, string> = {
   doc: "bg-primary/10 text-primary",
@@ -35,6 +29,7 @@ export function GlobalSearch({
   open: boolean;
   onClose: () => void;
 }) {
+  const t = useTranslations("chrome.search");
   const router = useRouter();
   const params = useParams<{ locale?: string }>();
   const locale = params?.locale ?? "en";
@@ -149,7 +144,7 @@ export function GlobalSearch({
     >
       <div className="w-full max-w-2xl overflow-hidden rounded-xl border border-border bg-card shadow-2xl">
         <div className="flex items-center border-b border-border px-3">
-          <span aria-hidden className="mr-2 text-muted-foreground">⌕</span>
+          <span aria-hidden className="me-2 text-muted-foreground">⌕</span>
           <input
             ref={inputRef}
             type="text"
@@ -159,22 +154,22 @@ export function GlobalSearch({
               setActive(0);
             }}
             onKeyDown={onKey}
-            placeholder="Search docs, products, actions… (Esc to close)"
+            placeholder={t("placeholder")}
             className="w-full bg-transparent px-2 py-3 text-sm focus:outline-none"
-            aria-label="Global search"
+            aria-label={t("ariaLabel")}
           />
           <span className="hidden text-xs text-muted-foreground sm:inline">⌘K</span>
         </div>
         <div className="max-h-[60vh] overflow-y-auto">
           {visible.length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-              {query.trim() ? "No matches." : "Type to search, or pick a recent."}
+              {query.trim() ? t("noMatches") : t("typeToSearch")}
             </div>
           ) : (
             <ul role="listbox">
               {!query.trim() ? (
                 <li className="px-4 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  Recent
+                  {t("recent")}
                 </li>
               ) : null}
               {visible.map((r, i) => {
@@ -186,7 +181,7 @@ export function GlobalSearch({
                       onClick={() => select(r)}
                       onMouseEnter={() => setActive(i)}
                       className={
-                        "flex w-full cursor-pointer items-start gap-3 px-4 py-2.5 text-left " +
+                        "flex w-full cursor-pointer items-start gap-3 px-4 py-2.5 text-start " +
                         (isActive ? "bg-primary/10" : "hover:bg-muted")
                       }
                     >
@@ -196,7 +191,7 @@ export function GlobalSearch({
                           KIND_TONE[r.kind]
                         }
                       >
-                        {KIND_LABEL[r.kind]}
+                        {t(`kinds.${r.kind}`)}
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium text-foreground">
@@ -216,8 +211,8 @@ export function GlobalSearch({
           )}
         </div>
         <footer className="flex items-center justify-between border-t border-border bg-muted/50 px-3 py-2 text-[11px] text-muted-foreground">
-          <span>↑ ↓ navigate · Enter select · Esc close</span>
-          <span>{index.length + databaseResults.length} items indexed</span>
+          <span>{t("hint")}</span>
+          <span>{t("itemsIndexed", { count: index.length + databaseResults.length })}</span>
         </footer>
       </div>
     </div>

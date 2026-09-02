@@ -48,17 +48,17 @@ export function DocLines({
 
   return (
     <div className="overflow-x-auto rounded-xl border border-border">
-      <table className="w-full text-left text-sm">
+      <table className="w-full text-start text-sm">
         <thead className="border-b border-border bg-muted/50 text-xs font-medium tracking-wide text-foreground uppercase">
           <tr>
             <th className="px-4 py-3">#</th>
             <th className="px-4 py-3">Description</th>
-            <th className="px-4 py-3 text-right">{qtyHeader}</th>
-            <th className="px-4 py-3 text-right">Unit</th>
-            <th className="px-4 py-3 text-right">Tax</th>
-            <th className="px-4 py-3 text-right">Net</th>
-            <th className="px-4 py-3 text-right">Tax amt</th>
-            <th className="px-4 py-3 text-right">Total</th>
+            <th className="px-4 py-3 text-end">{qtyHeader}</th>
+            <th className="px-4 py-3 text-end">Unit</th>
+            <th className="px-4 py-3 text-end">Tax</th>
+            <th className="px-4 py-3 text-end">Net</th>
+            <th className="px-4 py-3 text-end">Tax amt</th>
+            <th className="px-4 py-3 text-end">Total</th>
             {extraColumn ? <th className="px-4 py-3">{extraColumn.header}</th> : null}
           </tr>
         </thead>
@@ -84,20 +84,20 @@ export function DocLines({
                     l.description
                   )}
                 </td>
-                <td className="px-4 py-3 text-right tabular-nums">
+                <td className="px-4 py-3 text-end tabular-nums">
                   {flowedKind ? (
                     <FlowedCell line={l} kind={flowedKind} />
                   ) : (
                     l.qty
                   )}
                 </td>
-                <td className="px-4 py-3 text-right tabular-nums">{fmt(l.unitPrice)}</td>
-                <td className="px-4 py-3 text-right text-xs text-muted-foreground">
+                <td className="px-4 py-3 text-end tabular-nums">{fmt(l.unitPrice)}</td>
+                <td className="px-4 py-3 text-end text-xs text-muted-foreground">
                   {tc ? `${tc.code} · ${(tc.rate * 100).toFixed(0)}%` : "—"}
                 </td>
-                <td className="px-4 py-3 text-right tabular-nums">{fmt(net)}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{fmt(taxAmt)}</td>
-                <td className="px-4 py-3 text-right font-medium tabular-nums">{fmt(net + taxAmt)}</td>
+                <td className="px-4 py-3 text-end tabular-nums">{fmt(net)}</td>
+                <td className="px-4 py-3 text-end tabular-nums">{fmt(taxAmt)}</td>
+                <td className="px-4 py-3 text-end font-medium tabular-nums">{fmt(net + taxAmt)}</td>
                 {extraColumn ? <td className="px-4 py-3">{extraColumn.render(l)}</td> : null}
               </tr>
             );
@@ -105,18 +105,18 @@ export function DocLines({
         </tbody>
         <tfoot className="border-t border-border bg-muted/50 text-sm">
           <tr>
-            <td colSpan={5} className="px-4 py-2 text-right text-muted-foreground">Subtotal</td>
-            <td className="px-4 py-2 text-right tabular-nums">{fmt(subtotal)}</td>
+            <td colSpan={5} className="px-4 py-2 text-end text-muted-foreground">Subtotal</td>
+            <td className="px-4 py-2 text-end tabular-nums">{fmt(subtotal)}</td>
             <td colSpan={2}></td>
           </tr>
           <tr>
-            <td colSpan={5} className="px-4 py-2 text-right text-muted-foreground">Tax</td>
-            <td className="px-4 py-2 text-right tabular-nums">{fmt(taxTotal)}</td>
+            <td colSpan={5} className="px-4 py-2 text-end text-muted-foreground">Tax</td>
+            <td className="px-4 py-2 text-end tabular-nums">{fmt(taxTotal)}</td>
             <td colSpan={2}></td>
           </tr>
           <tr>
-            <td colSpan={5} className="px-4 py-2 text-right font-medium text-foreground">Total</td>
-            <td className="px-4 py-2 text-right font-semibold tabular-nums">{fmt(subtotal + taxTotal)}</td>
+            <td colSpan={5} className="px-4 py-2 text-end font-medium text-foreground">Total</td>
+            <td className="px-4 py-2 text-end font-semibold tabular-nums">{fmt(subtotal + taxTotal)}</td>
             <td colSpan={2}></td>
           </tr>
         </tfoot>

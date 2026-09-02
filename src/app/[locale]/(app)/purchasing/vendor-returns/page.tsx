@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
@@ -15,6 +16,7 @@ export default async function Page({
   searchParams: Promise<{ page?: string; limit?: string }>;
 }) {
   const { locale } = await params;
+  const t = await getTranslations("purchasing");
   const { page, limit, offset } = parseListPage(await searchParams);
 
   const paged = await listVendorReturnsPage({ limit, offset });
@@ -43,14 +45,14 @@ export default async function Page({
         rows={paged.items.map((v) => [
           <Link
             key="n"
-            href={`/${locale}/purchasing/vendor-returns/${v.id}`}
+            href={`/purchasing/vendor-returns/${v.id}`}
             className="font-medium text-primary hover:underline"
           >
             {v.number}
           </Link>,
           <Link
             key="g"
-            href={`/${locale}/purchasing/goods-receipts/${v.grnId}`}
+            href={`/purchasing/goods-receipts/${v.grnId}`}
             className="text-primary hover:underline"
           >
             {v.grnId}
@@ -60,7 +62,7 @@ export default async function Page({
           v.lines.length,
           <StateBadge key="s" state={v.state} />,
         ])}
-        emptyMessage="No vendor returns yet."
+        emptyMessage={t("empty.vendorReturns")}
         serverPagination={{
           page,
           pageSize: paged.limit,

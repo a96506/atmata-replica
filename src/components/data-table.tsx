@@ -3,6 +3,7 @@
 import * as React from "react";
 import { ArrowDown, ArrowUp, ChevronsUpDown, Inbox } from "lucide-react";
 import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -25,7 +26,7 @@ import {
 export type Column = {
   key: string;
   label: string;
-  /** Existing pages pass `text-right` / `text-right tabular-nums` here. */
+  /** Existing pages pass `text-right` / `text-end` (and tabular-nums) here. */
   className?: string;
   /** Opt out of sorting for a column (e.g. an actions column). */
   sortable?: boolean;
@@ -44,7 +45,7 @@ export type DataTableProps = {
   /** Row cells, positionally matched to `columns`. */
   rows: React.ReactNode[][];
   emptyMessage?: string;
-  /** Overrides the default "Nothing here yet" title in the empty state. */
+  /** Overrides the default empty-state title. */
   emptyTitle?: string;
   /** Sorting is on by default; pass false for pre-ordered data like ledgers. */
   sortable?: boolean;
@@ -66,7 +67,7 @@ export type DataTableProps = {
  * Deliberately keeps the original `columns` + `rows: ReactNode[][]` contract so
  * all 44 existing call sites work untouched, while adding the things an ERP
  * grid needs: client-side sorting, pagination, a sticky header, and numeric
- * alignment inferred from the column's own `text-right` class.
+ * alignment inferred from the column's own `text-right` / `text-end` class.
  *
  * Pass `serverPagination` for heavy lists so Next/Previous fetch the next
  * page from the server via `?page=` instead of slicing a full client array.
@@ -74,14 +75,17 @@ export type DataTableProps = {
 export function DataTable({
   columns,
   rows,
-  emptyMessage = "No data.",
-  emptyTitle = "Nothing here yet",
+  emptyMessage,
+  emptyTitle,
   sortable = true,
   pageSize = 0,
   serverPagination,
   maxBodyHeight,
   className,
 }: DataTableProps) {
+  const t = useTranslations("common.dataTable");
+  const resolvedEmptyMessage = emptyMessage ?? t("emptyMessage");
+  const resolvedEmptyTitle = emptyTitle ?? t("emptyTitle");
   const [sort, setSort] = React.useState<{
     index: number;
     dir: "asc" | "desc";
@@ -129,8 +133,8 @@ export function DataTable({
           <EmptyMedia variant="icon">
             <Inbox />
           </EmptyMedia>
-          <EmptyTitle>{emptyTitle}</EmptyTitle>
-          <EmptyDescription>{emptyMessage}</EmptyDescription>
+          <EmptyTitle>{resolvedEmptyTitle}</EmptyTitle>
+          <EmptyDescription>{resolvedEmptyMessage}</EmptyDescription>
         </EmptyHeader>
       </Empty>
     );
@@ -259,9 +263,11 @@ export function DataTable({
       {showClientPager ? (
         <div className="flex items-center justify-between gap-2">
           <p className="text-muted-foreground text-xs tabular-nums">
-            {safePage * pageSize + 1}–
-            {Math.min((safePage + 1) * pageSize, sortedRows.length)} of{" "}
-            {sortedRows.length}
+            {t("range", {
+              from: safePage * pageSize + 1,
+              to: Math.min((safePage + 1) * pageSize, sortedRows.length),
+              total: sortedRows.length,
+            })}
           </p>
           <div className="flex items-center gap-2">
             <Button
@@ -270,7 +276,7 @@ export function DataTable({
               disabled={safePage === 0}
               onClick={() => setPage(safePage - 1)}
             >
-              Previous
+              {t("previous")}
             </Button>
             <Button
               variant="outline"
@@ -278,7 +284,7 @@ export function DataTable({
               disabled={safePage >= pageCount - 1}
               onClick={() => setPage(safePage + 1)}
             >
-              Next
+              {t("next")}
             </Button>
           </div>
         </div>
@@ -297,6 +303,7 @@ export function ServerPaginationBar({
   pageSize: number;
   total: number;
 }) {
+  const t = useTranslations("common.dataTable");
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -315,7 +322,7 @@ export function ServerPaginationBar({
   return (
     <div className="flex items-center justify-between gap-2">
       <p className="text-muted-foreground text-xs tabular-nums">
-        {from}–{to} of {total}
+        {t("range", { from, to, total })}
       </p>
       <div className="flex items-center gap-2">
         <Button
@@ -324,7 +331,7 @@ export function ServerPaginationBar({
           disabled={page <= 1}
           onClick={() => goTo(page - 1)}
         >
-          Previous
+          {t("previous")}
         </Button>
         <Button
           variant="outline"
@@ -332,16 +339,17 @@ export function ServerPaginationBar({
           disabled={page >= pageCount}
           onClick={() => goTo(page + 1)}
         >
-          Next
+          {t("next")}
         </Button>
       </div>
     </div>
   );
 }
 
-/** Columns already flagged `text-right` by call sites are numeric. */
+/** Columns already flagged `text-right` / `text-end` by call sites are numeric. */
 function isNumericColumn(col?: Column) {
-  return Boolean(col?.className?.includes("text-right"));
+  const cls = col?.className ?? "";
+  return cls.includes("text-right") || cls.includes("text-end");
 }
 
 /**

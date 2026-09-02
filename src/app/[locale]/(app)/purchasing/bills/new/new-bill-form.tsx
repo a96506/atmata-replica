@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
@@ -55,6 +57,8 @@ export function NewBillForm({
   suppliers: Supplier[];
   paymentTerms: PaymentTerm[];
 }) {
+  const t = useTranslations("purchasing");
+  const tCommon = useTranslations("common.toast");
   const router = useRouter();
   const confirm = useConfirm();
   const actionToast = useActionToast();
@@ -183,7 +187,7 @@ export function NewBillForm({
   const runWrite = async (intent: WriteIntent) => {
     if (pending) return;
     if (errors.length > 0) {
-      toast.error(`Fix ${errors.length} validation error${errors.length === 1 ? "" : "s"} first.`);
+      toast.error(tCommon("formValidation", { count: errors.length }));
       return;
     }
     setPending(true);
@@ -234,7 +238,7 @@ export function NewBillForm({
 
   const onSubmit = async () => {
     if (errors.length > 0) {
-      toast.error(`Fix ${errors.length} validation error${errors.length === 1 ? "" : "s"} first.`);
+      toast.error(tCommon("formValidation", { count: errors.length }));
       return;
     }
     const warnings: string[] = [];
@@ -320,7 +324,7 @@ export function NewBillForm({
                 type="text"
                 value={invoiceNumber}
                 onChange={(e) => wrap(setInvoiceNumber)(e.target.value)}
-                placeholder="As printed on the supplier invoice"
+                placeholder={t("placeholder.billInvoiceNumber")}
                 className={
                   "rounded-md border bg-card px-3 py-1.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring " +
                   (duplicate ? "border-status-pending-border" : "border-input")

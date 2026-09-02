@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
 import { useActionToast } from "@/hooks/use-action-toast";
@@ -29,6 +29,7 @@ export function RuleBuilder() {
   const writeLocale = locale === "ar" ? "ar" : "en";
   const router = useRouter();
   const actionToast = useActionToast();
+  const t = useTranslations("accounting.recon");
   const idempotencyKeyRef = React.useRef(crypto.randomUUID());
 
   const [rules, setRules] = React.useState<RuleRow[]>([]);
@@ -56,11 +57,11 @@ export function RuleBuilder() {
 
   const addRule = async () => {
     if (!targetDocId.trim()) {
-      toast.error("Target doc id is required.");
+      toast.error(t("targetDocRequired"));
       return;
     }
     if (!refContains.trim() && !amountMin && !amountMax) {
-      toast.error("Add at least one condition (ref or amount range).");
+      toast.error(t("conditionRequired"));
       return;
     }
 
@@ -103,7 +104,7 @@ export function RuleBuilder() {
       setAmountMin("");
       setAmountMax("");
       setTargetDocId("");
-      toast.success("Rule saved.");
+      toast.success(t("ruleSaved"));
       await reload();
       router.refresh();
     } catch {
@@ -125,7 +126,7 @@ export function RuleBuilder() {
         actionToast.error(result.error);
         return;
       }
-      toast.success("Rule removed.");
+      toast.success(t("ruleRemoved"));
       await reload();
       router.refresh();
     } catch {
@@ -138,50 +139,49 @@ export function RuleBuilder() {
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-border bg-card p-4">
-        <div className="text-sm font-semibold text-foreground">New rule</div>
+        <div className="text-sm font-semibold text-foreground">{t("newRule")}</div>
         <p className="mt-1 text-xs text-muted-foreground">
-          If <em>reference contains</em> AND <em>amount in [min, max]</em> →
-          propose match to <em>target doc</em>.
+          {t("newRuleHint")}
         </p>
         <div className="mt-3 grid gap-3 md:grid-cols-4">
-          <Field label="Reference contains">
+          <Field label={t("refContains")}>
             <input
               type="text"
               value={refContains}
               onChange={(e) => setRefContains(e.target.value)}
-              placeholder="e.g. PCG/2026"
+              placeholder={t("placeholderRef")}
               className="w-full rounded-md border border-input px-3 py-1.5 text-sm"
               disabled={pending}
             />
           </Field>
-          <Field label="Amount min">
+          <Field label={t("amountMin")}>
             <input
               type="number"
               step="any"
               value={amountMin}
               onChange={(e) => setAmountMin(e.target.value)}
-              placeholder="(optional)"
+              placeholder={t("optional")}
               className="w-full rounded-md border border-input px-3 py-1.5 text-sm"
               disabled={pending}
             />
           </Field>
-          <Field label="Amount max">
+          <Field label={t("amountMax")}>
             <input
               type="number"
               step="any"
               value={amountMax}
               onChange={(e) => setAmountMax(e.target.value)}
-              placeholder="(optional)"
+              placeholder={t("optional")}
               className="w-full rounded-md border border-input px-3 py-1.5 text-sm"
               disabled={pending}
             />
           </Field>
-          <Field label="Target doc id">
+          <Field label={t("targetDocId")}>
             <input
               type="text"
               value={targetDocId}
               onChange={(e) => setTargetDocId(e.target.value)}
-              placeholder="e.g. bill_1 / inv_1"
+              placeholder={t("placeholderTarget")}
               className="w-full rounded-md border border-input px-3 py-1.5 text-sm"
               disabled={pending}
             />
@@ -194,23 +194,22 @@ export function RuleBuilder() {
             disabled={pending}
             className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary disabled:opacity-50"
           >
-            Add rule
+            {t("addRule")}
           </button>
         </div>
       </div>
 
       <div>
         <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Active rules ({rules.length})
+          {t("activeRules", { count: rules.length })}
         </div>
         {loading ? (
           <div className="rounded-md border border-dashed border-input bg-muted/50 p-4 text-sm text-muted-foreground">
-            Loading rules…
+            {t("loadingRules")}
           </div>
         ) : rules.length === 0 ? (
           <div className="rounded-md border border-dashed border-input bg-muted/50 p-4 text-sm text-muted-foreground">
-            No rules yet. Add one above, then import a statement to see suggested
-            matches.
+            {t("noRules")}
           </div>
         ) : (
           <ul className="space-y-2">
@@ -240,7 +239,7 @@ export function RuleBuilder() {
                   <div className="text-foreground">
                     {ref ? (
                       <span>
-                        ref contains{" "}
+                        {t("refContainsLabel")}{" "}
                         <span className="font-mono">{`"${ref}"`}</span>
                       </span>
                     ) : null}
@@ -249,7 +248,10 @@ export function RuleBuilder() {
                       : ""}
                     {amtMin !== undefined || amtMax !== undefined ? (
                       <span>
-                        amount ∈ [{amtMin ?? "−∞"}, {amtMax ?? "+∞"}]
+                        {t("amountIn", {
+                          min: amtMin ?? "−∞",
+                          max: amtMax ?? "+∞",
+                        })}
                       </span>
                     ) : null}
                     {" → "}
@@ -261,7 +263,7 @@ export function RuleBuilder() {
                     disabled={pending}
                     className="cursor-pointer text-xs text-destructive hover:underline disabled:opacity-50"
                   >
-                    Remove
+                    {t("remove")}
                   </button>
                 </li>
               );

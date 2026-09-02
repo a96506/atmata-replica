@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
@@ -33,6 +34,7 @@ export default async function Page({
   searchParams: Promise<{ page?: string; limit?: string }>;
 }) {
   const { locale } = await params;
+  const t = await getTranslations("inventory");
   const { page, limit, offset } = parseListPage(await searchParams);
 
   const { items: trxs, total } = await listInternalTransfersPage({ limit, offset });
@@ -77,7 +79,7 @@ export default async function Page({
             <StateBadge key="s" state={t.state} />,
           ];
         })}
-        emptyMessage="No transfers yet."
+        emptyMessage={t("empty.transfers")}
         serverPagination={{ page, pageSize: limit, total }}
       />
     </DocumentList>

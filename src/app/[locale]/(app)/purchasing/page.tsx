@@ -119,7 +119,7 @@ export default async function PurchasingPage() {
               severityBadge(r.severity),
               <PoSuggestionActions key={`a-${r.id}`} prId={r.prId} />,
             ])}
-            emptyMessage="No open purchase requisitions."
+            emptyMessage={t("empty.openPrs")}
           />
         </TabsContent>
 
@@ -141,7 +141,7 @@ export default async function PurchasingPage() {
               b.discrepancy ?? "—",
               <BillMatchActions key={b.id} id={b.id} status={b.status} />,
             ])}
-            emptyMessage="No vendor bills yet."
+            emptyMessage={t("empty.bills")}
           />
         </TabsContent>
 
@@ -210,7 +210,7 @@ export default async function PurchasingPage() {
               r.flag ? t(`recvFlag.${r.flag}`) : "—",
               <ReceivingDemoActions key={r.id} grnId={r.id} />,
             ])}
-            emptyMessage="No goods receipts yet."
+            emptyMessage={t("empty.goodsReceipts")}
           />
         </TabsContent>
       </Tabs>

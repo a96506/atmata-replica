@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
 import { useActionToast } from "@/hooks/use-action-toast";
@@ -46,6 +47,8 @@ export function NewDnForm({
   taxCodes: TaxCode[];
   warehouses: Warehouse[];
 }) {
+  const tToast = useTranslations("common.toast");
+  const tSalesToast = useTranslations("sales.toast");
   const router = useRouter();
   const confirm = useConfirm();
   const actionToast = useActionToast();
@@ -130,7 +133,7 @@ export function NewDnForm({
   const runWrite = async (intent: WriteIntent) => {
     if (pending || !so) return;
     if (errors.length > 0) {
-      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      toast.error(tToast("formValidation", { count: errors.length }));
       return;
     }
     setPending(true);
@@ -152,8 +155,19 @@ export function NewDnForm({
         return;
       }
       const verb =
-        intent === "save_draft" ? "Saved draft" : intent === "post" ? "Posted" : "Submitted";
-      toast.success(`${verb}: ${result.data.number} · ${result.data.state} · ${totalQty} units`);
+        intent === "save_draft"
+          ? tSalesToast("verbSavedDraft")
+          : intent === "post"
+            ? tSalesToast("verbPosted")
+            : tSalesToast("verbSubmitted");
+      toast.success(
+        tSalesToast("successUnits", {
+          verb,
+          number: result.data.number,
+          state: result.data.state,
+          qty: totalQty,
+        }),
+      );
       idempotencyKeyRef.current = crypto.randomUUID();
       setDirty(false);
       router.push(`/${locale}/sales/deliveries/${result.data.id}`);
@@ -166,7 +180,7 @@ export function NewDnForm({
 
   const onSubmit = async () => {
     if (errors.length > 0) {
-      toast.error(`Fix ${errors.length} validation issue${errors.length === 1 ? "" : "s"} first.`);
+      toast.error(tToast("formValidation", { count: errors.length }));
       return;
     }
     const ok = await confirm({

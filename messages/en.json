@@ -12,7 +12,45 @@
     "role": "admin",
     "signOut": "Sign out",
     "locale": "Language",
-    "skipToContent": "Skip to content"
+    "skipToContent": "Skip to content",
+    "search": {
+      "placeholder": "Search docs, products, actions… (Esc to close)",
+      "ariaLabel": "Global search",
+      "trigger": "Search",
+      "openAria": "Open global search",
+      "noMatches": "No matches.",
+      "typeToSearch": "Type to search, or pick a recent.",
+      "recent": "Recent",
+      "hint": "↑ ↓ navigate · Enter select · Esc close",
+      "itemsIndexed": "{count} items indexed",
+      "kinds": {
+        "doc": "Doc",
+        "product": "Product",
+        "action": "Action",
+        "settings": "Settings"
+      }
+    },
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "density": "Density",
+    "densityComfortable": "Comfortable",
+    "densityCompact": "Compact",
+    "notifications": {
+      "title": "Notifications",
+      "aria": "Notifications",
+      "ariaUnread": "Notifications, {unread} unread",
+      "markAllRead": "Mark all read",
+      "inboxSection": "Inbox ({count})",
+      "botSection": "Bot-proposed ({count})",
+      "recentAudit": "Recent audit",
+      "emptyQueued": "No queued actions yet.",
+      "emptyAudit": "No audit events.",
+      "openInbox": "Open full inbox",
+      "botProposedSubtitle": "bot-proposed · {when}"
+    }
   },
   "nav": {
     "inbox": "AI Inbox",
@@ -251,6 +289,168 @@
       "colDebit": "Debit",
       "colCredit": "Credit",
       "colBalance": "Balance"
+    },
+    "journalEntries": {
+      "title": "Journal entries",
+      "subtitle": "One JE per posted business document. Every Dr must equal Cr.",
+      "newJe": "New JE",
+      "colNumber": "Number",
+      "colDate": "Date",
+      "colDescription": "Description",
+      "colSource": "Source",
+      "colAmount": "Amount",
+      "colStatus": "Status",
+      "empty": "No journal entries yet."
+    },
+    "jeForm": {
+      "dateRequired": "Date required.",
+      "descriptionRequired": "Description required.",
+      "unbalanced": "Unbalanced — Dr {debit} ≠ Cr {credit}.",
+      "pickAccount": "Pick an account.",
+      "debitOrCreditOnly": "Line can only be debit OR credit, not both.",
+      "enterDebitOrCredit": "Enter a debit or credit.",
+      "savedDraft": "Saved draft",
+      "submittedForApproval": "Submitted for approval",
+      "submitted": "Submitted",
+      "writeSuccess": "{verb}: {number} · {state} · {amount}",
+      "submitConfirmTitle": "Submit {number} for approval?",
+      "submitConfirmDescription": "Routes {amount} in balanced journal lines for approval before posting.",
+      "submitConfirmLabel": "Submit for approval",
+      "title": "New journal entry · {number}",
+      "subtitle": "Backend issues the final number on save.",
+      "balanced": "Balanced",
+      "unbalancedBanner": "Unbalanced — not ready",
+      "jeDate": "JE date",
+      "description": "Description",
+      "descriptionPlaceholder": "What is this entry for?",
+      "account": "Account",
+      "debit": "Debit",
+      "credit": "Credit",
+      "mustBalance": "Debits and credits must balance.",
+      "remove": "Remove",
+      "addLine": "+ Add line",
+      "submitLabel": "Submit for approval"
+    },
+    "invoicesPage": {
+      "title": "Invoices",
+      "subtitle": "Upload PDFs for AI extraction, then review and approve.",
+      "colFile": "File",
+      "colVendor": "Vendor",
+      "colTotal": "Total",
+      "colConfidence": "Confidence",
+      "colStatus": "Status",
+      "review": "Review",
+      "toBill": "→ Bill",
+      "empty": "No invoices yet. Upload a PDF to get started.",
+      "fileTooLarge": "File too large (max 50 MB).",
+      "uploadedOcr": "Uploaded {name} — OCR queued.",
+      "uploading": "Uploading…",
+      "upload": "Upload",
+      "draftBillCreated": "Draft bill {number} created",
+      "invoiceRejected": "Invoice #{jobId} rejected",
+      "openVendorBill": "Open vendor bill",
+      "approve": "Approve",
+      "approving": "Approving…",
+      "reject": "Reject",
+      "rejecting": "Rejecting…"
+    },
+    "recon": {
+      "title": "Bank Reconciliation",
+      "subtitle": "Import a bank statement, define matching rules, and accept suggested matches against open bills and invoices.",
+      "noOpenTitle": "No open statements",
+      "noOpenDescription": "Import a bank statement to start a reconciliation workspace.",
+      "statementsHeading": "Bank statements",
+      "colNumber": "Number",
+      "colStatus": "Status",
+      "colPeriod": "Period",
+      "colCreated": "Created",
+      "open": "Open",
+      "emptyStatements": "No open statements.",
+      "sessionDisabled": "Session start is disabled in UI-only mode.",
+      "journalId": "Journal ID",
+      "journalIdPlaceholder": "e.g. 7",
+      "startSession": "Start session",
+      "back": "← Reconciliation",
+      "statementTitle": "Statement {number}",
+      "statusLine": "Status: {status}",
+      "periodRange": "{start} → {end}",
+      "suggestionCount": "{count, plural, one {# suggestion} other {# suggestions}}",
+      "notFoundBody": "Bank statement not found.",
+      "notFoundTitle": "Statement not found",
+      "notFoundDescription": "Open a statement from the reconciliation list. The URL id is the bank_statement_id.",
+      "noMatchesTitle": "No suggested matches",
+      "noMatchesDescription": "Run matching rules or wait for suggestions on unmatched lines.",
+      "emptySuggestions": "No suggestions for this statement.",
+      "colBankRef": "Bank ref",
+      "colAmount": "Amount",
+      "colMatchedEntry": "Matched entry",
+      "colEntryAmount": "Entry amount",
+      "colConfidence": "Confidence",
+      "colType": "Type",
+      "noMatchId": "No match id available for this suggestion.",
+      "matchAccepted": "Match accepted.",
+      "noLineId": "No line id available to skip.",
+      "lineSkipped": "Line skipped.",
+      "match": "Match",
+      "skip": "Skip",
+      "lineIdRequired": "Line id required",
+      "selectBankAccount": "Select a bank account first.",
+      "csvNoLines": "CSV contained no statement lines.",
+      "csvHeaderInvalid": "CSV header must include: date, description, [reference], amount",
+      "importedLines": "Imported {count, plural, one {# statement line} other {# statement lines}}.",
+      "aiMatchingFailed": "AI matching failed. Try again.",
+      "aiSuggestionsGenerated": "Generated {count} AI match suggestions.",
+      "bankAccount": "Bank account",
+      "noBankAccounts": "No bank accounts",
+      "statementNumber": "Statement number",
+      "importCsv": "Import bank statement CSV",
+      "importHint": "Expected header: date, description, [reference], amount. Parsed in-browser; imported via import_bank_statement.",
+      "findingMatches": "Finding matches…",
+      "suggestAiMatches": "Suggest AI matches",
+      "colDate": "Date",
+      "colDescription": "Description",
+      "colReference": "Reference",
+      "colSuggestedMatch": "Suggested match",
+      "aiProposal": "AI proposal · review only",
+      "noSuggestion": "No suggestion",
+      "ruleSaved": "Rule saved.",
+      "ruleRemoved": "Rule removed.",
+      "targetDocRequired": "Target doc id is required.",
+      "conditionRequired": "Add at least one condition (ref or amount range).",
+      "newRule": "New rule",
+      "newRuleHint": "If reference contains AND amount in [min, max] → propose match to target doc.",
+      "refContains": "Reference contains",
+      "amountMin": "Amount min",
+      "amountMax": "Amount max",
+      "targetDocId": "Target doc id",
+      "optional": "(optional)",
+      "addRule": "Add rule",
+      "activeRules": "Active rules ({count})",
+      "loadingRules": "Loading rules…",
+      "noRules": "No rules yet. Add one above, then import a statement to see suggested matches.",
+      "refContainsLabel": "ref contains",
+      "amountIn": "amount ∈ [{min}, {max}]",
+      "remove": "Remove",
+      "placeholderRef": "e.g. PCG/2026",
+      "placeholderTarget": "e.g. bill_1 / inv_1"
+    },
+    "closeActions": {
+      "noFiscalPeriodStart": "No fiscal period id for this month — cannot start close.",
+      "noFiscalPeriod": "No fiscal period id for this month.",
+      "fiscalPeriodNotFound": "Fiscal period not found for this month",
+      "startConfirmTitle": "Start close for {period}?",
+      "startConfirmDescription": "Soft-closes the fiscal period so posting is locked to `period_adjust` users, then creates the 10-step close checklist. Re-open it from Settings → Fiscal calendar if you need to post more.",
+      "startConfirmDescriptionShort": "Soft-closes the fiscal period so posting is locked to `period_adjust` users, then creates the 10-step close checklist.",
+      "startConfirmLabel": "Start close",
+      "closeStarted": "Close started for {period}.",
+      "runClose": "Run close",
+      "runCloseFor": "Run close for {period}",
+      "rescanned": "Re-scanned {period}.",
+      "rescan": "Re-scan",
+      "taskIdRequired": "Task id required",
+      "cannotCompleteStep": "Cannot complete step — no period_close_tasks id.",
+      "stepComplete": "Step {stepName} marked complete · {period}",
+      "markComplete": "Mark complete"
     }
   },
   "sales": {
@@ -372,6 +572,26 @@
       "newInvoice": "New invoice",
       "newReceipt": "New receipt",
       "creditNotes": "Credit notes"
+    },
+    "empty": {
+      "quotes": "No quotes yet.",
+      "orders": "No sales orders yet.",
+      "customers": "No customers yet.",
+      "invoices": "No invoices yet.",
+      "deliveries": "No delivery notes yet.",
+      "receipts": "No customer receipts yet.",
+      "returns": "No customer returns yet.",
+      "creditNotes": "No credit notes yet."
+    },
+    "toast": {
+      "creditHoldBlocked": "Customer on credit hold — SO confirm blocked.",
+      "successMoney": "{verb}: {number} · {state} · {currency} {total}",
+      "successUnits": "{verb}: {number} · {state} · {qty} units",
+      "successAmount": "{verb}: {number} · {state} · {amount}",
+      "verbSavedDraft": "Saved draft",
+      "verbPosted": "Posted",
+      "verbSubmitted": "Submitted",
+      "verbConfirmed": "Confirmed"
     }
   },
   "purchasing": {
@@ -497,6 +717,26 @@
     "alertType": {
       "price_increase": "Price increase",
       "price_watch": "Price watch"
+    },
+    "empty": {
+      "openPrs": "No open purchase requisitions.",
+      "bills": "No vendor bills yet.",
+      "goodsReceipts": "No goods receipts yet.",
+      "prs": "No purchase requisitions yet.",
+      "rfqs": "No RFQs yet.",
+      "payments": "No vendor payments yet.",
+      "vendorReturns": "No vendor returns yet.",
+      "debitNotes": "No debit notes yet.",
+      "purchaseOrders": "No purchase orders yet."
+    },
+    "toast": {
+      "awarded": "Awarded · {vendor}"
+    },
+    "placeholder": {
+      "prNotes": "Reason for the request…",
+      "poNotes": "Internal notes (visible to approver)…",
+      "grnNotes": "Condition notes, packaging issues, etc.",
+      "billInvoiceNumber": "As printed on the supplier invoice"
     }
   },
   "inventory": {
@@ -549,7 +789,28 @@
       "stockMoves": "Stock moves",
       "newTransfer": "New transfer"
     },
-    "colWarehouse": "Warehouse"
+    "colWarehouse": "Warehouse",
+    "empty": {
+      "products": "No products yet.",
+      "adjustments": "No adjustments yet.",
+      "transfers": "No transfers yet.",
+      "stockMoves": "No stock moves yet.",
+      "inbound": "No open inbound receipts.",
+      "outbound": "No open outbound deliveries."
+    },
+    "toast": {
+      "saved": "{verb}: {number} · {state}",
+      "savedWithQty": "{verb}: {number} · {state} · {qty} units",
+      "verbDraft": "Saved draft",
+      "verbPosted": "Posted",
+      "verbSubmitted": "Submitted"
+    },
+    "form": {
+      "lotRequired": "Required",
+      "lotEmpty": "—",
+      "transferNotes": "Transfer reason…",
+      "adjustmentNotes": "Explanation for the adjustment…"
+    }
   },
   "settings": {
     "overviewTitle": "Settings",
@@ -626,6 +887,29 @@
         "viewer": "Viewer",
         "ai_agent": "AI agent"
       }
+    },
+    "coa": {
+      "title": "Chart of accounts",
+      "subtitle": "Account tree by class. Each account carries an EN + AR name. Used by every posted document to write its journal entry.",
+      "entity": "Account",
+      "code": "Code",
+      "nameEn": "Name (EN)",
+      "nameAr": "Name (AR)",
+      "type": "Type",
+      "parent": "Parent",
+      "parentAccount": "Parent account",
+      "parentHelp": "Optional — groups this account under a parent in the tree.",
+      "codePlaceholder": "e.g. 1200",
+      "active": "Active",
+      "yes": "yes",
+      "no": "no",
+      "types": {
+        "asset": "Asset",
+        "liability": "Liability",
+        "equity": "Equity",
+        "revenue": "Revenue",
+        "expense": "Expense"
+      }
     }
   },
   "deferred": {
@@ -673,6 +957,18 @@
     "error": {
       "title": "Something went wrong",
       "retry": "Retry"
+    },
+    "dataTable": {
+      "emptyTitle": "Nothing here yet",
+      "emptyMessage": "No data.",
+      "previous": "Previous",
+      "next": "Next",
+      "range": "{from}–{to} of {total}",
+      "selectAllRows": "Select all rows",
+      "selectRow": "Select row {id}"
+    },
+    "toast": {
+      "formValidation": "Fix {count} validation issue(s) first."
     }
   },
   "adoption": {
@@ -951,5 +1247,22 @@
       "EMAIL_DELIVERY_FAILED": "Email delivery failed.",
       "INTERNAL": "Something went wrong."
     }
+  },
+  "masterCrud": {
+    "deleteTitle": "Delete {entity}?",
+    "deleteDescription": "This cannot be undone.",
+    "deleteConfirm": "Delete",
+    "empty": "No {entity}s yet.",
+    "newEntity": "New {entity}",
+    "editEntity": "Edit {entity}",
+    "formCreateHint": "Fill in the fields below.",
+    "formEditHint": "Update the fields below.",
+    "saving": "Saving…",
+    "saveChanges": "Save changes",
+    "toastCreated": "{entity} created",
+    "toastUpdated": "{entity} updated",
+    "toastDeleted": "{entity} deleted",
+    "ariaEdit": "Edit {entity}",
+    "ariaDelete": "Delete {entity}"
   }
 }

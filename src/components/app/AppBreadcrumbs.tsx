@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { usePathname } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import { buildBreadcrumbs } from "@/config/navigation";
@@ -23,17 +24,21 @@ import {
  */
 export function AppBreadcrumbs() {
   const pathname = usePathname();
+  const t = useTranslations("nav");
   const crumbs = buildBreadcrumbs(pathname);
   const overrideLabel = useBreadcrumbLabel(pathname);
 
   if (crumbs.length === 0) return null;
 
+  const crumbLabel = (crumb: { label: string; labelKey?: string }) =>
+    crumb.labelKey && t.has(crumb.labelKey) ? t(crumb.labelKey) : crumb.label;
+
   const finalCrumbs = crumbs.map((crumb, index) => {
     const isLast = index === crumbs.length - 1;
     if (isLast && overrideLabel != null) {
-      return { ...crumb, label: overrideLabel };
+      return { ...crumb, label: overrideLabel, labelKey: undefined };
     }
-    return crumb;
+    return { ...crumb, label: crumbLabel(crumb) };
   });
 
   return (

@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server";
 import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
@@ -16,6 +17,7 @@ export default async function Page({
   searchParams: Promise<{ page?: string; limit?: string }>;
 }) {
   const { locale } = await params;
+  const t = await getTranslations("sales");
   const { page, limit, offset } = parseListPage(await searchParams);
 
   const paged = await listCustomerReceiptsPage({ limit, offset });
@@ -47,7 +49,7 @@ export default async function Page({
         rows={paged.items.map((r) => [
           <Link
             key="n"
-            href={`/${locale}/sales/receipts/${r.id}`}
+            href={`/sales/receipts/${r.id}`}
             className="font-medium text-primary hover:underline"
           >
             {r.number}
@@ -60,7 +62,7 @@ export default async function Page({
           r.method,
           <StateBadge key="s" state={r.state} />,
         ])}
-        emptyMessage="No customer receipts yet."
+        emptyMessage={t("empty.receipts")}
         serverPagination={{
           page,
           pageSize: paged.limit,

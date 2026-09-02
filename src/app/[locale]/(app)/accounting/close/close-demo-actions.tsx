@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
 import { useActionToast } from "@/hooks/use-action-toast";
@@ -24,18 +24,18 @@ export function CloseDemoToolbar({
   const router = useRouter();
   const actionToast = useActionToast();
   const confirm = useConfirm();
+  const t = useTranslations("accounting.closeActions");
   const [pending, setPending] = React.useState(false);
 
   const onStart = async () => {
     if (!fiscalPeriodId) {
-      toast.error("No fiscal period id for this month — cannot start close.");
+      toast.error(t("noFiscalPeriodStart"));
       return;
     }
     const ok = await confirm({
-      title: `Start close for ${period}?`,
-      description:
-        "Soft-closes the fiscal period so posting is locked to `period_adjust` users, then creates the 10-step close checklist. Re-open it from Settings → Fiscal calendar if you need to post more.",
-      confirmLabel: "Start close",
+      title: t("startConfirmTitle", { period }),
+      description: t("startConfirmDescription"),
+      confirmLabel: t("startConfirmLabel"),
       tone: "default",
     });
     if (!ok) return;
@@ -50,7 +50,7 @@ export function CloseDemoToolbar({
         actionToast.error(result.error);
         return;
       }
-      toast.success(`Close started for ${period}.`);
+      toast.success(t("closeStarted", { period }));
       router.refresh();
     } catch {
       actionToast.network();
@@ -81,13 +81,13 @@ export function CloseDemoToolbar({
         disabled={pending || !fiscalPeriodId}
         title={
           !fiscalPeriodId
-            ? "Fiscal period not found for this month"
+            ? t("fiscalPeriodNotFound")
             : undefined
         }
         className="cursor-pointer rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary disabled:cursor-not-allowed disabled:opacity-50"
         onClick={() => void onStart()}
       >
-        Run close
+        {t("runClose")}
       </button>
     </form>
   );
@@ -105,6 +105,7 @@ export function CloseStartDemo({
   const router = useRouter();
   const actionToast = useActionToast();
   const confirm = useConfirm();
+  const t = useTranslations("accounting.closeActions");
   const [pending, setPending] = React.useState(false);
 
   return (
@@ -115,14 +116,13 @@ export function CloseStartDemo({
       onClick={() => {
         void (async () => {
           if (!fiscalPeriodId) {
-            toast.error("No fiscal period id for this month.");
+            toast.error(t("noFiscalPeriod"));
             return;
           }
           const ok = await confirm({
-            title: `Start close for ${period}?`,
-            description:
-              "Soft-closes the fiscal period so posting is locked to `period_adjust` users, then creates the 10-step close checklist.",
-            confirmLabel: "Start close",
+            title: t("startConfirmTitle", { period }),
+            description: t("startConfirmDescriptionShort"),
+            confirmLabel: t("startConfirmLabel"),
           });
           if (!ok) return;
           setPending(true);
@@ -136,7 +136,7 @@ export function CloseStartDemo({
               actionToast.error(result.error);
               return;
             }
-            toast.success(`Close started for ${period}.`);
+            toast.success(t("closeStarted", { period }));
             router.refresh();
           } catch {
             actionToast.network();
@@ -146,7 +146,7 @@ export function CloseStartDemo({
         })();
       }}
     >
-      Run close for {period}
+      {t("runCloseFor", { period })}
     </button>
   );
 }
@@ -162,6 +162,7 @@ export function CloseRescanDemo({
   const writeLocale = locale === "ar" ? "ar" : "en";
   const router = useRouter();
   const actionToast = useActionToast();
+  const t = useTranslations("accounting.closeActions");
   const [pending, setPending] = React.useState(false);
 
   return (
@@ -169,13 +170,13 @@ export function CloseRescanDemo({
       type="button"
       disabled={pending || !fiscalPeriodId}
       title={
-        !fiscalPeriodId ? "Fiscal period not found for this month" : undefined
+        !fiscalPeriodId ? t("fiscalPeriodNotFound") : undefined
       }
       className="cursor-pointer rounded-md bg-muted px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
       onClick={() => {
         void (async () => {
           if (!fiscalPeriodId) {
-            toast.error("No fiscal period id for this month.");
+            toast.error(t("noFiscalPeriod"));
             return;
           }
           setPending(true);
@@ -189,7 +190,7 @@ export function CloseRescanDemo({
               actionToast.error(result.error);
               return;
             }
-            toast.success(`Re-scanned ${period}.`);
+            toast.success(t("rescanned", { period }));
             router.refresh();
           } catch {
             actionToast.network();
@@ -199,7 +200,7 @@ export function CloseRescanDemo({
         })();
       }}
     >
-      Re-scan
+      {t("rescan")}
     </button>
   );
 }
@@ -217,18 +218,19 @@ export function CloseStepDemo({
   const writeLocale = locale === "ar" ? "ar" : "en";
   const router = useRouter();
   const actionToast = useActionToast();
+  const t = useTranslations("accounting.closeActions");
   const [pending, setPending] = React.useState(false);
 
   return (
     <button
       type="button"
       disabled={pending || !taskId}
-      title={!taskId ? "Task id required" : undefined}
+      title={!taskId ? t("taskIdRequired") : undefined}
       className="cursor-pointer rounded bg-status-success-muted text-status-success-foreground ring-1 ring-status-success-border px-3 py-1 text-xs font-medium hover:bg-status-success/20 disabled:cursor-not-allowed disabled:opacity-50"
       onClick={() => {
         void (async () => {
           if (!taskId) {
-            toast.error("Cannot complete step — no period_close_tasks id.");
+            toast.error(t("cannotCompleteStep"));
             return;
           }
           setPending(true);
@@ -243,7 +245,7 @@ export function CloseStepDemo({
               actionToast.error(result.error);
               return;
             }
-            toast.success(`Step ${stepName} marked complete · ${period}`);
+            toast.success(t("stepComplete", { stepName, period }));
             router.refresh();
           } catch {
             actionToast.network();
@@ -253,7 +255,7 @@ export function CloseStepDemo({
         })();
       }}
     >
-      Mark complete
+      {t("markComplete")}
     </button>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { toast } from "@/components/toast";
 import { insforge } from "@/lib/insforge/client";
 import { createOcrJob, linkOcrJobSource } from "@/lib/actions/invoices";
@@ -24,11 +25,12 @@ function safeFileName(name: string): string {
 export function DemoUpload() {
   const [uploading, setUploading] = React.useState(false);
   const actionToast = useActionToast();
+  const t = useTranslations("accounting.invoicesPage");
 
   const onFile = async (file: File | undefined) => {
     if (!file) return;
     if (file.size > 50 * 1024 * 1024) {
-      toast.error("File too large (max 50 MB).");
+      toast.error(t("fileTooLarge"));
       return;
     }
     setUploading(true);
@@ -51,11 +53,9 @@ export function DemoUpload() {
         size: file.size,
         filename: file.name,
       });
-      // Enqueue OCR worker job (document_processing_jobs stays queued until handled).
       const ocr = await requestVendorBillOcr(jobId);
       if (!ocr.ok) actionToast.error(ocr.error);
-      toast.success(`Uploaded ${file.name} — OCR queued.`);
-      // Reload so the new job appears in the list.
+      toast.success(t("uploadedOcr", { name: file.name }));
       window.location.reload();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e));
@@ -87,7 +87,7 @@ export function DemoUpload() {
         disabled={uploading}
         className="cursor-pointer rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
       >
-        {uploading ? "Uploading…" : "Upload"}
+        {uploading ? t("uploading") : t("upload")}
       </button>
     </form>
   );

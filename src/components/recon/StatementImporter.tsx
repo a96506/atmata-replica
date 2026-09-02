@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
 import { useActionToast } from "@/hooks/use-action-toast";
@@ -39,6 +39,8 @@ type ParsedLine = {
   amount: number;
 };
 
+const CSV_HEADER_ERROR = "CSV_HEADER_INVALID";
+
 function parseCsv(text: string): ParsedLine[] {
   const lines = text.split(/\r?\n/).filter((l) => l.trim().length > 0);
   if (lines.length === 0) return [];
@@ -49,9 +51,7 @@ function parseCsv(text: string): ParsedLine[] {
   const refi = idx("reference");
   const ami = idx("amount");
   if (di < 0 || desci < 0 || ami < 0) {
-    throw new Error(
-      "CSV header must include: date, description, [reference], amount",
-    );
+    throw new Error(CSV_HEADER_ERROR);
   }
   return lines.slice(1).map((line, i) => {
     const cells = line.split(",").map((c) => c.trim());
@@ -74,6 +74,7 @@ export function StatementImporter() {
   const writeLocale = locale === "ar" ? "ar" : "en";
   const router = useRouter();
   const actionToast = useActionToast();
+  const t = useTranslations("accounting.recon");
   const idempotencyKeyRef = React.useRef(crypto.randomUUID());
 
   const [bankAccounts, setBankAccounts] = React.useState<
@@ -127,7 +128,7 @@ export function StatementImporter() {
   const onUpload = async (file: File | undefined) => {
     if (!file) return;
     if (!bankAccountId) {
-      toast.error("Select a bank account first.");
+      toast.error(t("selectBankAccount"));
       return;
     }
     setUploading(true);
@@ -135,7 +136,7 @@ export function StatementImporter() {
       const csvText = await file.text();
       const parsed = parseCsv(csvText);
       if (parsed.length === 0) {
-        toast.error("CSV contained no statement lines.");
+        toast.error(t("csvNoLines"));
         return;
       }
 
@@ -184,13 +185,15 @@ export function StatementImporter() {
         setStatementId(payload.statementId);
       }
       toast.success(
-        `Imported ${payload.lineCount ?? parsed.length} statement line${
-          (payload.lineCount ?? parsed.length) === 1 ? "" : "s"
-        }.`,
+        t("importedLines", { count: payload.lineCount ?? parsed.length }),
       );
       router.refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : String(e));
+      if (e instanceof Error && e.message === CSV_HEADER_ERROR) {
+        toast.error(t("csvHeaderInvalid"));
+      } else {
+        toast.error(e instanceof Error ? e.message : String(e));
+      }
     } finally {
       setUploading(false);
     }
@@ -205,13 +208,13 @@ export function StatementImporter() {
     });
     setSuggesting(false);
     if (!result.ok) {
-      toast.error("AI matching failed. Try again.");
+      toast.error(t("aiMatchingFailed"));
       return;
     }
     setAiSuggestions(
       new Map(result.data.map((suggestion) => [suggestion.lineId, suggestion])),
     );
-    toast.success(`Generated ${result.data.length} AI match suggestions.`);
+    toast.success(t("aiSuggestionsGenerated", { count: result.data.length }));
   };
 
   return (
@@ -219,7 +222,7 @@ export function StatementImporter() {
       <div className="rounded-xl border border-dashed border-input bg-card p-4 space-y-3">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <label className="flex-1 text-sm text-foreground">
-            <span className="mb-1 block font-medium">Bank account</span>
+            <span className="mb-1 block font-medium">{t("bankAccount")}</span>
             <select
               value={bankAccountId}
               onChange={(e) => setBankAccountId(e.target.value)}
@@ -227,7 +230,7 @@ export function StatementImporter() {
               disabled={uploading || bankAccounts.length === 0}
             >
               {bankAccounts.length === 0 ? (
-                <option value="">No bank accounts</option>
+                <option value="">{t("noBankAccounts")}</option>
               ) : (
                 bankAccounts.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -238,7 +241,7 @@ export function StatementImporter() {
             </select>
           </label>
           <label className="flex-1 text-sm text-foreground">
-            <span className="mb-1 block font-medium">Statement number</span>
+            <span className="mb-1 block font-medium">{t("statementNumber")}</span>
             <input
               type="text"
               value={statementNumber}
@@ -251,15 +254,10 @@ export function StatementImporter() {
         </div>
         <label className="flex flex-col items-start gap-2">
           <span className="text-sm font-medium text-foreground">
-            Import bank statement CSV
+            {t("importCsv")}
           </span>
           <span className="text-xs text-muted-foreground">
-            Expected header:{" "}
-            <span className="font-mono">
-              date, description, [reference], amount
-            </span>
-            . Parsed in-browser; imported via{" "}
-            <span className="font-mono">import_bank_statement</span>.
+            {t("importHint")}
           </span>
           <input
             type="file"
@@ -283,7 +281,7 @@ export function StatementImporter() {
             disabled={!statementId || suggesting}
             className="cursor-pointer rounded-md border border-input bg-card px-3 py-1.5 text-sm font-medium hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {suggesting ? "Finding matches…" : "Suggest AI matches"}
+            {suggesting ? t("findingMatches") : t("suggestAiMatches")}
           </button>
         </div>
       ) : null}
@@ -293,11 +291,11 @@ export function StatementImporter() {
           <table className="w-full text-left text-sm">
             <thead className="border-b border-border bg-muted/50 text-xs font-medium uppercase text-muted-foreground">
               <tr>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Description</th>
-                <th className="px-4 py-3">Reference</th>
-                <th className="px-4 py-3 text-right">Amount</th>
-                <th className="px-4 py-3">Suggested match</th>
+                <th className="px-4 py-3">{t("colDate")}</th>
+                <th className="px-4 py-3">{t("colDescription")}</th>
+                <th className="px-4 py-3">{t("colReference")}</th>
+                <th className="px-4 py-3 text-right">{t("colAmount")}</th>
+                <th className="px-4 py-3">{t("colSuggestedMatch")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
@@ -339,12 +337,12 @@ export function StatementImporter() {
                             {match.reason}
                           </span>
                           <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                            AI proposal · review only
+                            {t("aiProposal")}
                           </span>
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">
-                          No suggestion
+                          {t("noSuggestion")}
                         </span>
                       )}
                     </td>

@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
@@ -15,6 +16,7 @@ export default async function Page({
   searchParams: Promise<{ page?: string; limit?: string }>;
 }) {
   const { locale } = await params;
+  const t = await getTranslations("purchasing");
   const { page, limit, offset } = parseListPage(await searchParams);
 
   const paged = await listDebitNotesPage({ limit, offset });
@@ -41,14 +43,14 @@ export default async function Page({
         rows={paged.items.map((n) => [
           <Link
             key="n"
-            href={`/${locale}/purchasing/debit-notes/${n.id}`}
+            href={`/purchasing/debit-notes/${n.id}`}
             className="font-medium text-primary hover:underline"
           >
             {n.number}
           </Link>,
           <Link
             key="v"
-            href={`/${locale}/purchasing/vendor-returns/${n.vendorReturnId}`}
+            href={`/purchasing/vendor-returns/${n.vendorReturnId}`}
             className="text-primary hover:underline"
           >
             {n.vendorReturnId}
@@ -57,7 +59,7 @@ export default async function Page({
           n.billId ? (
             <Link
               key="b"
-              href={`/${locale}/purchasing/bills/${n.billId}`}
+              href={`/purchasing/bills/${n.billId}`}
               className="text-primary hover:underline"
             >
               {n.billId}
@@ -70,7 +72,7 @@ export default async function Page({
           <span key="s" className="tabular-nums">{formatMoney(n.settled, n.currency)}</span>,
           <StateBadge key="st" state={n.state} />,
         ])}
-        emptyMessage="No debit notes yet."
+        emptyMessage={t("empty.debitNotes")}
         serverPagination={{
           page,
           pageSize: paged.limit,

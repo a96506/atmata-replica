@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/toast";
@@ -31,6 +33,8 @@ export function NewPrForm({
   taxCodes: TaxCode[];
   warehouses: Warehouse[];
 }) {
+  const t = useTranslations("purchasing");
+  const tCommon = useTranslations("common.toast");
   const router = useRouter();
   const confirm = useConfirm();
   const actionToast = useActionToast();
@@ -82,7 +86,7 @@ export function NewPrForm({
   const runWrite = async (intent: WriteIntent) => {
     if (pending) return;
     if (errors.length > 0) {
-      toast.error(`Fix ${errors.length} validation error${errors.length === 1 ? "" : "s"} first.`);
+      toast.error(tCommon("formValidation", { count: errors.length }));
       return;
     }
     setPending(true);
@@ -160,7 +164,7 @@ export function NewPrForm({
           rows={3}
           value={notes}
           onChange={(e) => wrap(setNotes)(e.target.value)}
-          placeholder="Reason for the request…"
+          placeholder={t("placeholder.prNotes")}
           className="w-full rounded-md border border-input bg-card px-3 py-2 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         />
       }

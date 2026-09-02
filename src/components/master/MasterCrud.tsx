@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import { useActionToast } from "@/hooks/use-action-toast";
@@ -156,6 +157,8 @@ export function MasterCrud({
   writeOperation,
   serverPagination,
 }: MasterCrudProps) {
+  const t = useTranslations("masterCrud");
+  const ta = useTranslations("common.actions");
   const router = useRouter();
   const confirm = useConfirm();
   const actionToast = useActionToast();
@@ -226,7 +229,11 @@ export function MasterCrud({
         actionToast.error(result.error);
         return;
       }
-      actionToast.success(editing ? `${entityLabel} updated` : `${entityLabel} created`);
+      actionToast.success(
+        editing
+          ? t("toastUpdated", { entity: entityLabel })
+          : t("toastCreated", { entity: entityLabel }),
+      );
       setOpen(false);
       router.refresh();
     } catch {
@@ -238,9 +245,9 @@ export function MasterCrud({
 
   const remove = async (entity: Entity) => {
     const ok = await confirm({
-      title: `Delete ${entityLabel.toLowerCase()}?`,
-      description: "This cannot be undone.",
-      confirmLabel: "Delete",
+      title: t("deleteTitle", { entity: entityLabel.toLowerCase() }),
+      description: t("deleteDescription"),
+      confirmLabel: t("deleteConfirm"),
       tone: "destructive",
     });
     if (!ok) return;
@@ -251,7 +258,7 @@ export function MasterCrud({
         actionToast.error(result.error);
         return;
       }
-      actionToast.success(`${entityLabel} deleted`);
+      actionToast.success(t("toastDeleted", { entity: entityLabel }));
       router.refresh();
     } catch {
       actionToast.network();
@@ -270,7 +277,7 @@ export function MasterCrud({
             type="button"
             variant="ghost"
             size="icon-sm"
-            aria-label={`Edit ${entityLabel}`}
+            aria-label={t("ariaEdit", { entity: entityLabel })}
             onClick={() => openEdit(entity)}
           >
             <Pencil />
@@ -281,7 +288,7 @@ export function MasterCrud({
             type="button"
             variant="ghost"
             size="icon-sm"
-            aria-label={`Delete ${entityLabel}`}
+            aria-label={t("ariaDelete", { entity: entityLabel })}
             onClick={() => remove(entity)}
           >
             <Trash2 />
@@ -302,7 +309,7 @@ export function MasterCrud({
             {extraActions}
             {showCreate ? (
               <Button type="button" onClick={openCreate}>
-                <Plus /> New {entityLabel}
+                <Plus /> {t("newEntity", { entity: entityLabel })}
               </Button>
             ) : null}
           </div>
@@ -311,7 +318,7 @@ export function MasterCrud({
         <DataTable
           columns={[...columns, actionCol]}
           rows={rowsWithActions}
-          emptyMessage={`No ${entityLabel.toLowerCase()}s yet.`}
+          emptyMessage={t("empty", { entity: entityLabel.toLowerCase() })}
           serverPagination={serverPagination}
         />
       </DocumentList>
@@ -329,9 +336,13 @@ export function MasterCrud({
           }}
         >
           <DialogHeader>
-            <DialogTitle>{editing ? `Edit ${entityLabel}` : `New ${entityLabel}`}</DialogTitle>
+            <DialogTitle>
+              {editing
+                ? t("editEntity", { entity: entityLabel })
+                : t("newEntity", { entity: entityLabel })}
+            </DialogTitle>
             <DialogDescription>
-              {editing ? "Update the fields below." : "Fill in the fields below."}
+              {editing ? t("formEditHint") : t("formCreateHint")}
             </DialogDescription>
           </DialogHeader>
 
@@ -356,10 +367,10 @@ export function MasterCrud({
                 onClick={() => setOpen(false)}
                 disabled={pending}
               >
-                Cancel
+                {ta("cancel")}
               </Button>
               <Button type="submit" disabled={pending}>
-                {pending ? "Saving…" : editing ? "Save changes" : "Create"}
+                {pending ? t("saving") : editing ? t("saveChanges") : ta("create")}
               </Button>
             </DialogFooter>
           </form>

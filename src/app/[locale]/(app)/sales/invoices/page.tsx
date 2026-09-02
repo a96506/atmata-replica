@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { DocumentList } from "@/components/doc/DocumentList";
 import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
@@ -25,6 +25,7 @@ export default async function Page({
   searchParams: Promise<{ state?: string; page?: string; limit?: string }>;
 }) {
   const { locale } = await params;
+  const t = await getTranslations("sales");
   const th = await getTranslations("sales.homeActions");
   const sp = await searchParams;
   const stateFilter = normalizeListState(sp.state);
@@ -98,7 +99,7 @@ export default async function Page({
         rows={paged.items.map((i) => [
           <Link
             key="n"
-            href={`/${locale}/sales/invoices/${i.id}`}
+            href={`/sales/invoices/${i.id}`}
             className="font-medium text-primary hover:underline"
           >
             {i.number}
@@ -114,7 +115,7 @@ export default async function Page({
           </span>,
           <StateBadge key="s" state={i.state} />,
         ])}
-        emptyMessage="No invoices yet."
+        emptyMessage={t("empty.invoices")}
         serverPagination={{
           page,
           pageSize: paged.limit,
