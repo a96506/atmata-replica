@@ -188,9 +188,11 @@ export async function resolveInvitationEmail(token: string): Promise<string | nu
 
 /**
  * Detect whether the invite email already exists in InsForge auth.users.
- * Admin list-users: GET /api/auth/users?search=…
- * Searches full email and local-part; exact lowercase match only.
+ * Admin list-users: GET /api/auth/users?search=&limit=&offset=
+ * Paginates until empty page or exact lowercase email match.
+ * Fallback: admin DB user_profiles.email (normalized lower/trim).
  * @see https://docs.insforge.dev/api-reference/admin/list-all-users-admin-only
+ * Pagination: @insforge/shared-schemas listUsersRequestSchema (limit/offset).
  */
 async function authEmailExists(email: string): Promise<boolean> {
   const baseUrl = process.env.INSFORGE_URL?.replace(/\/$/, "");
@@ -200,38 +202,72 @@ async function authEmailExists(email: string): Promise<boolean> {
   }
 
   const needle = email.trim().toLowerCase();
+  if (!needle) return false;
+
   const at = needle.indexOf("@");
   const localPart = at > 0 ? needle.slice(0, at) : needle;
   const searchTerms = Array.from(new Set([needle, localPart].filter(Boolean)));
+  const pageSize = 100;
 
   for (const search of searchTerms) {
-    const url = new URL("/api/auth/users", baseUrl);
-    url.searchParams.set("search", search);
-    url.searchParams.set("limit", "100");
-    url.searchParams.set("offset", "0");
+    let offset = 0;
+    for (;;) {
+      const url = new URL("/api/auth/users", baseUrl);
+      url.searchParams.set("search", search);
+      url.searchParams.set("limit", String(pageSize));
+      url.searchParams.set("offset", String(offset));
 
-    const response = await fetch(url, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-      cache: "no-store",
-    });
+      const response = await fetch(url, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        cache: "no-store",
+      });
 
-    if (!response.ok) {
-      throw new Error(`Unable to look up invitation account (${response.status}).`);
-    }
+      if (!response.ok) {
+        throw new Error(
+          `Unable to look up invitation account (${response.status}).`,
+        );
+      }
 
-    const body = (await response.json()) as {
-      data?: Array<{ email?: string | null }>;
-      users?: Array<{ email?: string | null }>;
-    };
-    const users = body.data ?? body.users ?? [];
-    if (
-      users.some((user) => (user.email ?? "").trim().toLowerCase() === needle)
-    ) {
-      return true;
+      const body = (await response.json()) as {
+        data?: Array<{ email?: string | null }>;
+        users?: Array<{ email?: string | null }>;
+        pagination?: { total?: number; offset?: number; limit?: number };
+      };
+      const users = body.data ?? body.users ?? [];
+      if (
+        users.some(
+          (user) => (user.email ?? "").trim().toLowerCase() === needle,
+        )
+      ) {
+        return true;
+      }
+
+      if (users.length === 0) break;
+      offset += users.length;
+      const total = body.pagination?.total;
+      if (typeof total === "number" && offset >= total) break;
+      if (users.length < pageSize) break;
     }
   }
 
-  return false;
+  // Fallback when list search misses (e.g. pagination/search quirks).
+  // Emails are stored lowercased in app writes; eq(needle) matches lower(email).
+  const admin = createInsForgeAdminClient();
+  const { data: profile, error: profileError } = await admin.database
+    .from("user_profiles")
+    .select("id")
+    .eq("email", needle)
+    .limit(1)
+    .maybeSingle();
+
+  if (profileError) {
+    throw new Error(
+      profileError.message?.trim() ||
+        "Unable to look up invitation account profile.",
+    );
+  }
+
+  return Boolean(profile);
 }
 
 export async function resolveInvitationContext(

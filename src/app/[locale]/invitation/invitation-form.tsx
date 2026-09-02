@@ -32,7 +32,7 @@ function invitationErrorMessage(
 export function InvitationForm({
   token,
   email,
-  mode,
+  mode: initialMode,
 }: {
   token?: string;
   email: string;
@@ -47,7 +47,25 @@ export function InvitationForm({
   );
   const [info, setInfo] = React.useState("");
   const [otpStep, setOtpStep] = React.useState<ExistingStep>("send");
+  const [mode, setMode] = React.useState<InvitationAcceptMode>(initialMode);
   const isExisting = mode === "existing";
+
+  function isEmailHasAccountResult(result: {
+    messageKey?: string;
+    message?: string;
+  }): boolean {
+    return (
+      result.messageKey === "auth.invitation.emailHasAccount" ||
+      result.messageKey === "emailHasAccount"
+    );
+  }
+
+  function switchToExistingOtpMode(message?: string) {
+    setMode("existing");
+    setOtpStep("send");
+    setError("");
+    setInfo(message ?? tInv("emailHasAccount"));
+  }
 
   if (isExisting) {
     return (
@@ -222,6 +240,12 @@ export function InvitationForm({
             mode: "new",
           });
           if (!result.ok) {
+            if (isEmailHasAccountResult(result)) {
+              switchToExistingOtpMode(
+                invitationErrorMessage(result, tInv, tInv("emailHasAccount")),
+              );
+              return;
+            }
             setError(invitationErrorMessage(result, tInv, tInv("invalid")));
             return;
           }
