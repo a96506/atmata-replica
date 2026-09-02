@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import {
   acceptInvitationAction,
+  sendInvitationOtpAction,
   type InvitationAcceptMode,
 } from "@/lib/actions/auth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -12,7 +13,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-const RESET_EMAIL_STORAGE_KEY = "atmata.resetPasswordEmail";
+type ExistingStep = "send" | "verify";
+
+function invitationErrorMessage(
+  result: { messageKey?: string; message?: string },
+  tInv: ReturnType<typeof useTranslations<"auth.invitation">>,
+  fallback: string,
+): string {
+  const key = result.messageKey?.startsWith("auth.invitation.")
+    ? result.messageKey.slice("auth.invitation.".length)
+    : null;
+  if (key) {
+    return tInv(key as Parameters<typeof tInv>[0]);
+  }
+  return result.message ?? fallback;
+}
 
 export function InvitationForm({
   token,
@@ -30,7 +45,159 @@ export function InvitationForm({
   const [error, setError] = React.useState(
     token && email ? "" : tInv("invalid"),
   );
+  const [info, setInfo] = React.useState("");
+  const [otpStep, setOtpStep] = React.useState<ExistingStep>("send");
   const isExisting = mode === "existing";
+
+  if (isExisting) {
+    return (
+      <form
+        method="post"
+        className="w-full max-w-sm space-y-5 rounded-2xl border border-border bg-card p-8 shadow-lg"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!token) return;
+          setError("");
+          setInfo("");
+
+          if (otpStep === "send") {
+            startTransition(async () => {
+              const result = await sendInvitationOtpAction({ token });
+              if (!result.ok) {
+                setError(
+                  invitationErrorMessage(result, tInv, tInv("otpSendFailed")),
+                );
+                return;
+              }
+              setOtpStep("verify");
+              setInfo(tInv("codeSent"));
+            });
+            return;
+          }
+
+          const form = new FormData(event.currentTarget);
+          const otp = String(form.get("otp") ?? "").trim();
+          startTransition(async () => {
+            const result = await acceptInvitationAction({
+              token,
+              otp,
+              mode: "existing",
+            });
+            if (!result.ok) {
+              setError(
+                invitationErrorMessage(result, tInv, tInv("otpFailed")),
+              );
+              return;
+            }
+            router.replace("/");
+            router.refresh();
+          });
+        }}
+      >
+        <div className="space-y-1 text-center">
+          <h1 className="text-xl font-semibold">{tInv("titleExisting")}</h1>
+          <p className="text-sm text-muted-foreground">
+            {tInv("subtitleExisting")}
+          </p>
+        </div>
+
+        {error ? (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        {info && !error ? (
+          <Alert>
+            <AlertDescription>{info}</AlertDescription>
+          </Alert>
+        ) : null}
+
+        <div className="space-y-2">
+          <Label htmlFor="email">{t("email")}</Label>
+          <Input
+            id="email"
+            type="email"
+            name="email"
+            autoComplete="email"
+            value={email}
+            readOnly
+            required
+            disabled={!token}
+          />
+        </div>
+
+        {otpStep === "verify" ? (
+          <div className="space-y-2">
+            <Label htmlFor="otp">{tInv("codeLabel")}</Label>
+            <Input
+              id="otp"
+              name="otp"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="\d{6}"
+              maxLength={6}
+              placeholder={tInv("enterCode")}
+              required
+              autoFocus
+              disabled={!token || pending}
+            />
+          </div>
+        ) : null}
+
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={pending || !token || !email}
+        >
+          {otpStep === "send"
+            ? pending
+              ? tInv("sendingCode")
+              : tInv("sendCode")
+            : pending
+              ? tInv("verifying")
+              : tInv("verifyAndAccept")}
+        </Button>
+
+        {otpStep === "verify" ? (
+          <Button
+            type="button"
+            variant="ghost"
+            className="w-full"
+            disabled={pending || !token}
+            onClick={() => {
+              if (!token) return;
+              setError("");
+              setInfo("");
+              startTransition(async () => {
+                const result = await sendInvitationOtpAction({ token });
+                if (!result.ok) {
+                  setError(
+                    invitationErrorMessage(
+                      result,
+                      tInv,
+                      tInv("otpSendFailed"),
+                    ),
+                  );
+                  return;
+                }
+                setInfo(tInv("codeSent"));
+              });
+            }}
+          >
+            {tInv("resendCode")}
+          </Button>
+        ) : null}
+
+        <Link
+          href="/login"
+          className="block text-center text-sm text-primary hover:underline"
+        >
+          {t("backToSignIn")}
+        </Link>
+      </form>
+    );
+  }
 
   return (
     <form
@@ -41,12 +208,10 @@ export function InvitationForm({
         if (!token) return;
         const form = new FormData(event.currentTarget);
         const password = String(form.get("password") ?? "");
-        if (!isExisting) {
-          const confirmPassword = String(form.get("confirmPassword") ?? "");
-          if (password !== confirmPassword) {
-            setError(t("passwordMismatch"));
-            return;
-          }
+        const confirmPassword = String(form.get("confirmPassword") ?? "");
+        if (password !== confirmPassword) {
+          setError(t("passwordMismatch"));
+          return;
         }
         setError("");
         startTransition(async () => {
@@ -54,17 +219,10 @@ export function InvitationForm({
             token,
             fullName: String(form.get("fullName") ?? ""),
             password,
-            mode,
+            mode: "new",
           });
           if (!result.ok) {
-            const key = result.messageKey?.startsWith("auth.invitation.")
-              ? result.messageKey.slice("auth.invitation.".length)
-              : null;
-            if (key) {
-              setError(tInv(key as Parameters<typeof tInv>[0]));
-            } else {
-              setError(result.message ?? tInv("invalid"));
-            }
+            setError(invitationErrorMessage(result, tInv, tInv("invalid")));
             return;
           }
           router.replace("/");
@@ -73,12 +231,8 @@ export function InvitationForm({
       }}
     >
       <div className="space-y-1 text-center">
-        <h1 className="text-xl font-semibold">
-          {isExisting ? tInv("titleExisting") : tInv("titleNew")}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {isExisting ? tInv("subtitleExisting") : tInv("subtitleNew")}
-        </p>
+        <h1 className="text-xl font-semibold">{tInv("titleNew")}</h1>
+        <p className="text-sm text-muted-foreground">{tInv("subtitleNew")}</p>
       </div>
 
       {error ? (
@@ -114,60 +268,33 @@ export function InvitationForm({
       </div>
 
       <div className="space-y-2">
-        <div className="flex items-center justify-between gap-4">
-          <Label htmlFor="password">
-            {isExisting ? tInv("currentPassword") : tInv("newPassword")}
-          </Label>
-          {isExisting ? (
-            <Link
-              href="/forgot-password"
-              className="text-xs text-primary hover:underline"
-              onClick={() => {
-                try {
-                  window.sessionStorage.setItem(RESET_EMAIL_STORAGE_KEY, email);
-                } catch {
-                  /* ignore */
-                }
-              }}
-            >
-              {t("forgotPassword")}
-            </Link>
-          ) : null}
-        </div>
+        <Label htmlFor="password">{tInv("newPassword")}</Label>
         <Input
           id="password"
           type="password"
           name="password"
-          autoComplete={isExisting ? "current-password" : "new-password"}
+          autoComplete="new-password"
           minLength={6}
           required
           disabled={!token}
         />
       </div>
 
-      {!isExisting ? (
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">{tInv("confirmPassword")}</Label>
-          <Input
-            id="confirmPassword"
-            type="password"
-            name="confirmPassword"
-            autoComplete="new-password"
-            minLength={6}
-            required
-            disabled={!token}
-          />
-        </div>
-      ) : null}
+      <div className="space-y-2">
+        <Label htmlFor="confirmPassword">{tInv("confirmPassword")}</Label>
+        <Input
+          id="confirmPassword"
+          type="password"
+          name="confirmPassword"
+          autoComplete="new-password"
+          minLength={6}
+          required
+          disabled={!token}
+        />
+      </div>
 
       <Button type="submit" className="w-full" disabled={pending || !token || !email}>
-        {pending
-          ? isExisting
-            ? tInv("signingInAndAccepting")
-            : tInv("creatingAccount")
-          : isExisting
-            ? tInv("signInAndAccept")
-            : tInv("createAccount")}
+        {pending ? tInv("creatingAccount") : tInv("createAccount")}
       </Button>
 
       <Link

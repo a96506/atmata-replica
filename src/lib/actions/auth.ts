@@ -189,6 +189,7 @@ export async function resolveInvitationEmail(token: string): Promise<string | nu
 /**
  * Detect whether the invite email already exists in InsForge auth.users.
  * Admin list-users: GET /api/auth/users?search=…
+ * Searches full email and local-part; exact lowercase match only.
  * @see https://docs.insforge.dev/api-reference/admin/list-all-users-admin-only
  */
 async function authEmailExists(email: string): Promise<boolean> {
@@ -198,27 +199,39 @@ async function authEmailExists(email: string): Promise<boolean> {
     throw new Error("Missing INSFORGE_URL or INSFORGE_API_KEY");
   }
 
-  const url = new URL("/api/auth/users", baseUrl);
-  url.searchParams.set("search", email);
-  url.searchParams.set("limit", "50");
-  url.searchParams.set("offset", "0");
+  const needle = email.trim().toLowerCase();
+  const at = needle.indexOf("@");
+  const localPart = at > 0 ? needle.slice(0, at) : needle;
+  const searchTerms = Array.from(new Set([needle, localPart].filter(Boolean)));
 
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-    cache: "no-store",
-  });
+  for (const search of searchTerms) {
+    const url = new URL("/api/auth/users", baseUrl);
+    url.searchParams.set("search", search);
+    url.searchParams.set("limit", "100");
+    url.searchParams.set("offset", "0");
 
-  if (!response.ok) {
-    throw new Error(`Unable to look up invitation account (${response.status}).`);
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      throw new Error(`Unable to look up invitation account (${response.status}).`);
+    }
+
+    const body = (await response.json()) as {
+      data?: Array<{ email?: string | null }>;
+      users?: Array<{ email?: string | null }>;
+    };
+    const users = body.data ?? body.users ?? [];
+    if (
+      users.some((user) => (user.email ?? "").trim().toLowerCase() === needle)
+    ) {
+      return true;
+    }
   }
 
-  const body = (await response.json()) as {
-    data?: Array<{ email?: string | null }>;
-  };
-  const needle = email.trim().toLowerCase();
-  return (body.data ?? []).some(
-    (user) => (user.email ?? "").trim().toLowerCase() === needle,
-  );
+  return false;
 }
 
 export async function resolveInvitationContext(
@@ -230,17 +243,50 @@ export async function resolveInvitationContext(
   return { email, mode: exists ? "existing" : "new" };
 }
 
+/**
+ * Send a passwordless sign-in OTP for an existing invitee.
+ * InsForge: signInWithOtp + verifyOtp (@insforge/sdk 1.5.2+).
+ * @see https://docs.insforge.dev/sdks/typescript/auth
+ * @see https://github.com/insforge/insforge-skills/blob/HEAD/skills/insforge/auth/sdk-integration.md
+ */
+export async function sendInvitationOtpAction(input: {
+  token: string;
+}): Promise<AuthActionResult> {
+  const token = input.token.trim();
+  if (!token) {
+    return { ok: false, messageKey: "auth.invitation.invalidOrExpired" };
+  }
+
+  const email = await resolveInvitationEmail(token);
+  if (!email) {
+    return { ok: false, messageKey: "auth.invitation.invalidOrExpired" };
+  }
+
+  const exists = await authEmailExists(email);
+  if (!exists) {
+    return { ok: false, messageKey: "auth.invitation.invalidOrExpired" };
+  }
+
+  const auth = await createInsForgeAuthActions();
+  const { error } = await auth.signInWithOtp({ email });
+  if (error) {
+    return { ok: false, messageKey: "auth.invitation.otpSendFailed" };
+  }
+
+  return { ok: true };
+}
+
 export async function acceptInvitationAction(input: {
   token: string;
-  fullName: string;
-  password: string;
+  fullName?: string;
+  password?: string;
+  otp?: string;
   mode: InvitationAcceptMode;
 }): Promise<AuthActionResult> {
   const token = input.token.trim();
-  const fullName = input.fullName.trim();
   const mode = input.mode === "existing" ? "existing" : "new";
 
-  if (!token || !fullName || input.password.length < 6) {
+  if (!token) {
     return {
       ok: false,
       messageKey: "auth.invitation.incompleteFields",
@@ -255,52 +301,92 @@ export async function acceptInvitationAction(input: {
     return { ok: false, messageKey: "auth.invitation.invalidOrExpired" };
   }
 
-  let userId: string | null = null;
+  const exists = await authEmailExists(email);
 
   if (mode === "existing") {
-    const { data: signInData, error: signInError } =
-      await auth.signInWithPassword({
-        email,
-        password: input.password,
-      });
-    if (signInError || !signInData?.user) {
-      return {
-        ok: false,
-        messageKey: "auth.invitation.wrongPassword",
-      };
+    if (!exists) {
+      return { ok: false, messageKey: "auth.invitation.invalidOrExpired" };
     }
-    const signedEmail = signInData.user.email?.trim().toLowerCase() ?? "";
+
+    const otp = (input.otp ?? "").trim();
+    if (!/^\d{6}$/.test(otp)) {
+      return { ok: false, messageKey: "auth.invitation.incompleteOtp" };
+    }
+
+    const { data: verifyData, error: verifyError } = await auth.verifyOtp({
+      email,
+      otp,
+    });
+    if (verifyError || !verifyData?.user) {
+      return { ok: false, messageKey: "auth.invitation.otpFailed" };
+    }
+
+    const signedEmail = verifyData.user.email?.trim().toLowerCase() ?? "";
     if (signedEmail !== email) {
       await auth.signOut();
       return { ok: false, messageKey: "auth.invitation.invalidOrExpired" };
     }
-    userId = signInData.user.id;
-  } else {
-    const { data: createData, error: createError } = await admin.auth.signUp({
-      email,
-      password: input.password,
-      name: fullName,
-      autoConfirm: true,
-    });
 
-    if (!createData?.user) {
-      if (createError) {
-        return {
-          ok: false,
-          messageKey: "auth.invitation.emailHasAccount",
-        };
-      }
+    const userId = verifyData.user.id;
+    const fullName =
+      verifyData.user.profile?.name?.trim() ||
+      email.slice(0, email.indexOf("@")) ||
+      email;
+
+    const { error: acceptError } = await admin.database.rpc(
+      "accept_invitation",
+      {
+        p_token: token,
+        p_user_id: userId,
+        p_full_name: fullName,
+      },
+    );
+
+    if (acceptError) {
+      await auth.signOut();
       return {
         ok: false,
-        messageKey: "auth.invitation.createFailed",
+        messageKey: "auth.invitation.invalidOrExpired",
       };
     }
-    userId = createData.user.id;
+
+    return { ok: true };
   }
 
-  if (!userId) {
-    return { ok: false, messageKey: "auth.invitation.acceptFailed" };
+  if (exists) {
+    return { ok: false, messageKey: "auth.invitation.emailHasAccount" };
   }
+
+  const fullName = (input.fullName ?? "").trim();
+  const password = input.password ?? "";
+  if (!fullName || password.length < 6) {
+    return {
+      ok: false,
+      messageKey: "auth.invitation.incompleteFields",
+    };
+  }
+
+  const { data: createData, error: createError } = await admin.auth.signUp({
+    email,
+    password,
+    name: fullName,
+    autoConfirm: true,
+  });
+
+  if (!createData?.user) {
+    if (createError) {
+      return {
+        ok: false,
+        messageKey: "auth.invitation.emailHasAccount",
+      };
+    }
+    return {
+      ok: false,
+      messageKey: "auth.invitation.createFailed",
+    };
+  }
+
+  const userId = createData.user.id;
 
   const { error: acceptError } = await admin.database.rpc(
     "accept_invitation",
@@ -319,19 +405,17 @@ export async function acceptInvitationAction(input: {
     };
   }
 
-  if (mode === "new") {
-    const { data: signInData, error: signInError } =
-      await auth.signInWithPassword({
-        email,
-        password: input.password,
-      });
+  const { data: signInData, error: signInError } =
+    await auth.signInWithPassword({
+      email,
+      password,
+    });
 
-    if (signInError || !signInData?.user) {
-      return {
-        ok: false,
-        messageKey: "auth.invitation.createdSignIn",
-      };
-    }
+  if (signInError || !signInData?.user) {
+    return {
+      ok: false,
+      messageKey: "auth.invitation.createdSignIn",
+    };
   }
 
   return { ok: true };
