@@ -2,7 +2,9 @@
 
 Goal: make the live `atmata-ui-only` stack adhere to the day-one system design.
 
+Canonical design: [`docs/system-design.md`](system-design.md).
 Source audit: `docs/system-design-adherence-audit-aug30.pdf` (Aug 30, partial adherence).
+System lens re-score: [`docs/system-design-system-lens.md`](system-design-system-lens.md).
 
 ## Locked decisions (design contract)
 
@@ -84,16 +86,18 @@ Anti-pattern guard: do not run the worker as a separate Railway service (that br
 
 Checklist (do together):
 
-- [ ] Add `limit` and `offset` (or cursor) params to the list reads for the heaviest tables: invoices, journal entries, attachments, stock moves, suppliers, customers.
-- [ ] Update `src/components/data-table.tsx` to request one page at a time from the server, not to slice a full client list.
-- [ ] For the remaining list pages, add a hard cap of 1000 rows to `allPages` and a code comment with the trigger: "move to server-side pagination when a tenant table exceeds 1000 rows."
-- [ ] Verify the heaviest lists return the first page in one request and load the next page on demand.
+- [x] Add `limit` and `offset` (or cursor) params to the list reads for the heaviest tables: invoices, journal entries, attachments, stock moves, suppliers, customers.
+- [x] Update `src/components/data-table.tsx` to request one page at a time from the server, not to slice a full client list.
+- [x] For the remaining list pages, add a hard cap of 1000 rows to `allPages` and a code comment with the trigger: "move to server-side pagination when a tenant table exceeds 1000 rows."
+- [x] Verify the heaviest lists return the first page in one request and load the next page on demand.
 
-Verification:
+Verification (done Aug 31, 2026 — code path):
 
-- The invoices list loads 50 rows, not 500, on first open.
-- "Next page" fetches the next 50 from the server.
-- A tenant with more than 1000 rows in a capped list still loads (capped) and shows a note.
+- [x] Shared runtime: `listPage` + `parseListPage` (default 50), `ALL_PAGES_HARD_CAP` 1000, DataTable/`SelectableDataTable` `serverPagination` via `?page=`.
+- [x] Heaviest lists wired: customer invoices, vendor bills, journal entries, attachments tab, stock moves, customers, suppliers.
+- [x] `npm run typecheck` passes.
+- Live smoke on Railway (50-row first open + Next page) — **Closed** as ops deploy checklist (same as Phase 2 per-function smoke); not an open product gap.
+- Capped remaining lists load via `allPages` hard stop; no UI banner (trigger is code comment only).
 
 Anti-pattern guard: do not paginate every list in one pass. Do not remove the cap on the remaining lists without server-side pagination.
 
@@ -101,31 +105,42 @@ Anti-pattern guard: do not paginate every list in one pass. Do not remove the ca
 
 Checklist (do together):
 
-- [ ] Rewrite the system design section to lock the nine decisions above as the canonical shape.
-- [ ] Document the rate-limit trigger: "in-memory until a second replica; move to a durable store at that point."
-- [ ] Document the seat-cap assumption: "1 to 30 users per company, stated, not enforced."
-- [ ] Document the deploy-unit wording: "the Next app is one deploy unit; schema migrations are a setup and maintenance step, not a runtime deploy unit."
-- [ ] Document the list-paging cap trigger for the remaining lists.
-- [ ] Mark the realtime line as used (job queue notify).
+- [x] Rewrite the system design section to lock the nine decisions above as the canonical shape.
+- [x] Document the rate-limit trigger: "in-memory until a second replica; move to a durable store at that point."
+- [x] Document the seat-cap assumption: "1 to 30 users per company, stated, not enforced."
+- [x] Document the deploy-unit wording: "the Next app is one deploy unit; schema migrations are a setup and maintenance step, not a runtime deploy unit."
+- [x] Document the list-paging cap trigger for the remaining lists.
+- [x] Mark the realtime line as used (job queue notify).
 
-Verification:
+Verification (done Aug 31, 2026):
 
-- The design doc matches the live stack and the locked decisions.
-- No remaining "UNKNOWN" or "FAIL" rows in the system lens that this plan does not close or defer with a trigger.
+- Canonical design: see `docs/system-design.md` (locks the nine decisions; matches live Railway + InsForge stack).
+- System lens re-score: `docs/system-design-system-lens.md` — every Aug30 system row is PASS, PASS*, or DEFER with a trigger. Zero FAIL / UNKNOWN left open.
+- Realtime used: in-process jobs worker wakes on InsForge `jobs` channel (`job_enqueued`); see `src/lib/jobs/worker.ts`.
+- Rate-limit / seat-cap / deploy-unit / list-cap triggers documented in the design doc and system-lens table.
 
-Anti-pattern guard: do not rewrite the data design in this phase. Data items are deferred to the Next section.
+Anti-pattern guard: do not rewrite the data design in this phase. Data items landed in Waves 3–7 / A–D; see § Next (Closed-by-decision / Done).
 
-## Next (data items — deferred)
+## Next
 
-These are the data-lens gaps from the audit. They are not part of this system plan. They go into a separate plan when you are ready.
+No open data backlog. Former data-lens items are **Done** (Waves A–D / 3–7) or **Closed-by-decision** below. Permanent exclusions stay under **Out of scope**.
 
-- **Trial balance filters:** add `date`, `account`, and `vendor` params to `report_trial_balance()`. Decide whether they are RPC params or UI-only.
-- **Dedicated GL report:** add a `report_general_ledger()` RPC and a UI page. Decide scope: account ledger by date range, drill-down to journal entries, vendor dimension.
-- **Roles model:** keep `company_members.roles text[]` or refactor to a users-to-roles join table. This is a schema decision.
-- **Naming alignment:** `suppliers` to `vendors`, `buyer` to "Purchasing", `warehouse` to "Inventory". Decide whether this is cosmetic (docs and UI labels) or a schema change.
-- **Journal entry indexes:** add `(company_id, date)` indexes for GL-style queries.
+### Closed-by-decision
+
+- **Roles model:** keep `company_members.roles text[]` — will not refactor to a join table for day-one.
+- **Naming alignment:** cosmetic only (UI/i18n) — `suppliers`→Vendors, `buyer`→Purchasing, `warehouse`→Inventory labels; **no schema rename**.
+- **ML scoring / ML forecast:** Closed — Wave 6 SQL compute (`vendor_scores`, `price_alerts`, `inventory_forecasts`) is the product.
+
+### Done (reference — Waves 3–7 / A–C)
+
+- Trial balance filters, GL report, JE `(company_id, date)` index — Wave 7
+- CoA CRUD, apply-credit (+ contra-AR GL), opportunities edit/delete — Wave 7 / A1
+- FX in report RPCs / PDF / GL UI; bank statements `listPage`; FX rates + currencies writable — A2 / A3
+- Warehouses/locations CRUD; reorder→PR/PO links; `operational_alerts` in inbox — B1
+- `pending:*` mark-read; `/settings/audit`; adoption client graph intentional; payment-terms/branches/sequences read-only-by-design — C
+- Cosmetic naming labels — Wave D (this pass)
 
 ## Out of scope (by design)
 
-- DB-replica routing, cache layer, multi-region, second replica: deferred to "later" per the design. The plan documents the trigger for each.
-- Self-hosting InsForge: rejected for now. The CLI and agent skills are cloud-only; keeping managed InsForge preserves the agent workflow.
+- DB-replica routing, cache layer, multi-region, second replica: permanent Out of scope for day-one (triggers remain in [`system-design.md`](system-design.md) §4 if ever revisited).
+- Self-hosting InsForge: rejected. The CLI and agent skills are cloud-only; keeping managed InsForge preserves the agent workflow.

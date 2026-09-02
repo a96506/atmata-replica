@@ -278,7 +278,7 @@ Verify:
 
 ---
 
-### Phase 2 — Discoverability: nav filter, RFQ actions, purchasing workflows, OCR placement
+### Phase 2 — Discoverability: nav filter, RFQ actions, purchasing workflows, OCR placement ✅ COMPLETE 2026-09-01
 
 **Goal:** Each role sees relevant routes; broken/demo workflows replaced with real actions; AP OCR findable from Purchasing.
 
@@ -335,7 +335,7 @@ Verify:
 
 ---
 
-### Phase 3 — Power-user: price lists, inventory accuracy, list filters
+### Phase 3 — Power-user: price lists, inventory accuracy, list filters ✅ COMPLETE 2026-09-01
 
 **Goal:** Sales pricing works end-to-end; inventory overview trustworthy; warehouse can filter moves.
 
@@ -387,7 +387,7 @@ Verify:
 
 ---
 
-### Phase 4 — Settings role matrix + DocActionBar capability sweep
+### Phase 4 — Settings role matrix + DocActionBar capability sweep ✅ COMPLETE 2026-09-01
 
 **Goal:** All settings pages and document actions respect the same capability map; no stray hard-coded role arrays.
 
@@ -436,7 +436,7 @@ Task — Phase 4 only:
 5. Expand capabilities.test.ts to fail if OPERATIONS keys drift from PermissionGate usage.
 
 Do NOT: add new SQL migrations unless a settings SDK write lacks RLS (fix in UI only).
-Do NOT: implement COA/warehouse CRUD if pages are intentionally read-only — gate only, add TODO comment.
+Do NOT: invent CRUD for masters Closed as read-only-by-design (payment-terms/branches/sequences). CoA/warehouse/FX landed as Done in later waves.
 
 Verify per role matrix above via dev role switcher on settings/*
 npm run typecheck && npm test
@@ -444,7 +444,7 @@ npm run typecheck && npm test
 
 ---
 
-### Phase 5 — Deferred data items (documented scope, minimal viable)
+### Phase 5 — Data items (documented scope, minimal viable) ✅ COMPLETE 2026-09-01
 
 **Goal:** Close remaining backlog items that are data/reporting-heavy without blocking role UX; defer full implementations with explicit stubs.
 
@@ -455,9 +455,9 @@ npm run typecheck && npm test
 | Trial balance period | `src/app/[locale]/(app)/accounting/financials/page.tsx`, `src/lib/api/gl.ts` | Pass `period` query param to `report_trial_balance` if RPC supports; else UI period selector + banner "period filter pending RPC" |
 | List paging | `src/lib/api/q2c.ts`, `p2p.ts`, `rfq.ts` + list pages for quotes, POs, GRNs | Add `listQuotesPage` etc. using `listPage` pattern from `src/lib/list-paging.ts` |
 | Opportunities | `src/app/[locale]/(app)/sales/page.tsx` pipeline tab | Minimal CRUD via SDK on `opportunities` if RLS allows admin/ar_clerk; else read-only + "Create" gated |
-| Credit notes | `src/app/[locale]/(app)/sales/credit-notes/` | Document auto-only; add read-only apply-credit placeholder tab on invoice detail |
+| Credit notes | `src/app/[locale]/(app)/sales/credit-notes/` | **Done (A1):** auto-create on return; apply-credit tab + RPC (supersedes Phase 5 read-only stub) |
 | Adoption metrics | `src/app/api/adoption/route.ts` | Add SQL comment + stub returning empty metrics; link from AdoptToButton tooltip |
-| Empty tabs | Purchasing vendor_scores, inventory forecasts | Keep empty states; add i18n "Coming soon" keyed to role (buyer/admin see roadmap note) |
+| Empty tabs | Purchasing vendor_scores, inventory forecasts | **Done (Wave 6):** SQL compute fills tabs; i18n empty states only when no data (not a Coming-soon gap) |
 
 **Acceptance criteria**
 
@@ -471,7 +471,7 @@ npm run typecheck && npm test
 **Agent prompt**
 
 ```
-Context: Role UX phases 1–4 complete. This phase handles deferred DATA items from access-patterns.md #7–10.
+Context: Role UX phases 1–4 complete. This phase handled DATA items from access-patterns.md #7–10 (later waves closed the rest).
 
 Task — Phase 5 only (minimal viable, do not gold-plate):
 1. Trial balance: add period selector to accounting/financials?type=trial-balance; wire to RPC if param exists,
@@ -481,7 +481,7 @@ Task — Phase 5 only (minimal viable, do not gold-plate):
 3. Sales pipeline opportunities tab: if opportunities table writable via SDK for ar_clerk/admin, add minimal
    create form; else read-only list with PermissionGate on create.
 4. Credit notes: add read-only "Apply credit" section on customer invoice detail (no RPC if none exists).
-5. Mark vendor_scores, forecasts, adoption metrics as deferred with accessible empty states — no fake data.
+5. ~~Mark vendor_scores, forecasts, adoption metrics as deferred with accessible empty states~~ → **Done (Wave 6 / C):** compute + intentional client adoption graph; empty states only when no rows.
 
 Do NOT: build full GL report page, full credit apply RPC, or materialized on-hand view.
 Do NOT: weaken capability gates from prior phases.
@@ -504,7 +504,7 @@ Verify:
 | 4 | OCR under Accounting not Purchasing | **2** |
 | 5 | Price list items + resolver unused | **3** |
 | 6 | On-hand from capped move scan | **3** |
-| 7 | Trial balance / GL report deferred | **5** (trial balance only) |
+| 7 | Trial balance / GL report | **5** (TB period); **Wave 7** GL + dimension filters (**Done**) |
 | 8 | Master data lacks role-scoped UI gates | **4** |
 | 9 | Opportunities + forecast tabs empty | **5** (opportunities); forecasts stub |
 | 10 | Adoption metrics in-memory only | **5** (stub) |
