@@ -5,10 +5,8 @@ import { DataTable } from "@/components/data-table";
 import { StateBadge } from "@/components/doc/StateBadge";
 import { NewDocButton } from "@/components/doc/CreateChildLinks";
 import { JeExportClient } from "./je-export-client";
-import {
-  ListStateFilter,
-  normalizeListState,
-} from "@/components/list/ListStateFilter";
+import { ListStateFilter } from "@/components/list/ListStateFilter";
+import { normalizeListState } from "@/components/list/list-state";
 import { listJournalEntriesPage } from "@/lib/api/gl";
 import { parseListPage } from "@/lib/list-paging";
 import { formatMoney } from "@/lib/money";

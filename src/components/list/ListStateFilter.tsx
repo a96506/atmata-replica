@@ -2,6 +2,10 @@
 
 import * as React from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import type { ListStateValue } from "./list-state";
+
+export type { ListStateValue } from "./list-state";
+export { normalizeListState } from "./list-state";
 
 /**
  * State filter control for document list views. Mirrors the `state` query
@@ -15,15 +19,6 @@ const OPTIONS = [
   { value: "pending", label: "Pending" },
   { value: "posted", label: "Posted" },
 ] as const;
-
-export type ListStateValue = "draft" | "pending" | "posted" | null;
-
-/** Coerce a raw `?state=` param into a known DocState or null (All). */
-export function normalizeListState(value: string | undefined): ListStateValue {
-  if (!value) return null;
-  if (value === "draft" || value === "pending" || value === "posted") return value;
-  return null;
-}
 
 export function ListStateFilter({ current }: { current: ListStateValue }) {
   const router = useRouter();
